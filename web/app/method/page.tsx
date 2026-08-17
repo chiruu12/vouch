@@ -282,9 +282,15 @@ export default function Page() {
               certainty is out of reach by construction, not by effort.
             </li>
             <li>
-              One collector in the account is permanently wedged by a repair prompt that was
-              too aggressive. A repair can damage a working scraper, and nothing here prevents
-              that yet beyond refusing to serve the result.
+              A record that is withdrawn at source and later reappears is served again
+              without comment. The system remembers the withdrawal but does not treat a
+              resurrection as an event worth flagging, and it should.
+            </li>
+            <li>
+              Two collectors in the account are permanently stuck, one on a repair prompt
+              that was too aggressive and one holding a repair lock that outlived its job. A
+              repair can damage a working scraper, and nothing here prevents that beyond
+              refusing to serve the result.
             </li>
             <li>
               Bright Data cannot run a repaired collector as a draft from the CLI, so the

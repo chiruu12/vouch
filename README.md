@@ -82,7 +82,7 @@ Stated plainly because the distinction matters when reading the numbers.
 | Source | Real? | How it is fetched |
 | --- | --- | --- |
 | US CPSC recalls | Real | The CPSC publishes a free JSON API. Not scraped, and the feed says so |
-| eBay listings | Real | Bright Data Scraper Studio. 193 listings, 244s, 0 errors |
+| eBay listings | Real | Bright Data Scraper Studio. 193 listings from one recall-derived query, about 6 minutes, 0 error rows |
 | Arcadia Product Safety | Synthetic fixture | Scraper Studio, against a site we built and are allowed to break |
 | Tradewell Market | Synthetic fixture | Scraper Studio, same |
 
@@ -109,7 +109,9 @@ timings are in [`runs/timing.log`](runs/timing.log).
 | Healthy cycle, Tradewell | 14 rows, contract passed, served verified, 6.0s |
 | Three listings delisted | Contract failed on a 21.4% row-count cliff. Diagnosed `gone`, refused to repair, served the remaining 11 as verified, withdrew the three. 5.0s |
 | Anti-bot interstitial at HTTP 200 | Diagnosed `blocked` from the body signature, refused to repair, served last-good as unverified. 38.7s |
+| Page redesign that broke paging | Returned 7 rows against a baseline of 14, and all 7 missing records still returned 200 at their own URLs. Diagnosed `pagination`, which is repairable |
 | Repair that reported success and returned nothing | Contract still failed after the repair, result rejected, last-good served as unverified |
+| Full detect, classify, repair and verify | 166s end to end on the Arcadia collector, measured before the account cap |
 
 The refusal is enforced in code rather than by convention. Flipping the `gone` branch to
 healable `drift` fails exactly four tests and nothing else.
@@ -162,9 +164,10 @@ runs/timing.log   every measurement, written when it was taken
 
 - Matching is title-based. It cannot read a lot code off a photo, so batch-level
   certainty is out of reach by construction.
-- One collector in the account is permanently wedged by a repair prompt that was too
-  aggressive. A repair can damage a working scraper, and nothing here prevents that
-  beyond refusing to serve the result.
+- Two collectors in the account are permanently stuck, one on a repair prompt that was
+  too aggressive and one holding a repair lock that outlived the job that took it. A
+  repair can damage a working scraper, and nothing here prevents that beyond refusing to
+  serve the result.
 - `bdata scraper run --version dev` is unreachable from the CLI, so a repair cannot be
   inspected before it reaches production. The gate sits at serving time instead.
 - A withdrawn record that reappears at source is served again without comment.
