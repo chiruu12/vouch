@@ -39,6 +39,10 @@ export interface PubProvenance {
    *  already offers machine-readable data, which is a different reliability claim
    *  and is stated as such rather than blurred. */
   scraped: boolean;
+  /** True for the fixtures we built to induce failures on demand. Carried as a flag
+   *  rather than left implicit in the label, so the feed cannot accidentally present
+   *  a fixture record as a real one and no template has to parse a name to find out. */
+  synthetic: boolean;
   contractVersion: string;
   trust: RecordState;
   fetchedAt: string;
@@ -92,6 +96,7 @@ export interface PubSource {
   id: SourceId;
   label: string;
   scraped: boolean;
+  synthetic: boolean;
   collectorId: string | null;
   url: string;
   contractVersion: string;
@@ -225,17 +230,27 @@ interface SourceMeta {
   collectorId: string | null;
   url: string;
   contract: SourceContract;
+  synthetic: boolean;
+  /** When this source has no live supervision state, the moment its data was actually
+   *  captured. Without it the feed reports "last verified never", which is both wrong
+   *  and the exact kind of vague provenance the project is against. */
+  capturedAt?: string;
 }
 
 const META: Record<string, SourceMeta> = {
   cpsc: {
-    label: "US CPSC",
+    label: "US CPSC (captured sample)",
     // CPSC publishes a JSON API. Saying we scraped it would overstate the difficulty
     // and understate the reliability, so the feed distinguishes the two.
     scraped: false,
     collectorId: null,
     url: "https://www.saferproducts.gov/RestWebServices/Recall",
     contract: CPSC_CONTRACT,
+    synthetic: false,
+    // Pulled once from the live API and committed so the tests and the feed run
+    // offline. Stamped rather than implied, because a captured sample that presents
+    // itself as current is exactly the failure this project is about.
+    capturedAt: "2026-08-17T13:13:32.000Z",
   },
   arcadia: {
     label: "Arcadia Product Safety (synthetic)",
@@ -243,6 +258,7 @@ const META: Record<string, SourceMeta> = {
     collectorId: "c_msx7z3xi2hs08ccwms",
     url: "https://arcadia-safety.vercel.app/",
     contract: ARCADIA_CONTRACT,
+    synthetic: true,
   },
   tradewell: {
     label: "Tradewell Market (synthetic)",
@@ -250,20 +266,27 @@ const META: Record<string, SourceMeta> = {
     collectorId: "c_msxhnjyoflutq9tt8",
     url: "https://tradewell-market.vercel.app/",
     contract: TRADEWELL_CONTRACT,
+    synthetic: true,
   },
 };
 
 function provenanceFor(sourceId: SourceId, state: SourceState | null, trust: RecordState): PubProvenance {
   const meta = META[sourceId];
   if (meta === undefined) throw new Error(`no metadata for source ${sourceId}`);
+  const at = state?.lastVerifiedAt ?? meta.capturedAt ?? null;
+  if (at === null) {
+    // Better to fail the build than to publish a record whose age nobody can state.
+    throw new Error(`source ${sourceId} has neither supervision state nor a capture time`);
+  }
   return {
     sourceId,
     sourceLabel: meta.label,
     scraped: meta.scraped,
+    synthetic: meta.synthetic,
     contractVersion: meta.contract.version,
     trust,
-    fetchedAt: state?.lastVerifiedAt ?? new Date(0).toISOString(),
-    lastVerifiedAt: state?.lastVerifiedAt ?? null,
+    fetchedAt: at,
+    lastVerifiedAt: at,
     heals: state?.healHistory.filter((h) => h.verified).length ?? 0,
   };
 }
@@ -276,6 +299,7 @@ function sourceCard(sourceId: SourceId, state: SourceState | null, rows: readonl
     id: sourceId,
     label: meta.label,
     scraped: meta.scraped,
+    synthetic: meta.synthetic,
     collectorId: meta.collectorId,
     url: meta.url,
     contractVersion: meta.contract.version,
@@ -284,7 +308,7 @@ function sourceCard(sourceId: SourceId, state: SourceState | null, rows: readonl
     baselineRows: state?.baselineRows ?? null,
     contractPassed: report.passed,
     breaches: report.breaches,
-    lastVerifiedAt: state?.lastVerifiedAt ?? null,
+    lastVerifiedAt: state?.lastVerifiedAt ?? meta.capturedAt ?? null,
     withdrawnRefs: state?.withdrawnRefs ?? [],
     heals: state?.healHistory.filter((h) => h.verified).length ?? 0,
   };
@@ -330,6 +354,22 @@ function loadIncidents(): PubIncident[] {
     });
   }
   return out;
+}
+
+/** Take up to `n` items, preferring one per distinct key before repeating any key. */
+function spread<T>(items: readonly T[], keyOf: (t: T) => string, n: number): T[] {
+  const seen = new Set<string>();
+  const first: T[] = [];
+  const rest: T[] = [];
+  for (const item of items) {
+    const k = keyOf(item);
+    if (seen.has(k)) rest.push(item);
+    else {
+      seen.add(k);
+      first.push(item);
+    }
+  }
+  return [...first, ...rest].slice(0, n);
 }
 
 function buildStudy(recalls: readonly RecallRecord[], listings: readonly Listing[]): PubStudy {
@@ -379,9 +419,17 @@ function buildStudy(recalls: readonly RecallRecord[], listings: readonly Listing
     quarantineReasons: [...reasons.entries()]
       .sort((a, b) => b[1] - a[1])
       .map(([reason, count]) => ({ reason, count })),
+    // Spread the examples across distinct recalls and distinct hold-back reasons.
+    // Taking the first four of each gave eight rows about one recall and one clash,
+    // which showed the reader the matcher works on Cooluli fridges rather than what
+    // the matcher does.
     examples: [
-      ...matches.filter((m) => m.publishable).slice(0, 4),
-      ...matches.filter((m) => !m.publishable).slice(0, 4),
+      ...spread(matches.filter((m) => m.publishable), (m) => m.recallRef, 4),
+      ...spread(
+        matches.filter((m) => !m.publishable),
+        (m) => m.contradiction ?? m.basis,
+        4
+      ),
     ].map(example),
   };
 }

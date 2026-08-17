@@ -45,25 +45,48 @@ function unwrap(item: unknown): Record<string, unknown>[] {
   return [row];
 }
 
+/** A price arrives as a number, a formatted string, or `{ value, currency, symbol }`,
+ *  depending on which collector produced the row. Two collectors over the same fixture
+ *  disagreed on this, which is the general rule restated: the output shape is a
+ *  property of the collector, not of the site. */
+function toPrice(raw: unknown): { price: number | null; currency: string | null } {
+  if (typeof raw === "number" && Number.isFinite(raw)) return { price: raw, currency: null };
+  if (typeof raw === "string") {
+    // "$129.00" and "US $129.00" both appear across the variants.
+    const n = Number(raw.replace(/[^0-9.]/g, ""));
+    return { price: Number.isFinite(n) && n > 0 ? n : null, currency: null };
+  }
+  if (typeof raw === "object" && raw !== null) {
+    const o = raw as Record<string, unknown>;
+    const inner = toPrice(o.value ?? o.amount);
+    return { price: inner.price, currency: blankToNull(o.currency) };
+  }
+  return { price: null, currency: null };
+}
+
+/** The contract wants date-only ISO, and one collector returns a full timestamp.
+ *  Truncating is safe; parsing anything looser is not, so anything else is null and
+ *  the contract gets to complain about it. */
+function toIsoDate(raw: unknown): string | null {
+  const s = blankToNull(raw);
+  if (s === null) return null;
+  const m = /^(\d{4}-\d{2}-\d{2})/.exec(s);
+  return m?.[1] ?? null;
+}
+
 function normaliseOne(row: Record<string, unknown>): Listing | null {
   if (row.error !== undefined) return null;
 
-  const permalink = blankToNull(row.url) ?? blankToNull(row.permalink) ?? blankToNull(row.product_page_url);
+  const permalink =
+    blankToNull(row.url) ??
+    blankToNull(row.permalink) ??
+    blankToNull(row.item_url) ??
+    blankToNull(row.product_page_url);
   const id = blankToNull(row.item_id) ?? blankToNull(row.id) ?? blankToNull(row.sku);
   const title = blankToNull(row.title);
   if (id === null || title === null) return null;
 
-  const rawPrice = row.price;
-  const price =
-    typeof rawPrice === "number" && Number.isFinite(rawPrice)
-      ? rawPrice
-      : typeof rawPrice === "string"
-        ? // "$129.00" and "US $129.00" both appear across the variants.
-          (() => {
-            const n = Number(rawPrice.replace(/[^0-9.]/g, ""));
-            return Number.isFinite(n) && n > 0 ? n : null;
-          })()
-        : null;
+  const { price, currency } = toPrice(row.price);
 
   const seller = blankToNull(row.seller) ?? blankToNull(row.seller_name);
 
@@ -73,12 +96,15 @@ function normaliseOne(row: Record<string, unknown>): Listing | null {
     title,
     brand: blankToNull(row.brand),
     price,
-    // The collector does not extract a currency and the page only shows a "$" glyph.
-    // Inferring "USD" from a symbol would be putting data in that we did not read.
-    currency: blankToNull(row.currency),
+    // Whatever the collector actually read. The original collector extracts no currency
+    // at all, because the page shows a bare "$" glyph, and inferring "USD" from a symbol
+    // would be putting in data we did not read. A collector that does report one is
+    // taken at its word.
+    currency: currency ?? blankToNull(row.currency),
     condition: blankToNull(row.condition),
     location: blankToNull(row.location),
-    listedOn: blankToNull(row.listed) ?? blankToNull(row.listed_on),
+    listedOn:
+      toIsoDate(row.listed) ?? toIsoDate(row.listed_on) ?? toIsoDate(row.listed_date),
   };
   if (seller !== null) listing.sellerKey = hashSeller(seller);
   return listing;

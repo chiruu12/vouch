@@ -1,0 +1,891 @@
+/* Vouch feed.
+ *
+ * The design register is a regulator's gazette rather than a consumer app: dated,
+ * hairline-ruled, typographically plain, with severity encoded in form as well as
+ * words. Three choices carry meaning and are not decoration.
+ *
+ *   Mono is reserved for text the system wrote itself. Contract breaches, classifier
+ *   evidence, heal prompts and matched tokens are quoted verbatim, and the typeface
+ *   change is the signal that nobody edited them on the way to the page.
+ *
+ *   The clay accent is reserved for refusals and withdrawals. Nothing else uses it,
+ *   so a page with clay on it is a page where we declined to publish something.
+ *
+ *   The severity stripe on a recall card reads risk before the type does.
+ *
+ * Palette neutrals carry a green bias so they read as chosen rather than inherited,
+ * and so the verified green sits inside the same family as the paper.
+ */
+
+:root {
+  --paper: #f1f4f0;
+  --card: #fbfcfa;
+  --sunken: #e7ebe5;
+  --ink: #141a16;
+  --ink-2: #3d4741;
+  --ink-3: #6b756e;
+  --rule: #ccd4cb;
+  --rule-strong: #9ea89d;
+
+  --verified: #1c6349;
+  --verified-bg: #e0ece6;
+  --healed: #7f5510;
+  --healed-bg: #f2e9d7;
+  --stale: #44515c;
+  --stale-bg: #e2e7ea;
+  --refused: #97291f;
+  --refused-bg: #f4e2df;
+
+  --risk-serious: #97291f;
+  --risk-high: #a85f14;
+  --risk-medium: #7f6b12;
+  --risk-low: #3f5a4c;
+  --risk-unknown: #6b756e;
+
+  /* next/font self-hosts these and exposes them as --font-*. The fallbacks are real
+     rather than ceremonial: a silent fallback to a system sans is survivable, but a
+     fallback that loses the mono would erase the distinction between the system's own
+     words and ours, which is the one typographic job on this page. */
+  --sans: var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --serif: var(--font-serif), Georgia, "Times New Roman", serif;
+  --mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --measure: 68ch;
+  --rail: 19rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #101410;
+    --card: #171d18;
+    --sunken: #1e2520;
+    --ink: #e6ebe5;
+    --ink-2: #b3bcb4;
+    --ink-3: #7e887f;
+    --rule: #2b332c;
+    --rule-strong: #4a544b;
+
+    --verified: #6cc39c;
+    --verified-bg: #16281f;
+    --healed: #d8a54c;
+    --healed-bg: #2a2113;
+    --stale: #9fb0bd;
+    --stale-bg: #1a2127;
+    --refused: #e58b7f;
+    --refused-bg: #2c1815;
+
+    --risk-serious: #e58b7f;
+    --risk-high: #dfa057;
+    --risk-medium: #c8b657;
+    --risk-low: #8fb3a0;
+    --risk-unknown: #7e887f;
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #101410;
+  --card: #171d18;
+  --sunken: #1e2520;
+  --ink: #e6ebe5;
+  --ink-2: #b3bcb4;
+  --ink-3: #7e887f;
+  --rule: #2b332c;
+  --rule-strong: #4a544b;
+
+  --verified: #6cc39c;
+  --verified-bg: #16281f;
+  --healed: #d8a54c;
+  --healed-bg: #2a2113;
+  --stale: #9fb0bd;
+  --stale-bg: #1a2127;
+  --refused: #e58b7f;
+  --refused-bg: #2c1815;
+
+  --risk-serious: #e58b7f;
+  --risk-high: #dfa057;
+  --risk-medium: #c8b657;
+  --risk-low: #8fb3a0;
+  --risk-unknown: #7e887f;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.55;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration-color: var(--rule-strong);
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  text-decoration-color: currentColor;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* --- shell ---------------------------------------------------------------- */
+
+.shell {
+  display: grid;
+  grid-template-columns: var(--rail) minmax(0, 1fr);
+  gap: 0;
+  align-items: start;
+  max-width: 78rem;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.rail {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding: 2rem 1.75rem 2rem 0;
+  border-right: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.main {
+  min-width: 0;
+  padding: 2rem 0 6rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+@media (max-width: 60rem) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0 1.1rem;
+  }
+  .rail {
+    position: static;
+    max-height: none;
+    border-right: 0;
+    border-bottom: 1px solid var(--rule);
+    padding: 1.5rem 0;
+  }
+  .main {
+    padding: 1.5rem 0 4rem;
+  }
+}
+
+/* --- masthead ------------------------------------------------------------- */
+
+.wordmark {
+  font-family: var(--serif);
+  font-size: 2.6rem;
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.wordmark a {
+  text-decoration: none;
+}
+
+.tagline {
+  margin: 0.55rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--ink-2);
+  max-width: 24ch;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.85rem;
+}
+
+.nav a {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.3rem 0;
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink-2);
+}
+
+.nav a:hover {
+  color: var(--ink);
+}
+
+.nav .count {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--ink-3);
+}
+
+/* --- labels and eyebrows -------------------------------------------------- */
+
+.eyebrow {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 500;
+  margin: 0 0 0.75rem;
+}
+
+h1.page {
+  font-family: var(--serif);
+  font-size: clamp(2rem, 4vw, 2.9rem);
+  line-height: 1.05;
+  margin: 0 0 0.6rem;
+  text-wrap: balance;
+  max-width: 30ch;
+}
+
+.lede {
+  margin: 0;
+  max-width: var(--measure);
+  font-size: 1.02rem;
+  color: var(--ink-2);
+}
+
+h2.section {
+  font-family: var(--serif);
+  font-size: 1.6rem;
+  line-height: 1.15;
+  margin: 0;
+  text-wrap: balance;
+}
+
+section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--ink);
+}
+
+.section-note {
+  margin: 0;
+  max-width: var(--measure);
+  font-size: 0.9rem;
+  color: var(--ink-2);
+}
+
+/* --- trust badges --------------------------------------------------------- */
+
+.badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4ch;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.badge[data-trust="verified"] {
+  color: var(--verified);
+  background: var(--verified-bg);
+}
+.badge[data-trust="healed"] {
+  color: var(--healed);
+  background: var(--healed-bg);
+}
+.badge[data-trust="unverified"] {
+  color: var(--stale);
+  background: var(--stale-bg);
+}
+.badge[data-trust="withdrawn"],
+.badge[data-trust="held"] {
+  color: var(--refused);
+  background: var(--refused-bg);
+}
+.badge[data-trust="listed"] {
+  color: var(--verified);
+  background: var(--verified-bg);
+}
+
+/* --- source health rail --------------------------------------------------- */
+
+.sources {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.source {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.source:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.source-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.source-meta {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--ink-3);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.tally {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.1rem 0.75rem;
+  font-size: 0.82rem;
+}
+
+.tally dt {
+  color: var(--ink-2);
+}
+
+.tally dd {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+}
+
+.tally dd[data-emphasis="refusal"] {
+  color: var(--refused);
+  font-weight: 600;
+}
+
+/* --- recall card ---------------------------------------------------------- */
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--risk-unknown);
+  border-radius: 2px;
+  padding: 1.15rem 1.25rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card[data-risk="Serious"] {
+  border-left-color: var(--risk-serious);
+}
+.card[data-risk="High"] {
+  border-left-color: var(--risk-high);
+}
+.card[data-risk="Medium"] {
+  border-left-color: var(--risk-medium);
+}
+.card[data-risk="Low"] {
+  border-left-color: var(--risk-low);
+}
+
+.card-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 0.75rem;
+}
+
+.risk {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--risk-unknown);
+}
+
+.card[data-risk="Serious"] .risk {
+  color: var(--risk-serious);
+}
+.card[data-risk="High"] .risk {
+  color: var(--risk-high);
+}
+.card[data-risk="Medium"] .risk {
+  color: var(--risk-medium);
+}
+.card[data-risk="Low"] .risk {
+  color: var(--risk-low);
+}
+
+.ref {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--ink-3);
+}
+
+.card h3 {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  line-height: 1.2;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.hazard {
+  margin: 0;
+  max-width: var(--measure);
+  color: var(--ink-2);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.5rem 1.25rem;
+  margin: 0;
+  padding-top: 0.15rem;
+}
+
+.facts > div {
+  min-width: 0;
+}
+
+.facts dt {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.facts dd {
+  margin: 0;
+  font-size: 0.88rem;
+  overflow-wrap: break-word;
+}
+
+/* --- provenance footer ---------------------------------------------------- */
+
+.prov {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.7rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--ink-3);
+}
+
+.prov .sep::before {
+  content: "·";
+  margin-right: 0.7rem;
+}
+
+/* --- nested match blocks -------------------------------------------------- */
+
+.attached {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--sunken);
+  border-radius: 2px;
+  padding: 0.85rem 0.95rem;
+}
+
+.attached-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem 1rem;
+}
+
+.attached-title {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* A held-back match is a refusal, so it is tinted like one. Sharing the on-sale
+   block's ground made the two read as the same kind of statement at a glance, which
+   is the misreading that matters most on this page. */
+.attached[data-kind="held"] {
+  background: var(--refused-bg);
+}
+
+.attached[data-kind="held"] .attached-title {
+  color: var(--refused);
+}
+
+.attached[data-kind="held"] .token {
+  background: transparent;
+}
+
+.attached-why {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ink-2);
+  max-width: var(--measure);
+}
+
+.listing {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--rule);
+}
+
+.listing-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.7rem;
+}
+
+.listing-title {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.listing[data-withdrawn="true"] .listing-title {
+  text-decoration: line-through;
+  text-decoration-color: var(--refused);
+  color: var(--ink-3);
+}
+
+.listing-meta {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--ink-3);
+}
+
+.basis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.5rem;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--ink-2);
+}
+
+.token {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 0 0.3rem;
+}
+
+.clash {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--refused);
+}
+
+/* --- machine text: quoted verbatim, never paraphrased --------------------- */
+
+.machine {
+  margin: 0;
+  padding: 0.7rem 0.85rem;
+  background: var(--sunken);
+  border-left: 2px solid var(--rule-strong);
+  border-radius: 0 2px 2px 0;
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.machine[data-tone="refusal"] {
+  border-left-color: var(--refused);
+  background: var(--refused-bg);
+  color: var(--refused);
+}
+
+ul.evidence {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+ul.evidence li {
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+  padding-left: 1.1rem;
+  position: relative;
+  overflow-wrap: break-word;
+}
+
+ul.evidence li::before {
+  content: "\203A";
+  position: absolute;
+  left: 0.15rem;
+  color: var(--ink-3);
+}
+
+/* --- incident timeline ---------------------------------------------------- */
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin: 0;
+  padding: 0;
+}
+
+.incident {
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--card);
+  padding: 1.1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.incident[data-refused="true"] {
+  border-left: 4px solid var(--refused);
+}
+
+.incident[data-refused="false"] {
+  border-left: 4px solid var(--healed);
+}
+
+.incident-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem 0.8rem;
+}
+
+.cause {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.incident[data-refused="true"] .cause {
+  color: var(--refused);
+}
+
+.verdict {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.verdict[data-kind="refused"] {
+  color: var(--refused);
+  background: var(--refused-bg);
+}
+
+.verdict[data-kind="healed"] {
+  color: var(--healed);
+  background: var(--healed-bg);
+}
+
+.sub {
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+  margin: 0;
+}
+
+/* --- tables (method page) ------------------------------------------------- */
+
+.scroll {
+  overflow-x: auto;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--card);
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.86rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.5rem 0.8rem;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+
+th {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+td.num {
+  font-family: var(--mono);
+  text-align: right;
+  white-space: nowrap;
+}
+
+td.nowrap {
+  white-space: nowrap;
+}
+
+td.nowrap .source-meta {
+  white-space: nowrap;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* --- big number strip ---------------------------------------------------- */
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.figure {
+  background: var(--card);
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.figure b {
+  font-family: var(--serif);
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 400;
+}
+
+.figure span {
+  font-size: 0.75rem;
+  color: var(--ink-3);
+  line-height: 1.35;
+}
+
+.figure[data-emphasis="refusal"] b {
+  color: var(--refused);
+}
+
+/* --- prose --------------------------------------------------------------- */
+
+.prose {
+  max-width: var(--measure);
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.prose p {
+  margin: 0;
+}
+
+.prose h3 {
+  font-family: var(--serif);
+  font-size: 1.2rem;
+  margin: 0.6rem 0 0;
+}
+
+.prose ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.85em;
+  background: var(--sunken);
+  padding: 0.05rem 0.3rem;
+  border-radius: 2px;
+}
+
+.caveat {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  background: var(--sunken);
+  font-size: 0.88rem;
+  max-width: var(--measure);
+}
+
+footer.foot {
+  border-top: 1px solid var(--rule);
+  padding-top: 1.25rem;
+  font-size: 0.8rem;
+  color: var(--ink-3);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-width: var(--measure);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

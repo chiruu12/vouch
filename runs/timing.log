@@ -82,3 +82,16 @@ One collector (c_msx7fknprsolywx8g) is permanently wedged by a bad heal prompt.
 A wedged collector during filming costs a take, so there is now a spare
 pointed at the same fixture with the same extraction intent.
 
+
+## Re-proving the withdrawal path on current code (2026-08-18)
+Earlier `gone` incident carried the pre-fix evidence wording "withdrawn by the
+regulator", which is wrong for a marketplace. Rather than edit a recorded incident,
+the scenario was re-run end to end:
+  deploy baseline  -> cycle: 14 rows, contract PASSED, healthy, 6.0s
+                      (note: the 3 previously withdrawn refs reappear and are served
+                       again with no comment. Resurrection is an unhandled case.)
+  deploy delisted  -> cycle: 11 rows, contract FAILED on the 21.4% cliff,
+                      diagnosis gone, REFUSED, served 11 as verified, 5.0s
+                      withdrew TW-88214, TW-44903, TW-33887
+Removed the superseded gone incident and one duplicate blocked incident. Kept one
+incident per distinct cause.

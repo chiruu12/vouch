@@ -1,0 +1,1080 @@
+{
+  "generatedAt": "2026-08-17T19:44:57.340Z",
+  "caveat": "Matched on product line, not on unit. Recalls are often limited to specific batches or serial ranges, and marketplace listings rarely show them, so a match here means this listing appears to be the same product as a recall, not that this particular item is affected.",
+  "publishThreshold": 0.7,
+  "sources": [
+    {
+      "id": "cpsc",
+      "label": "US CPSC (captured sample)",
+      "scraped": false,
+      "synthetic": false,
+      "collectorId": null,
+      "url": "https://www.saferproducts.gov/RestWebServices/Recall",
+      "contractVersion": "cpsc@1",
+      "trust": "verified",
+      "rows": 6,
+      "baselineRows": null,
+      "contractPassed": true,
+      "breaches": [],
+      "lastVerifiedAt": "2026-08-17T13:13:32.000Z",
+      "withdrawnRefs": [],
+      "heals": 0
+    },
+    {
+      "id": "arcadia",
+      "label": "Arcadia Product Safety (synthetic)",
+      "scraped": true,
+      "synthetic": true,
+      "collectorId": "c_msx7z3xi2hs08ccwms",
+      "url": "https://arcadia-safety.vercel.app/",
+      "contractVersion": "arcadia@1",
+      "trust": "verified",
+      "rows": 12,
+      "baselineRows": 12,
+      "contractPassed": true,
+      "breaches": [],
+      "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+      "withdrawnRefs": [],
+      "heals": 0
+    },
+    {
+      "id": "tradewell",
+      "label": "Tradewell Market (synthetic)",
+      "scraped": true,
+      "synthetic": true,
+      "collectorId": "c_msxhnjyoflutq9tt8",
+      "url": "https://tradewell-market.vercel.app/",
+      "contractVersion": "tradewell@1",
+      "trust": "verified",
+      "rows": 11,
+      "baselineRows": 11,
+      "contractPassed": true,
+      "breaches": [],
+      "lastVerifiedAt": "2026-08-17T17:24:49.672Z",
+      "withdrawnRefs": [
+        "TW-88214",
+        "TW-33887",
+        "TW-44903"
+      ],
+      "heals": 0
+    }
+  ],
+  "recalls": [
+    {
+      "ref": "26692",
+      "permalink": "https://www.cpsc.gov/Recalls/2026/COMMOWNER-Pressure-Washers-Recalled-Due-to-Serious-Risk-of-Injury-or-Death-from-Shock-and-Electrocution-Hazards-Imported-by-AZ-Home-Concept",
+      "title": "COMMOWNER Pressure Washers Recalled Due to Serious Risk of Injury or Death from Shock and Electrocution Hazards; Imported by AZ Home Concept",
+      "brand": "COMMOWNER",
+      "hazard": "The recalled pressure washers lack an integral ground-fault circuit-interrupter (GFCI) and, because the power cord is short, it may encourage use of an extension cord, posing serious risks of injury or death from shock and electrocution hazards.",
+      "risk": "Unknown",
+      "category": null,
+      "affectedUnits": "1,694 units",
+      "published": "2026-08-13",
+      "action": "Consumers should stop using the recalled pressure washers immediately and contact AZ Home Concept for a full refund. Consumers will be asked to destroy the pressure washer by cutting the unplugged power cord in half and send a photo of the destroyed power washer to pressurewasherrecall@outlook.com. Consumers should then dispose of the destroyed recalled product.",
+      "provenance": {
+        "sourceId": "cpsc",
+        "sourceLabel": "US CPSC (captured sample)",
+        "scraped": false,
+        "synthetic": false,
+        "contractVersion": "cpsc@1",
+        "trust": "verified",
+        "fetchedAt": "2026-08-17T13:13:32.000Z",
+        "lastVerifiedAt": "2026-08-17T13:13:32.000Z",
+        "heals": 0
+      },
+      "onSale": [],
+      "quarantined": []
+    },
+    {
+      "ref": "26685",
+      "permalink": "https://www.cpsc.gov/Recalls/2026/Cooluli-Recalls-10-Liter-and-15-Liter-Minifridges-Due-to-Fire-and-Burn-Hazards",
+      "title": "Cooluli Recalls 10-Liter and 15-Liter Minifridges Due to Fire and Burn Hazards",
+      "brand": "Cooluli",
+      "hazard": "The recalled minifridges' electrical switch can short circuit, posing fire and burn hazards.",
+      "risk": "Unknown",
+      "category": null,
+      "affectedUnits": "About 250,000 units",
+      "published": "2026-08-13",
+      "action": "Consumers should stop using the recalled minifridges immediately and contact Cooluli for a free replacement power cord. Consumers will be asked to visit www.cooluli.com/pages/product-notices-recalls to enter the model and batch numbers to determine whether their minifridge is included in the recall. Consumers who have recalled minifridges will be instructed to unplug the minifridge, cut the power cord and submit photos to Cooluli showing the model and batch numbers of the fridge. Cooluli will provide a replacement DC power cord and permanent sticker to cover the AC port.",
+      "provenance": {
+        "sourceId": "cpsc",
+        "sourceLabel": "US CPSC (captured sample)",
+        "scraped": false,
+        "synthetic": false,
+        "contractVersion": "cpsc@1",
+        "trust": "verified",
+        "fetchedAt": "2026-08-17T13:13:32.000Z",
+        "lastVerifiedAt": "2026-08-17T13:13:32.000Z",
+        "heals": 0
+      },
+      "onSale": [
+        {
+          "id": "TW-77301",
+          "permalink": "https://tradewell-market.vercel.app/item/TW-77301.html",
+          "title": "Cooluli Infinity 10L mini fridge, black",
+          "brand": "Cooluli",
+          "price": 64.5,
+          "currency": null,
+          "condition": "Used, good",
+          "location": "Austin, TX",
+          "listedOn": "2026-08-08",
+          "provenance": {
+            "sourceId": "tradewell",
+            "sourceLabel": "Tradewell Market (synthetic)",
+            "scraped": true,
+            "synthetic": true,
+            "contractVersion": "tradewell@1",
+            "trust": "verified",
+            "fetchedAt": "2026-08-17T17:24:49.672Z",
+            "lastVerifiedAt": "2026-08-17T17:24:49.672Z",
+            "heals": 0
+          },
+          "match": {
+            "confidence": 0.72,
+            "basis": "brand+product",
+            "matchedTokens": [
+              "minifridge",
+              "cooluli",
+              "fridge"
+            ],
+            "contradiction": null,
+            "publishable": true
+          }
+        },
+        {
+          "id": "TW-22765",
+          "permalink": "https://tradewell-market.vercel.app/item/TW-22765.html",
+          "title": "15 litre Cooluli Classic mini-fridge, white",
+          "brand": "Cooluli",
+          "price": 71,
+          "currency": null,
+          "condition": "Pre-owned",
+          "location": "Brooklyn, NY",
+          "listedOn": "2026-07-26",
+          "provenance": {
+            "sourceId": "tradewell",
+            "sourceLabel": "Tradewell Market (synthetic)",
+            "scraped": true,
+            "synthetic": true,
+            "contractVersion": "tradewell@1",
+            "trust": "verified",
+            "fetchedAt": "2026-08-17T17:24:49.672Z",
+            "lastVerifiedAt": "2026-08-17T17:24:49.672Z",
+            "heals": 0
+          },
+          "match": {
+            "confidence": 0.72,
+            "basis": "brand+product",
+            "matchedTokens": [
+              "minifridge",
+              "cooluli",
+              "fridge"
+            ],
+            "contradiction": null,
+            "publishable": true
+          }
+        }
+      ],
+      "quarantined": []
+    },
+    {
+      "ref": "26698",
+      "permalink": "https://www.cpsc.gov/Recalls/2026/CuberShop-Magnetic-Speed-Cubes-Recalled-Due-to-Risk-of-Serious-Injury-or-Death-from-Magnet-Ingestion-Violate-Mandatory-Standard-for-Toys-Imported-by-SKY-CUBE-HK",
+      "title": "CuberShop Magnetic Speed Cubes Recalled Due to Risk of Serious Injury or Death from Magnet Ingestion; Violate Mandatory Standard for Toys; Imported by SKY CUBE HK",
+      "brand": "CuberShop",
+      "hazard": "The recalled magnetic cubes violate the mandatory standard for toys because the cubes were packaged with loose high-powered magnets, posing an ingestion hazard to children. When high-powered magnets are swallowed, the ingested magnets can attract each other, or other metal objects and become lodged in the digestive system. This can result in perforations, twisting, and/or blockage of the intestines, blood poisoning and death.",
+      "risk": "Unknown",
+      "category": null,
+      "affectedUnits": "About 132 units",
+      "published": "2026-08-13",
+      "action": "Consumers should take the recalled loose magnets away from children, stop using them immediately, and contact SKY CUBE HK for information on how to receive a $5 refund. Consumers will be asked to throw away the magnets and email a photo of the disposed magnets to recall@cubershop.com. Consumers may keep the cube.",
+      "provenance": {
+        "sourceId": "cpsc",
+        "sourceLabel": "US CPSC (captured sample)",
+        "scraped": false,
+        "synthetic": false,
+        "contractVersion": "cpsc@1",
+        "trust": "verified",
+        "fetchedAt": "2026-08-17T13:13:32.000Z",
+        "lastVerifiedAt": "2026-08-17T13:13:32.000Z",
+        "heals": 0
+      },
+      "onSale": [
+        {
+          "id": "TW-66420",
+          "permalink": "https://tradewell-market.vercel.app/item/TW-66420.html",
+          "title": "MGC 5x5 magnetic speed cubes, stickerless",
+          "brand": "CuberShop",
+          "price": 18.99,
+          "currency": null,
+          "condition": "New",
+          "location": "Columbus, OH",
+          "listedOn": "2026-08-06",
+          "provenance": {
+            "sourceId": "tradewell",
+            "sourceLabel": "Tradewell Market (synthetic)",
+            "scraped": true,
+            "synthetic": true,
+            "contractVersion": "tradewell@1",
+            "trust": "verified",
+            "fetchedAt": "2026-08-17T17:24:49.672Z",
+            "lastVerifiedAt": "2026-08-17T17:24:49.672Z",
+            "heals": 0
+          },
+          "match": {
+            "confidence": 0.72,
+            "basis": "brand+product",
+            "matchedTokens": [
+              "magnetic",
+              "speed",
+              "cube",
+              "cubershop",
+              "magneticspeed",
+              "speedcube"
+            ],
+            "contradiction": null,
+            "publishable": true
+          }
+        }
+      ],
+      "quarantined": []
+    },
+    {
+      "ref": "26691",
+      "permalink": "https://www.cpsc.gov/Recalls/2026/Deli-Jerry-Fuel-Containers-Recalled-Due-to-Risk-of-Serious-Injury-or-Death-from-Burn-Hazard-and-Child-Poisoning-Violate-Mandatory-Standard-for-Portable-Fuel-Containers-Sold-on-Walmart-com-by-Deli-OfficeSupplies",
+      "title": "Deli Jerry Fuel Containers Recalled Due to Risk of Serious Injury or Death from Burn Hazard and Child Poisoning; Violate Mandatory Standard for Portable Fuel Containers; Sold on Walmart.com by Deli OfficeSupplies",
+      "brand": "Deli Jerry",
+      "hazard": "The recalled fuel containers violate the requirement for closures under the Children's Gasoline Burn Prevention Act. The closure is not child-resistant, posing a risk of burns and poisoning to children.",
+      "risk": "Unknown",
+      "category": null,
+      "affectedUnits": "About 1,750 units",
+      "published": "2026-08-13",
+      "action": "Consumers should stop using the recalled fuel containers immediately and contact Deli OfficeSupplies for a full refund. Consumers will be asked to destroy the fuel container by writing in permanent maker \"RECALLED\" on the product and to send a photo of the destroyed fuel container to service@steelitetool.com. Consumers should then dispose of the recalled product in accordance with local and/or state disposal procedures.",
+      "provenance": {
+        "sourceId": "cpsc",
+        "sourceLabel": "US CPSC (captured sample)",
+        "scraped": false,
+        "synthetic": false,
+        "contractVersion": "cpsc@1",
+        "trust": "verified",
+        "fetchedAt": "2026-08-17T13:13:32.000Z",
+        "lastVerifiedAt": "2026-08-17T13:13:32.000Z",
+        "heals": 0
+      },
+      "onSale": [],
+      "quarantined": [
+        {
+          "id": "TW-55118",
+          "permalink": "https://tradewell-market.vercel.app/item/TW-55118.html",
+          "title": "Deli 20L metal jerry can, dark green",
+          "brand": "Deli",
+          "price": 27.5,
+          "currency": null,
+          "condition": "New",
+          "location": "Toledo, OH",
+          "listedOn": "2026-08-04",
+          "provenance": {
+            "sourceId": "tradewell",
+            "sourceLabel": "Tradewell Market (synthetic)",
+            "scraped": true,
+            "synthetic": true,
+            "contractVersion": "tradewell@1",
+            "trust": "verified",
+            "fetchedAt": "2026-08-17T17:24:49.672Z",
+            "lastVerifiedAt": "2026-08-17T17:24:49.672Z",
+            "heals": 0
+          },
+          "match": {
+            "confidence": 0.3,
+            "basis": "product-only",
+            "matchedTokens": [
+              "jerry",
+              "deli"
+            ],
+            "contradiction": null,
+            "publishable": false
+          }
+        }
+      ]
+    },
+    {
+      "ref": "26690",
+      "permalink": "https://www.cpsc.gov/Recalls/2026/DUMOS-Nine-Drawer-Dressers-Recalled-Due-to-Risk-of-Serious-Injury-or-Death-from-Tip-Over-and-Entrapment-Hazards-Violate-Mandatory-Standard-for-Clothing-Storage-Units",
+      "title": "DUMOS Nine-Drawer Dressers Recalled Due to Risk of Serious Injury or Death from Tip-Over and Entrapment Hazards; Violate Mandatory Standard for Clothing Storage Units",
+      "brand": "DUMOS",
+      "hazard": "The recalled dressers are unstable if they are not anchored to the wall, posing tip-over and entrapment hazards that can result in risks of serious injuries or death to children. The dressers violate the mandatory safety standards as required by the STURDY Act.",
+      "risk": "Unknown",
+      "category": null,
+      "affectedUnits": "About 8,981 units",
+      "published": "2026-08-13",
+      "action": "Consumers should immediately stop using the recalled dressers if they are not anchored to the wall and place them in an area that children cannot access. Consumers should contact DUMOS for a full refund. Consumers will be asked to destroy the dressers by cutting the drawers in half and writing in permanent marker \"RECALLED\", and to send a photo of the destroyed dressers to dumosdresserrecall@dumos.com. Consumers should then dispose of the recalled products.",
+      "provenance": {
+        "sourceId": "cpsc",
+        "sourceLabel": "US CPSC (captured sample)",
+        "scraped": false,
+        "synthetic": false,
+        "contractVersion": "cpsc@1",
+        "trust": "verified",
+        "fetchedAt": "2026-08-17T13:13:32.000Z",
+        "lastVerifiedAt": "2026-08-17T13:13:32.000Z",
+        "heals": 0
+      },
+      "onSale": [],
+      "quarantined": []
+    },
+    {
+      "ref": "26700",
+      "permalink": "https://www.cpsc.gov/Recalls/2026/Fastbuy-Recalls-Zimtown-Portable-Gas-and-Fuel-Cans-Due-to-Risk-of-Serious-Injury-or-Death-from-Burn-Hazard-and-Child-Poisoning-Violate-Mandatory-Standard-for-Portable-Fuel-Containers",
+      "title": "Fastbuy Recalls Zimtown Portable Gas and Fuel Cans Due to Risk of Serious Injury or Death from Burn Hazard and Child Poisoning; Violate Mandatory Standard for Portable Fuel Containers",
+      "brand": "Zimtown",
+      "hazard": "The fuel containers violate the requirement for closures under the Children's Gasoline Burn Prevention Act because the closure is not child-resistant, posing a risk of burns and poisoning to children.",
+      "risk": "Unknown",
+      "category": null,
+      "affectedUnits": "About 200 units",
+      "published": "2026-08-13",
+      "action": "Consumers should stop using the gas and fuel containers immediately and contact Fastbuy for a full refund. Consumers should disassemble the spout, cut it into pieces with scissors and dispose of it separately from the container. Consumers will be asked to write \"RECALLED\" on the container and submit photos of the product to ZimtownFuelCanrecall@outlook.com separately.",
+      "provenance": {
+        "sourceId": "cpsc",
+        "sourceLabel": "US CPSC (captured sample)",
+        "scraped": false,
+        "synthetic": false,
+        "contractVersion": "cpsc@1",
+        "trust": "verified",
+        "fetchedAt": "2026-08-17T13:13:32.000Z",
+        "lastVerifiedAt": "2026-08-17T13:13:32.000Z",
+        "heals": 0
+      },
+      "onSale": [],
+      "quarantined": []
+    },
+    {
+      "ref": "APS-2026-0413",
+      "permalink": "https://arcadia-safety.vercel.app/notice/APS-2026-0413.html",
+      "title": "Marrow & Pike infant teething ring, assorted colours",
+      "brand": "Marrow & Pike",
+      "hazard": "Ring separates into small parts; choking hazard",
+      "risk": "Serious",
+      "category": "Childcare articles and children's equipment",
+      "affectedUnits": "All batches",
+      "published": "2026-08-05",
+      "action": "Remove from the child immediately and return for a refund",
+      "provenance": {
+        "sourceId": "arcadia",
+        "sourceLabel": "Arcadia Product Safety (synthetic)",
+        "scraped": true,
+        "synthetic": true,
+        "contractVersion": "arcadia@1",
+        "trust": "verified",
+        "fetchedAt": "2026-08-17T17:17:37.717Z",
+        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+        "heals": 0
+      },
+      "onSale": [],
+      "quarantined": []
+    },
+    {
+      "ref": "APS-2026-0417",
+      "permalink": "https://arcadia-safety.vercel.app/notice/APS-2026-0417.html",
+      "title": "Nimbus Rest travel cot, model NR-220",
+      "brand": "Nimbus Rest",
+      "hazard": "Side rail can disengage under load, creating an entrapment gap",
+      "risk": "Serious",
+      "category": "Childcare articles and children's equipment",
+      "affectedUnits": "NR220-2451 to NR220-2488",
+      "published": "2026-08-14",
+      "action": "Stop using immediately and contact the retailer for a full refund",
+      "provenance": {
+        "sourceId": "arcadia",
+        "sourceLabel": "Arcadia Product Safety (synthetic)",
+        "scraped": true,
+        "synthetic": true,
+        "contractVersion": "arcadia@1",
+        "trust": "verified",
+        "fetchedAt": "2026-08-17T17:17:37.717Z",
+        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+        "heals": 0
+      },
+      "onSale": [],
+      "quarantined": []
+    },
+    {
+      "ref": "APS-2026-0412",
+      "permalink": "https://arcadia-safety.vercel.app/notice/APS-2026-0412.html",
+      "title": "Ferrow Works angle grinder, FW-AG115",
+      "brand": "Ferrow Works",
+      "hazard": "Guard mounting can shear, exposing the rotating disc",
+      "risk": "High",
+      "category": "Machinery and power tools",
+      "affectedUnits": "Serial prefix FWAG26",
+      "published": "2026-08-01",
+      "action": "Stop using; contact Ferrow Works for a repair kit",
+      "provenance": {
+        "sourceId": "arcadia",
+        "sourceLabel": "Arcadia Product Safety (synthetic)",
+        "scraped": true,
+        "synthetic": true,
+        "contractVersion": "arcadia@1",
+        "trust": "verified",
+        "fetchedAt": "2026-08-17T17:17:37.717Z",
+        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+        "heals": 0
+      },
+      "onSale": [],
+      "quarantined": []
+    },
+    {
+      "ref": "APS-2026-0414",
+      "permalink": "https://arcadia-safety.vercel.app/notice/APS-2026-0414.html",
+      "title": "Sable Lumen USB-C wall charger, 65W",
+      "brand": "Sable Lumen",
+      "hazard": "Insufficient insulation between primary and secondary circuits; electric shock risk",
+      "risk": "Serious",
+      "category": "Electrical appliances",
+      "affectedUnits": "SL65W rev A only",
+      "published": "2026-08-08",
+      "action": "Stop using immediately; dispose of at an electrical waste facility",
+      "provenance": {
+        "sourceId": "arcadia",
+        "sourceLabel": "Arcadia Product Safety (synthetic)",
+        "scraped": true,
+        "synthetic": true,
+        "contractVersion": "arcadia@1",
+        "trust": "verified",
+        "fetchedAt": "2026-08-17T17:17:37.717Z",
+        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+        "heals": 0
+      },
+      "onSale": [],
+      "quarantined": []
+    },
+    {
+      "ref": "APS-2026-0415",
+      "permalink": "https://arcadia-safety.vercel.app/notice/APS-2026-0415.html",
+      "title": "Halvard Trail 24 children's bicycle helmet",
+      "brand": "Halvard",
+      "hazard": "Shell fails impact attenuation testing; inadequate head protection",
+      "risk": "High",
+      "category": "Protective equipment",
+      "affectedUnits": "Lot HT24-A, HT24-B",
+      "published": "2026-08-11",
+      "action": "Cease use; free replacement available from the importer",
+      "provenance": {
+        "sourceId": "arcadia",
+        "sourceLabel": "Arcadia Product Safety (synthetic)",
+        "scraped": true,
+        "synthetic": true,
+        "contractVersion": "arcadia@1",
+        "trust": "verified",
+        "fetchedAt": "2026-08-17T17:17:37.717Z",
+        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+        "heals": 0
+      },
+      "onSale": [],
+      "quarantined": []
+    },
+    {
+      "ref": "APS-2026-0416",
+      "permalink": "https://arcadia-safety.vercel.app/notice/APS-2026-0416.html",
+      "title": "Calder & Vane 1.7L cordless kettle, CV-K17",
+      "brand": "Calder & Vane",
+      "hazard": "Base connector overheats and can ignite surrounding material",
+      "risk": "Serious",
+      "category": "Electrical appliances",
+      "affectedUnits": "Manufactured 2025-11 through 2026-03",
+      "published": "2026-08-12",
+      "action": "Unplug and stop using; return to point of sale",
+      "provenance": {
+        "sourceId": "arcadia",
+        "sourceLabel": "Arcadia Product Safety (synthetic)",
+        "scraped": true,
+        "synthetic": true,
+        "contractVersion": "arcadia@1",
+        "trust": "verified",
+        "fetchedAt": "2026-08-17T17:17:37.717Z",
+        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+        "heals": 0
+      },
+      "onSale": [],
+      "quarantined": []
+    },
+    {
+      "ref": "APS-2026-0408",
+      "permalink": "https://arcadia-safety.vercel.app/notice/APS-2026-0408.html",
+      "title": "Wexley wooden stacking toy set, 12 pieces",
+      "brand": "Wexley",
+      "hazard": "Painted rings detach into small parts; coating exceeds migration limits",
+      "risk": "Serious",
+      "category": "Toys",
+      "affectedUnits": "WX-STK-12 all batches",
+      "published": "2026-07-16",
+      "action": "Remove from children immediately and return for a refund",
+      "provenance": {
+        "sourceId": "arcadia",
+        "sourceLabel": "Arcadia Product Safety (synthetic)",
+        "scraped": true,
+        "synthetic": true,
+        "contractVersion": "arcadia@1",
+        "trust": "verified",
+        "fetchedAt": "2026-08-17T17:17:37.717Z",
+        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+        "heals": 0
+      },
+      "onSale": [],
+      "quarantined": []
+    },
+    {
+      "ref": "APS-2026-0406",
+      "permalink": "https://arcadia-safety.vercel.app/notice/APS-2026-0406.html",
+      "title": "Iselin Kitchen 6L pressure cooker, IK-PC6",
+      "brand": "Iselin Kitchen",
+      "hazard": "Lid interlock permits opening while the vessel is pressurised; scalding risk",
+      "risk": "Serious",
+      "category": "Kitchen and cookware",
+      "affectedUnits": "IKPC6 serials 4400-6200",
+      "published": "2026-07-07",
+      "action": "Stop using immediately and return for a full refund",
+      "provenance": {
+        "sourceId": "arcadia",
+        "sourceLabel": "Arcadia Product Safety (synthetic)",
+        "scraped": true,
+        "synthetic": true,
+        "contractVersion": "arcadia@1",
+        "trust": "verified",
+        "fetchedAt": "2026-08-17T17:17:37.717Z",
+        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+        "heals": 0
+      },
+      "onSale": [],
+      "quarantined": []
+    },
+    {
+      "ref": "APS-2026-0409",
+      "permalink": "https://arcadia-safety.vercel.app/notice/APS-2026-0409.html",
+      "title": "Petrel Outdoor camping gas lantern, PL-90",
+      "brand": "Petrel Outdoor",
+      "hazard": "Valve stem leaks fuel when the canister is inverted",
+      "risk": "Serious",
+      "category": "Leisure and sporting goods",
+      "affectedUnits": "All units",
+      "published": "2026-07-20",
+      "action": "Stop using; do not attempt to vent the canister indoors",
+      "provenance": {
+        "sourceId": "arcadia",
+        "sourceLabel": "Arcadia Product Safety (synthetic)",
+        "scraped": true,
+        "synthetic": true,
+        "contractVersion": "arcadia@1",
+        "trust": "verified",
+        "fetchedAt": "2026-08-17T17:17:37.717Z",
+        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+        "heals": 0
+      },
+      "onSale": [],
+      "quarantined": []
+    },
+    {
+      "ref": "APS-2026-0411",
+      "permalink": "https://arcadia-safety.vercel.app/notice/APS-2026-0411.html",
+      "title": "Orrin Fields convertible high chair, OF-HC3",
+      "brand": "Orrin Fields",
+      "hazard": "Five-point restraint buckle can release without input",
+      "risk": "Serious",
+      "category": "Childcare articles and children's equipment",
+      "affectedUnits": "OFHC3 units sold before 2026-06",
+      "published": "2026-07-29",
+      "action": "Stop using and request the free retrofit harness",
+      "provenance": {
+        "sourceId": "arcadia",
+        "sourceLabel": "Arcadia Product Safety (synthetic)",
+        "scraped": true,
+        "synthetic": true,
+        "contractVersion": "arcadia@1",
+        "trust": "verified",
+        "fetchedAt": "2026-08-17T17:17:37.717Z",
+        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+        "heals": 0
+      },
+      "onSale": [],
+      "quarantined": []
+    },
+    {
+      "ref": "APS-2026-0410",
+      "permalink": "https://arcadia-safety.vercel.app/notice/APS-2026-0410.html",
+      "title": "Bracken Home oil-filled radiator, BH-OR1500",
+      "brand": "Bracken Home",
+      "hazard": "Thermal cutout fails to trip; enclosure reaches ignition temperature",
+      "risk": "High",
+      "category": "Electrical appliances",
+      "affectedUnits": "Lots 26-04 and 26-05",
+      "published": "2026-07-24",
+      "action": "Unplug and return for a full refund",
+      "provenance": {
+        "sourceId": "arcadia",
+        "sourceLabel": "Arcadia Product Safety (synthetic)",
+        "scraped": true,
+        "synthetic": true,
+        "contractVersion": "arcadia@1",
+        "trust": "verified",
+        "fetchedAt": "2026-08-17T17:17:37.717Z",
+        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+        "heals": 0
+      },
+      "onSale": [],
+      "quarantined": []
+    },
+    {
+      "ref": "APS-2026-0407",
+      "permalink": "https://arcadia-safety.vercel.app/notice/APS-2026-0407.html",
+      "title": "Dunmore Cycles rear child bike seat, DC-CS2",
+      "brand": "Dunmore Cycles",
+      "hazard": "Mounting bracket cracks at the weld under normal cycling load",
+      "risk": "High",
+      "category": "Childcare articles and children's equipment",
+      "affectedUnits": "DCCS2-A through DCCS2-D",
+      "published": "2026-07-11",
+      "action": "Stop using and contact the retailer for a replacement bracket",
+      "provenance": {
+        "sourceId": "arcadia",
+        "sourceLabel": "Arcadia Product Safety (synthetic)",
+        "scraped": true,
+        "synthetic": true,
+        "contractVersion": "arcadia@1",
+        "trust": "verified",
+        "fetchedAt": "2026-08-17T17:17:37.717Z",
+        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+        "heals": 0
+      },
+      "onSale": [],
+      "quarantined": []
+    }
+  ],
+  "withdrawn": [
+    {
+      "id": "TW-88214",
+      "permalink": "https://tradewell-market.vercel.app/item/TW-88214.html",
+      "title": "Commowner electric pressure washer, 3 gpm, orange",
+      "brand": "COMMOWNER",
+      "price": 129,
+      "currency": null,
+      "condition": "Used, good",
+      "location": "Tampa, FL",
+      "listedOn": "2026-08-10",
+      "provenance": {
+        "sourceId": "tradewell",
+        "sourceLabel": "Tradewell Market (synthetic)",
+        "scraped": true,
+        "synthetic": true,
+        "contractVersion": "tradewell@1",
+        "trust": "withdrawn",
+        "fetchedAt": "2026-08-17T17:24:49.672Z",
+        "lastVerifiedAt": "2026-08-17T17:24:49.672Z",
+        "heals": 0
+      },
+      "match": {
+        "confidence": 0.72,
+        "basis": "brand+product",
+        "matchedTokens": [
+          "pressure",
+          "washer",
+          "commowner",
+          "pressurewasher"
+        ],
+        "contradiction": null,
+        "publishable": true
+      }
+    },
+    {
+      "id": "TW-44903",
+      "permalink": "https://tradewell-market.vercel.app/item/TW-44903.html",
+      "title": "DUMOS 9-drawer fabric TV dresser w/ LED, grey",
+      "brand": "DUMOS",
+      "price": 49.99,
+      "currency": null,
+      "condition": "Pre-owned",
+      "location": "Phoenix, AZ",
+      "listedOn": "2026-08-02",
+      "provenance": {
+        "sourceId": "tradewell",
+        "sourceLabel": "Tradewell Market (synthetic)",
+        "scraped": true,
+        "synthetic": true,
+        "contractVersion": "tradewell@1",
+        "trust": "withdrawn",
+        "fetchedAt": "2026-08-17T17:24:49.672Z",
+        "lastVerifiedAt": "2026-08-17T17:24:49.672Z",
+        "heals": 0
+      },
+      "match": {
+        "confidence": 0.72,
+        "basis": "brand+product",
+        "matchedTokens": [
+          "drawer",
+          "dresser",
+          "dumo"
+        ],
+        "contradiction": null,
+        "publishable": true
+      }
+    },
+    {
+      "id": "TW-33887",
+      "permalink": "https://tradewell-market.vercel.app/item/TW-33887.html",
+      "title": "Zimtown 5 gal portable gas can, red, with spout",
+      "brand": "Zimtown",
+      "price": 34,
+      "currency": null,
+      "condition": "New",
+      "location": "Boise, ID",
+      "listedOn": "2026-07-30",
+      "provenance": {
+        "sourceId": "tradewell",
+        "sourceLabel": "Tradewell Market (synthetic)",
+        "scraped": true,
+        "synthetic": true,
+        "contractVersion": "tradewell@1",
+        "trust": "withdrawn",
+        "fetchedAt": "2026-08-17T17:24:49.672Z",
+        "lastVerifiedAt": "2026-08-17T17:24:49.672Z",
+        "heals": 0
+      },
+      "match": {
+        "confidence": 0.72,
+        "basis": "brand+product",
+        "matchedTokens": [
+          "zimtown",
+          "portable",
+          "gas",
+          "can",
+          "zimtownportable",
+          "portablegas"
+        ],
+        "contradiction": null,
+        "publishable": true
+      }
+    }
+  ],
+  "incidents": [
+    {
+      "id": "tradewell-1786987328817",
+      "sourceId": "tradewell",
+      "sourceLabel": "Tradewell Market (synthetic)",
+      "openedAt": "2026-08-17T17:17:44.036Z",
+      "closedAt": null,
+      "cause": "drift",
+      "healable": true,
+      "evidence": [
+        "field id null rate 100.0% against a limit of 0.0% over 0 rows (examples: )",
+        "field permalink null rate 100.0% against a limit of 0.0% over 0 rows (examples: )",
+        "field title null rate 100.0% against a limit of 0.0% over 0 rows (examples: )",
+        "field price null rate 100.0% against a limit of 2.0% over 0 rows (examples: )",
+        "field currency null rate 100.0% against a limit of 2.0% over 0 rows (examples: )",
+        "field condition null rate 100.0% against a limit of 5.0% over 0 rows (examples: )",
+        "field location null rate 100.0% against a limit of 5.0% over 0 rows (examples: )",
+        "listing fetched cleanly (HTTP 200, 8470 bytes) but yielded no rows"
+      ],
+      "refusal": "heal reported \"done\" but the result still fails the contract: field id null rate 100.0% exceeds limit 0.0% over 0 rows; field permalink null rate 100.0% exceeds limit 0.0% over 0 rows",
+      "healAttempted": true,
+      "healDurationMs": 246455,
+      "prompt": "Extraction returned an empty array: 0 rows where several were expected, and no errors were raised. The listing at https://tradewell-market.vercel.app/ still returns HTTP 200 with 8470 bytes, so it is not blocked. Permalinks for the previously extracted notices still return HTTP 200, so nothing was withdrawn. The previously working selector .permalink now matches 0 elements. Attribute hooks present in the live document: data-testid, data-item-id. Visible field labels are now: Brand, Condition, Seller, Location, Shipping, Listed. Re-extract every notice across https://tradewell-market.vercel.app/ and /page-2.html.",
+      "verified": false,
+      "mttrMs": null,
+      "withdrawnRefs": [],
+      "rows": 0,
+      "breaches": [
+        "field id null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "field permalink null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "field title null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "field price null rate 100.0% exceeds limit 2.0% over 0 rows",
+        "field currency null rate 100.0% exceeds limit 2.0% over 0 rows",
+        "field condition null rate 100.0% exceeds limit 5.0% over 0 rows",
+        "field location null rate 100.0% exceeds limit 5.0% over 0 rows",
+        "returned 0 rows, contract requires at least 5"
+      ]
+    },
+    {
+      "id": "tradewell-1786987490007",
+      "sourceId": "tradewell",
+      "sourceLabel": "Tradewell Market (synthetic)",
+      "openedAt": "2026-08-17T17:24:43.159Z",
+      "closedAt": "2026-08-17T17:24:49.672Z",
+      "cause": "gone",
+      "healable": false,
+      "evidence": [
+        "3 notice(s) absent from the listing AND their permalinks return 404 or 410: TW-88214, TW-33887, TW-44903",
+        "withdrawn by the regulator, not lost by us: retained as last-good, never healed",
+        "all 3 missing record(s) accounted for by withdrawal; remaining 11 rows satisfy contract tradewell@1"
+      ],
+      "refusal": "records were withdrawn at source and their permalinks no longer resolve; healing would fabricate replacements for records that were deliberately removed",
+      "healAttempted": false,
+      "healDurationMs": null,
+      "prompt": null,
+      "verified": true,
+      "mttrMs": 0,
+      "withdrawnRefs": [
+        "TW-88214",
+        "TW-33887",
+        "TW-44903"
+      ],
+      "rows": 11,
+      "breaches": [
+        "row count fell from 14 to 11, a 21.4% drop, limit 20.0%"
+      ]
+    },
+    {
+      "id": "tradewell-1786987678278",
+      "sourceId": "tradewell",
+      "sourceLabel": "Tradewell Market (synthetic)",
+      "openedAt": "2026-08-17T17:27:23.014Z",
+      "closedAt": null,
+      "cause": "blocked",
+      "healable": false,
+      "evidence": [
+        "listing returned HTTP 200 with block signature \"verify you are a human\"",
+        "healing cannot clear a block; backing off instead"
+      ],
+      "refusal": "the source refused the request; healing cannot clear a block",
+      "healAttempted": false,
+      "healDurationMs": null,
+      "prompt": null,
+      "verified": false,
+      "mttrMs": null,
+      "withdrawnRefs": [],
+      "rows": 0,
+      "breaches": [
+        "field id null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "field permalink null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "field title null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "field brand null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "field price null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "field condition null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "field location null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "field listedOn null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "returned 0 rows, contract requires at least 10",
+        "row count fell from 11 to 0, a 100.0% drop, limit 20.0%"
+      ]
+    },
+    {
+      "id": "tradewell-1786987729444",
+      "sourceId": "tradewell",
+      "sourceLabel": "Tradewell Market (synthetic)",
+      "openedAt": "2026-08-17T17:28:10.753Z",
+      "closedAt": null,
+      "cause": "blocked",
+      "healable": false,
+      "evidence": [
+        "listing returned HTTP 200 with block signature \"verify you are a human\"",
+        "healing cannot clear a block; backing off instead"
+      ],
+      "refusal": "the source refused the request; healing cannot clear a block",
+      "healAttempted": false,
+      "healDurationMs": null,
+      "prompt": null,
+      "verified": false,
+      "mttrMs": null,
+      "withdrawnRefs": [],
+      "rows": 0,
+      "breaches": [
+        "field id null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "field permalink null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "field title null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "field brand null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "field price null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "field condition null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "field location null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "field listedOn null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "returned 0 rows, contract requires at least 10",
+        "row count fell from 11 to 0, a 100.0% drop, limit 20.0%"
+      ]
+    }
+  ],
+  "study": {
+    "recallSource": "US CPSC recall API (real)",
+    "listingSource": "eBay search results via Bright Data Scraper Studio (real)",
+    "capturedAt": "2026-08-17",
+    "recalls": 6,
+    "listings": 193,
+    "publishThreshold": 0.7,
+    "matched": 185,
+    "publishable": 17,
+    "quarantined": 168,
+    "unmatched": 8,
+    "byBasis": [
+      {
+        "basis": "brand+product",
+        "count": 150
+      },
+      {
+        "basis": "product-only",
+        "count": 35
+      }
+    ],
+    "quarantineReasons": [
+      {
+        "reason": "recall covers 10L, 15L; this listing states 4L",
+        "count": 97
+      },
+      {
+        "reason": "listing is for an accessory (\"cord\"), not the recalled product",
+        "count": 15
+      },
+      {
+        "reason": "listing is for an accessory (\"adapter\"), not the recalled product",
+        "count": 14
+      },
+      {
+        "reason": "recall covers 10L, 15L; this listing states 20L",
+        "count": 13
+      },
+      {
+        "reason": "recall covers 10L, 15L; this listing states 12L",
+        "count": 10
+      },
+      {
+        "reason": "confidence 0.30 on product-only is below the 0.7 threshold",
+        "count": 9
+      },
+      {
+        "reason": "listing is for an accessory (\"cable\"), not the recalled product",
+        "count": 5
+      },
+      {
+        "reason": "recall covers 10L, 15L; this listing states 9L",
+        "count": 2
+      },
+      {
+        "reason": "recall covers 10L, 15L; this listing states 4L, 6L",
+        "count": 1
+      },
+      {
+        "reason": "listing is for an accessory (\"logo\"), not the recalled product",
+        "count": 1
+      },
+      {
+        "reason": "listing is for an accessory (\"charger\"), not the recalled product",
+        "count": 1
+      }
+    ],
+    "examples": [
+      {
+        "verdict": "publishable",
+        "recallRef": "26685",
+        "recallTitle": "Cooluli Recalls 10-Liter and 15-Liter Minifridges Due to Fire and Burn Hazards",
+        "listingTitle": "BRAND NEW MINI FRIDGE- COOLULI",
+        "confidence": 0.72,
+        "basis": "brand+product",
+        "matchedTokens": [
+          "minifridge",
+          "cooluli",
+          "fridge",
+          "fridgecooluli"
+        ],
+        "contradiction": null
+      },
+      {
+        "verdict": "publishable",
+        "recallRef": "26685",
+        "recallTitle": "Cooluli Recalls 10-Liter and 15-Liter Minifridges Due to Fire and Burn Hazards",
+        "listingTitle": "Cooluli Mini Fridge Portable Plug In Cooler & Warmer for Food, Drinks, Skincare",
+        "confidence": 0.72,
+        "basis": "brand+product",
+        "matchedTokens": [
+          "minifridge",
+          "cooluli",
+          "fridge"
+        ],
+        "contradiction": null
+      },
+      {
+        "verdict": "publishable",
+        "recallRef": "26685",
+        "recallTitle": "Cooluli Recalls 10-Liter and 15-Liter Minifridges Due to Fire and Burn Hazards",
+        "listingTitle": "Cooluli Mini Fridge 4K Portable Bedroom Car Office Dorm Cools Warms Black New",
+        "confidence": 0.72,
+        "basis": "brand+product",
+        "matchedTokens": [
+          "minifridge",
+          "cooluli",
+          "fridge"
+        ],
+        "contradiction": null
+      },
+      {
+        "verdict": "publishable",
+        "recallRef": "26685",
+        "recallTitle": "Cooluli Recalls 10-Liter and 15-Liter Minifridges Due to Fire and Burn Hazards",
+        "listingTitle": "Cooluli Infinity Black 15 Liter fridge",
+        "confidence": 0.72,
+        "basis": "brand+product",
+        "matchedTokens": [
+          "cooluli",
+          "fridge"
+        ],
+        "contradiction": null
+      },
+      {
+        "verdict": "quarantined",
+        "recallRef": "26685",
+        "recallTitle": "Cooluli Recalls 10-Liter and 15-Liter Minifridges Due to Fire and Burn Hazards",
+        "listingTitle": "COOLULI CL4L Classic-4L Compact Thermoelectric Cooler And Warmer Mini Fridge",
+        "confidence": 0.35,
+        "basis": "brand+product",
+        "matchedTokens": [
+          "minifridge",
+          "cooluli",
+          "fridge"
+        ],
+        "contradiction": "recall covers 10L, 15L; this listing states 4L"
+      },
+      {
+        "verdict": "quarantined",
+        "recallRef": "26685",
+        "recallTitle": "Cooluli Recalls 10-Liter and 15-Liter Minifridges Due to Fire and Burn Hazards",
+        "listingTitle": "Cooluli Mini Fridge 4L Portable Electric Cooler and Warmer Black",
+        "confidence": 0.35,
+        "basis": "brand+product",
+        "matchedTokens": [
+          "minifridge",
+          "cooluli",
+          "fridge"
+        ],
+        "contradiction": "recall covers 10L, 15L; this listing states 4L"
+      },
+      {
+        "verdict": "quarantined",
+        "recallRef": "26685",
+        "recallTitle": "Cooluli Recalls 10-Liter and 15-Liter Minifridges Due to Fire and Burn Hazards",
+        "listingTitle": "Cooluli 4 Liter Portable Compact Multipurpose Cooler Warmer Mini Fridge, Working",
+        "confidence": 0.35,
+        "basis": "brand+product",
+        "matchedTokens": [
+          "minifridge",
+          "cooluli",
+          "fridge"
+        ],
+        "contradiction": "recall covers 10L, 15L; this listing states 4L"
+      },
+      {
+        "verdict": "quarantined",
+        "recallRef": "26685",
+        "recallTitle": "Cooluli Recalls 10-Liter and 15-Liter Minifridges Due to Fire and Burn Hazards",
+        "listingTitle": "Cooluli 12L Beauty Mini Fridge. Brand New. Never Used. In Original Box.",
+        "confidence": 0.35,
+        "basis": "brand+product",
+        "matchedTokens": [
+          "minifridge",
+          "cooluli",
+          "fridge"
+        ],
+        "contradiction": "recall covers 10L, 15L; this listing states 12L"
+      }
+    ]
+  },
+  "totals": {
+    "recalls": 18,
+    "listingsWatched": 11,
+    "asserted": 3,
+    "quarantined": 1,
+    "withdrawn": 3,
+    "refusals": 4
+  }
+}

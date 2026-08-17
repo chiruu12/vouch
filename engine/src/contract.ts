@@ -12,7 +12,7 @@
 // hands off to classify.ts to work out which of the four causes it is. Keeping
 // detection and diagnosis apart is what stops us healing a withdrawn recall.
 
-import type { RecallRecord, SourceId } from "./types.js";
+import type { SourceId } from "./types.js";
 
 export type FieldType = "string" | "date" | "enum" | "number";
 
@@ -65,8 +65,6 @@ export interface ContractReport {
   breaches: string[];
   fields: FieldReport[];
 }
-
-type Candidate = Omit<RecallRecord, "provenance">;
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 

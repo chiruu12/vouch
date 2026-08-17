@@ -38,8 +38,13 @@ interface SourceWiring {
   /** How a row names itself. */
   refOf(row: Row): string;
   /** A ref's own page, used as the withdrawal oracle. Null when the source has none,
-   *  which disables withdrawal detection rather than guessing at it. */
-  permalinkFor(ref: string): string | null;
+   *  which disables withdrawal detection rather than guessing at it.
+   *
+   *  Takes the origin actually being crawled rather than hardcoding it. When a second
+   *  deployment of the same fixture is under test, a permalink built from the hardcoded
+   *  production origin probes the wrong site, and 404s there would be read as
+   *  withdrawals from a source we were not even looking at. */
+  permalinkFor(ref: string, origin: string): string | null;
   rowsPerPage?: number;
   extraPaths?: readonly string[];
 }
@@ -58,7 +63,7 @@ const SOURCES: Partial<Record<SourceId, SourceWiring>> = {
     contract: ARCADIA_CONTRACT,
     normalise: (raw) => normaliseArcadia(raw) as unknown as Row[],
     refOf: (row) => str(row, "ref"),
-    permalinkFor: (ref) => `https://arcadia-safety.vercel.app/notice/${ref}.html`,
+    permalinkFor: (ref, origin) => `${origin}/notice/${ref}.html`,
     rowsPerPage: 6,
     extraPaths: ["/page-2.html"],
   },
@@ -69,7 +74,7 @@ const SOURCES: Partial<Record<SourceId, SourceWiring>> = {
     contract: TRADEWELL_CONTRACT,
     normalise: (raw) => normaliseTradewell(raw) as unknown as Row[],
     refOf: (row) => str(row, "id"),
-    permalinkFor: (ref) => `https://tradewell-market.vercel.app/item/${ref}.html`,
+    permalinkFor: (ref, origin) => `${origin}/item/${ref}.html`,
     rowsPerPage: 7,
     extraPaths: ["/page-2.html"],
   },
@@ -207,7 +212,10 @@ function arg(name: string): string | undefined {
 async function main(): Promise<void> {
   const sourceId = process.argv[2] as SourceId | undefined;
   if (sourceId === undefined || SOURCES[sourceId] === undefined) {
-    console.error(`usage: node --import tsx src/cycle.ts <${Object.keys(SOURCES).join("|")}> [--url URL]`);
+    console.error(
+      `usage: node --import tsx src/cycle.ts <${Object.keys(SOURCES).join("|")}> ` +
+        `[--url URL] [--collector c_...] [--state SUFFIX]`
+    );
     process.exit(2);
   }
 
@@ -219,7 +227,11 @@ async function main(): Promise<void> {
   }
 
   const url = arg("url") ?? wiring.url;
-  const state = loadState(sourceId);
+  // A second collector against the same source needs its own memory. Without this the
+  // drift experiment would overwrite the baseline the production collector is judged
+  // against, and the next production cycle would diagnose a fabricated row-count cliff.
+  const stateKey = arg("state") === undefined ? sourceId : `${sourceId}-${arg("state")}`;
+  const state = loadState(stateKey);
   const firstRun = state.baselineRefs.length === 0;
 
   console.log(`source      ${sourceId}`);
@@ -236,7 +248,7 @@ async function main(): Promise<void> {
       url,
       contract: wiring.contract,
       state,
-      permalinkFor: wiring.permalinkFor,
+      permalinkFor: (ref) => wiring.permalinkFor(ref, new URL(url).origin),
       refOf: wiring.refOf,
       ...(wiring.rowsPerPage !== undefined ? { rowsPerPage: wiring.rowsPerPage } : {}),
       ...(wiring.extraPaths !== undefined ? { extraPaths: wiring.extraPaths } : {}),
@@ -270,9 +282,9 @@ async function main(): Promise<void> {
   console.log(`SERVING     ${serving.rows.length} rows as "${serving.state}"`);
   console.log(`cycle took  ${((Date.now() - started) / 1000).toFixed(1)}s`);
 
-  saveState(sourceId, result.nextState);
+  saveState(stateKey, result.nextState);
 
-  const incidentPath = resolve(process.cwd(), "..", "runs", `incident-${sourceId}-${Date.now()}.json`);
+  const incidentPath = resolve(process.cwd(), "..", "runs", `incident-${stateKey}-${Date.now()}.json`);
   if (incident !== null) {
     writeFileSync(incidentPath, JSON.stringify({ incident, report, diagnosis }, null, 2) + "\n");
     console.log(`incident    ${incidentPath}`);

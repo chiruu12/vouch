@@ -1,0 +1,23 @@
+{
+  "name": "@vouch/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "snapshot": "cd ../engine && node --import tsx src/snapshot.ts",
+    "dev": "npm run snapshot && next dev",
+    "build": "npm run snapshot && next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "15.1.6",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "typescript": "^5.7.2"
+  }
+}
