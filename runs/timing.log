@@ -74,3 +74,11 @@ blocked variant: anti-bot interstitial served at HTTP 200
   cycle -> diagnosis "blocked" from the 200 + signature, REFUSED to heal,
         -> served 11 last-good rows as UNVERIFIED, 38.7s
 engine tests: 78 pass
+
+## Standby collector (filming insurance)
+Created 2026-08-17T17:29:26Z, done in 157 polls (~5 min).
+  arcadia-standby  c_msxidlbw1ylqqub349
+One collector (c_msx7fknprsolywx8g) is permanently wedged by a bad heal prompt.
+A wedged collector during filming costs a take, so there is now a spare
+pointed at the same fixture with the same extraction intent.
+
