@@ -1,0 +1,15 @@
+node_modules/
+.next/
+.vercel/
+.env
+.env.*
+!.env.example
+dist/
+out/
+*.log
+.DS_Store
+
+# Local run artifacts from timing/measurement work
+scratch/
+runs/*.json
+!runs/.gitkeep

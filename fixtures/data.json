@@ -1,0 +1,139 @@
+{
+  "authority": "Arcadia Product Safety Authority",
+  "directorate": "Consumer Protection Directorate",
+  "perPage": 6,
+  "records": [
+    {
+      "ref": "APS-2026-0417",
+      "title": "Nimbus Rest travel cot, model NR-220",
+      "brand": "Nimbus Rest",
+      "hazard": "Side rail can disengage under load, creating an entrapment gap",
+      "risk": "Serious",
+      "category": "Childcare articles and children's equipment",
+      "batch": "NR220-2451 to NR220-2488",
+      "published": "2026-08-14",
+      "action": "Stop using immediately and contact the retailer for a full refund"
+    },
+    {
+      "ref": "APS-2026-0416",
+      "title": "Calder & Vane 1.7L cordless kettle, CV-K17",
+      "brand": "Calder & Vane",
+      "hazard": "Base connector overheats and can ignite surrounding material",
+      "risk": "Serious",
+      "category": "Electrical appliances",
+      "batch": "Manufactured 2025-11 through 2026-03",
+      "published": "2026-08-12",
+      "action": "Unplug and stop using; return to point of sale"
+    },
+    {
+      "ref": "APS-2026-0415",
+      "title": "Halvard Trail 24 children's bicycle helmet",
+      "brand": "Halvard",
+      "hazard": "Shell fails impact attenuation testing; inadequate head protection",
+      "risk": "High",
+      "category": "Protective equipment",
+      "batch": "Lot HT24-A, HT24-B",
+      "published": "2026-08-11",
+      "action": "Cease use; free replacement available from the importer"
+    },
+    {
+      "ref": "APS-2026-0414",
+      "title": "Sable Lumen USB-C wall charger, 65W",
+      "brand": "Sable Lumen",
+      "hazard": "Insufficient insulation between primary and secondary circuits; electric shock risk",
+      "risk": "Serious",
+      "category": "Electrical appliances",
+      "batch": "SL65W rev A only",
+      "published": "2026-08-08",
+      "action": "Stop using immediately; dispose of at an electrical waste facility"
+    },
+    {
+      "ref": "APS-2026-0413",
+      "title": "Marrow & Pike infant teething ring, assorted colours",
+      "brand": "Marrow & Pike",
+      "hazard": "Ring separates into small parts; choking hazard",
+      "risk": "Serious",
+      "category": "Childcare articles and children's equipment",
+      "batch": "All batches",
+      "published": "2026-08-05",
+      "action": "Remove from the child immediately and return for a refund"
+    },
+    {
+      "ref": "APS-2026-0412",
+      "title": "Ferrow Works angle grinder, FW-AG115",
+      "brand": "Ferrow Works",
+      "hazard": "Guard mounting can shear, exposing the rotating disc",
+      "risk": "High",
+      "category": "Machinery and power tools",
+      "batch": "Serial prefix FWAG26",
+      "published": "2026-08-01",
+      "action": "Stop using; contact Ferrow Works for a repair kit"
+    },
+    {
+      "ref": "APS-2026-0411",
+      "title": "Orrin Fields convertible high chair, OF-HC3",
+      "brand": "Orrin Fields",
+      "hazard": "Five-point restraint buckle can release without input",
+      "risk": "Serious",
+      "category": "Childcare articles and children's equipment",
+      "batch": "OFHC3 units sold before 2026-06",
+      "published": "2026-07-29",
+      "action": "Stop using and request the free retrofit harness"
+    },
+    {
+      "ref": "APS-2026-0410",
+      "title": "Bracken Home oil-filled radiator, BH-OR1500",
+      "brand": "Bracken Home",
+      "hazard": "Thermal cutout fails to trip; enclosure reaches ignition temperature",
+      "risk": "High",
+      "category": "Electrical appliances",
+      "batch": "Lots 26-04 and 26-05",
+      "published": "2026-07-24",
+      "action": "Unplug and return for a full refund"
+    },
+    {
+      "ref": "APS-2026-0409",
+      "title": "Petrel Outdoor camping gas lantern, PL-90",
+      "brand": "Petrel Outdoor",
+      "hazard": "Valve stem leaks fuel when the canister is inverted",
+      "risk": "Serious",
+      "category": "Leisure and sporting goods",
+      "batch": "All units",
+      "published": "2026-07-20",
+      "action": "Stop using; do not attempt to vent the canister indoors"
+    },
+    {
+      "ref": "APS-2026-0408",
+      "title": "Wexley wooden stacking toy set, 12 pieces",
+      "brand": "Wexley",
+      "hazard": "Painted rings detach into small parts; coating exceeds migration limits",
+      "risk": "Serious",
+      "category": "Toys",
+      "batch": "WX-STK-12 all batches",
+      "published": "2026-07-16",
+      "action": "Remove from children immediately and return for a refund"
+    },
+    {
+      "ref": "APS-2026-0407",
+      "title": "Dunmore Cycles rear child bike seat, DC-CS2",
+      "brand": "Dunmore Cycles",
+      "hazard": "Mounting bracket cracks at the weld under normal cycling load",
+      "risk": "High",
+      "category": "Childcare articles and children's equipment",
+      "batch": "DCCS2-A through DCCS2-D",
+      "published": "2026-07-11",
+      "action": "Stop using and contact the retailer for a replacement bracket"
+    },
+    {
+      "ref": "APS-2026-0406",
+      "title": "Iselin Kitchen 6L pressure cooker, IK-PC6",
+      "brand": "Iselin Kitchen",
+      "hazard": "Lid interlock permits opening while the vessel is pressurised; scalding risk",
+      "risk": "Serious",
+      "category": "Kitchen and cookware",
+      "batch": "IKPC6 serials 4400-6200",
+      "published": "2026-07-07",
+      "action": "Stop using immediately and return for a full refund"
+    }
+  ]
+}
