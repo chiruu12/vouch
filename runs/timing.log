@@ -1,0 +1,38 @@
+balance before: Balance $52.00
+create started: 12:23:01Z (epoch 1786969381)
+create finished: 12:28:07Z rc=0 elapsed=306s
+balance after: Balance $52.00
+heal started: 12:32:56Z
+HEAL finished: 12:34:26Z rc=0 elapsed=90s
+balance: Balance $52.00
+heal-2 started: 12:37:08Z
+heal-2 finished: 12:37:11Z rc=1 elapsed=3s
+create-2 started: 12:38:10Z
+create-2 finished: 12:40:18Z rc=0 elapsed=128s
+collector: c_msx7z3xi2hs08ccwms
+heal-3 (drift) started: 12:42:50Z
+heal-3 finished: 12:45:28Z rc=0 elapsed=158s
+TOTAL MTTR (heal + verify): 166s
+create-uk started: 13:03:52Z
+create-uk finished: 13:04:02Z rc=1 elapsed=10s
+uk collector: c_msx8w7ej1jd83t7w83
+create-ebay started: 13:12:15Z
+create-ebay finished: 13:18:17Z rc=0 elapsed=362s
+marketplace collector: c_msx96yzmkunilzwhd
+balance before ebay run: Balance $52.00
+ebay run finished rc=0 elapsed=3s
+balance after: Balance $52.00
+--- 2026-08-17 16:00-16:10Z account cap investigation ---
+bdata scrape ebay          -> RATE_LIMIT (explicit verification link)
+bdata scrape OUR fixture   -> RATE_LIMIT  (so not domain-specific)
+scraper run arcadia c_msx7z3xi2hs08ccwms --sync -> "too many requests"
+  ^ same collector that produced the 166s MTTR at 12:45Z
+scraper run ebay c_msx96yzmkunilzwhd -> error_code rate_limit
+balance unchanged $52.00 (rate-limited requests are not billed)
+CONCLUSION: account-wide cap across Web Unlocker AND Scraper Studio.
+  Cap appeared between 12:45Z (last good run) and 13:18Z (first rate_limit).
+  Requires KYC at https://brightdata.com/cp/account_verification.
+--- 2026-08-17 16:17Z KYC CLEARED ---
+bdata scrape our fixture -> OK (real markup)
+bdata scrape ebay search -> OK (real eBay search page)
+Cap lifted after account verification. Recovery watcher stopped.

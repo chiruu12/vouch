@@ -9,10 +9,14 @@ out/
 *.log
 .DS_Store
 
-# Local run artifacts from timing/measurement work
+# Local run artifacts from timing/measurement work.
+# Raw captures stay out: marketplace output carries seller names and this repo is
+# public. Scrubbed samples go to engine/samples/ instead. timing.log is kept, since
+# it is the measurement record the write-up cites.
 scratch/
 runs/*.json
 !runs/.gitkeep
+!runs/timing.log
 
 # local agent fleet config (dev tooling, not part of the submission)
 fleet.config.yaml
