@@ -95,3 +95,28 @@ the scenario was re-run end to end:
                       withdrew TW-88214, TW-44903, TW-33887
 Removed the superseded gone incident and one duplicate blocked incident. Kept one
 incident per distinct cause.
+
+## Pagination proved live, and a second wedged collector (2026-08-18)
+Created c_msxnf5nk1ltg20ga7 ("tradewell-drift") against a baseline preview so the
+production collector stayed clean. Findings:
+
+1. The new collector names fields differently AGAIN: item_url not url, price as
+   {value,currency,symbol} not a number, listed_date as a full timestamp not a date.
+   Same site, same intent sentence, different output shape. Adapter now handles both
+   and there is a test asserting the two captures agree on the facts.
+     cycle on baseline preview -> 14 rows, contract PASSED, healthy, 11.0s
+
+2. PAGINATION branch fired live for the first time, correctly:
+     cycle on redesign preview -> 7 rows against a baseline of 14, one page of 7,
+       all 7 missing permalinks return 200, diagnosis pagination (healable)
+
+3. Heal is exclusive per collector. A concurrent call returns HTTP 409
+   "Another refactor job is still in progress", and the CLI reports that as
+   status heal_trigger_failed with zero completed steps, which reads as a failed
+   repair. It is not: nothing was attempted. Now detected as heal_busy and recorded
+   as a deferral rather than a failure.
+
+4. c_msxnf5nk1ltg20ga7 has held the refactor lock for 20+ minutes across four heal
+   attempts. Same family as the arcadia wedge (c_msx7fknprsolywx8g). Second data
+   point: a heal that fails to trigger can leave a collector permanently locked.
+   Created tradewell-drift-2 to finish the drift experiment.

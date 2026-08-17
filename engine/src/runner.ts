@@ -47,6 +47,10 @@ export interface Incident {
   /** The synthesised prompt, or null when we refused to heal. */
   prompt: string | null;
   healAttempted: boolean;
+  /** The repair could not start because one was already running on this collector.
+   *  Distinct from healAttempted=false meaning "we refused to try": here we would
+   *  have tried and were not allowed to, which is a wait rather than a verdict. */
+  healDeferred: boolean;
   healDurationMs: number | null;
   /** Did the post-heal run satisfy the contract? */
   verified: boolean;
@@ -169,6 +173,7 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
     evidence: diagnosis.evidence,
     prompt: null,
     healAttempted: false,
+    healDeferred: false,
     healDurationMs: null,
     verified: false,
     serving: false,
@@ -255,6 +260,7 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
   // conflating them would put "we tried to fix this and could not" in the incident log
   // for an event where we never got to try. Serve last-good and come back.
   if (healed.status === "heal_busy") {
+    incident.healDeferred = true;
     incident.refusal =
       "a repair is already running on this collector, so this one could not start; " +
       "nothing was attempted and the collector is unchanged";

@@ -21,12 +21,15 @@ const CAUSE_MEANING: Record<string, string> = {
   healthy: "nothing was wrong.",
 };
 
-/** Three outcomes, not two. Refusing to start a repair and throwing away a repair that
- *  finished are different events, and collapsing them into "refused" hid the more
- *  interesting one: a repair that reported success and was rejected on measurement. */
-function outcome(i: PubIncident): { label: string; kind: "refused" | "healed" } {
+/** Four outcomes, not two. Refusing to start a repair, being unable to start one, and
+ *  throwing away a repair that finished are three different events, and collapsing them
+ *  into "refused" both hid the interesting one (a repair that reported success and was
+ *  rejected on measurement) and mislabelled the boring one (a queue conflict) as a
+ *  judgement we made. */
+function outcome(i: PubIncident): { label: string; kind: "refused" | "healed" | "waiting" } {
   if (i.verified && i.healAttempted) return { label: "repaired and verified", kind: "healed" };
   if (i.healAttempted) return { label: "repair ran, result rejected", kind: "refused" };
+  if (i.healDeferred) return { label: "repair deferred, collector busy", kind: "waiting" };
   if (i.refusal !== null) return { label: "repair refused", kind: "refused" };
   return { label: "no repair needed", kind: "healed" };
 }

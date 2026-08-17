@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T20:08:16.073Z",
+  "generatedAt": "2026-08-17T20:16:53.663Z",
   "caveat": "Matched on product line, not on unit. Recalls are often limited to specific batches or serial ranges, and marketplace listings rarely show them, so a match here means this listing appears to be the same product as a recall, not that this particular item is affected.",
   "publishThreshold": 0.7,
   "sources": [
@@ -774,6 +774,7 @@
       ],
       "refusal": "heal reported \"done\" but the result still fails the contract: field id null rate 100.0% exceeds limit 0.0% over 0 rows; field permalink null rate 100.0% exceeds limit 0.0% over 0 rows",
       "healAttempted": true,
+      "healDeferred": false,
       "healDurationMs": 246455,
       "prompt": "Extraction returned an empty array: 0 rows where several were expected, and no errors were raised. The listing at https://tradewell-market.vercel.app/ still returns HTTP 200 with 8470 bytes, so it is not blocked. Permalinks for the previously extracted notices still return HTTP 200, so nothing was withdrawn. The previously working selector .permalink now matches 0 elements. Attribute hooks present in the live document: data-testid, data-item-id. Visible field labels are now: Brand, Condition, Seller, Location, Shipping, Listed. Re-extract every notice across https://tradewell-market.vercel.app/ and /page-2.html.",
       "verified": false,
@@ -805,6 +806,7 @@
       ],
       "refusal": "the source refused the request; healing cannot clear a block",
       "healAttempted": false,
+      "healDeferred": false,
       "healDurationMs": null,
       "prompt": null,
       "verified": false,
@@ -839,6 +841,7 @@
       ],
       "refusal": "records were withdrawn at source and their permalinks no longer resolve; healing would fabricate replacements for records that were deliberately removed",
       "healAttempted": false,
+      "healDeferred": false,
       "healDurationMs": null,
       "prompt": null,
       "verified": true,
@@ -854,10 +857,10 @@
       ]
     },
     {
-      "id": "tradewell-drift-1786997246996",
+      "id": "tradewell-drift-1786997608048",
       "sourceId": "tradewell",
       "sourceLabel": "Tradewell Market (synthetic)",
-      "openedAt": "2026-08-17T20:07:11.314Z",
+      "openedAt": "2026-08-17T20:13:05.787Z",
       "closedAt": null,
       "cause": "pagination",
       "healable": true,
@@ -867,7 +870,8 @@
       ],
       "refusal": "a repair is already running on this collector, so this one could not start; nothing was attempted and the collector is unchanged",
       "healAttempted": false,
-      "healDurationMs": 9135,
+      "healDeferred": false,
+      "healDurationMs": 6861,
       "prompt": "Extraction returned 7 rows against a baseline of 14, and every field it did read satisfied contract tradewell@1. Rows are missing, not fields. The listing at https://tradewell-market-p5kff05i7-chirus-projects-a2862453.vercel.app/ still returns HTTP 200 with 8631 bytes, so it is not blocked. Permalinks for the previously extracted notices still return HTTP 200, so nothing was withdrawn. The previously working selector .permalink now matches 0 elements. Attribute hooks present in the live document: data-testid, data-listing-ref, data-explicit-opt-in, data-deployment-id. Visible field labels are now: Brand, Item condition, Seller, Location, Shipping, Listed. Re-extract every notice across https://tradewell-market-p5kff05i7-chirus-projects-a2862453.vercel.app/ and /page-2.html.",
       "verified": false,
       "mttrMs": null,

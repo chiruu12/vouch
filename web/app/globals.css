@@ -731,6 +731,21 @@ ul.evidence li::before {
   background: var(--healed-bg);
 }
 
+/* A queue conflict is not a verdict, so it gets the neutral slate rather than the clay
+   the page reserves for things we decided not to do. */
+.verdict[data-kind="waiting"] {
+  color: var(--stale);
+  background: var(--stale-bg);
+}
+
+.incident[data-refused="true"]:has(.verdict[data-kind="waiting"]) {
+  border-left-color: var(--rule-strong);
+}
+
+.incident:has(.verdict[data-kind="waiting"]) .cause {
+  color: var(--ink-2);
+}
+
 .sub {
   font-size: 0.78rem;
   letter-spacing: 0.06em;

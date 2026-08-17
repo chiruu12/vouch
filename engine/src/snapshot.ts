@@ -124,6 +124,8 @@ export interface PubIncident {
   evidence: string[];
   refusal: string | null;
   healAttempted: boolean;
+  /** The repair was not refused, it was not allowed to start yet. */
+  healDeferred: boolean;
   healDurationMs: number | null;
   /** The synthesised prompt, shown in full when we did heal. */
   prompt: string | null;
@@ -344,6 +346,7 @@ function loadIncidents(): PubIncident[] {
       evidence: raw.diagnosis.evidence,
       refusal: raw.incident.refusal,
       healAttempted: raw.incident.healAttempted,
+      healDeferred: raw.incident.healDeferred ?? false,
       healDurationMs: raw.incident.healDurationMs,
       prompt: raw.incident.prompt,
       verified: raw.incident.verified,

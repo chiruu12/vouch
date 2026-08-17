@@ -22,9 +22,10 @@ selectors, no browser session, no login. Timings for a 12-record, 2-page listing
 | `scraper heal` | 90s and up |
 | `scraper run --sync` | 5s to 6s |
 
-**It handles a real hostile target.** eBay search results, 193 listings across several
-queries, 244 seconds, zero error rows. That is the case we most expected to fail, and
-it did not need any tuning.
+**It handles a real hostile target.** eBay search results, 193 listings from one query,
+about six minutes, zero error rows. An earlier query returned 169 listings in 244
+seconds, also clean. That is the case we most expected to fail, and it did not need any
+tuning.
 
 **Cost at this volume is not a factor.** Account balance did not move across two
 creates, three heals and seven runs. Only page loads bill. Throttled requests are not
@@ -71,9 +72,15 @@ ourselves.
 
 ### A heal can permanently wedge a collector
 
-A second `scraper heal` against a collector whose previous heal had auto-approved
-returned HTTP 422 `Invalid message` with zero completed steps, and that collector has
-not accepted a heal since. It is still in the account, still wedged.
+Two collectors in this account are stuck, by two different routes.
+
+The first: a second `scraper heal` against a collector whose previous heal had
+auto-approved returned HTTP 422 `Invalid message` with zero completed steps, and it has
+not accepted a heal since.
+
+The second: a heal that never produced a usable repair left the refactor lock held.
+Every subsequent heal on that collector has returned the 409 below, across four attempts
+over twenty minutes. The lock outlives the job that took it.
 
 Treat a wedged collector as a real operational state, not a transient error. We keep a
 standby collector against the same fixture with the same intent, because five free
