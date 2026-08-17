@@ -110,7 +110,28 @@ Accusing a named seller of selling recalled goods on a fuzzy title match would b
 exactly the category of lie this project exists to avoid. The discipline we apply to
 scraper output applies to our own inferences.
 
-## 8. The fixture is labelled, always
+## 8. Every measurement is recorded when it is taken, not when it is needed
+
+Mid-build our Bright Data account hit an account-wide request cap. The same
+collector that had completed a full detect-classify-heal-verify cycle in 166s at
+12:45Z returned `too many requests` at 16:10Z, on our own fixture, with the balance
+untouched at $52.00 because throttled requests are not billed.
+
+Unverified accounts sit in Immediate Access Mode: GET only, a pre-approved domain
+list, and provider throttling. Removing it needs identity verification, which has a
+48 hour SLA outside our control.
+
+The lesson is not about one vendor's tiering. It is that a demo which can only be
+produced live is one quota away from having nothing to show. Every run in `runs/`
+is kept with its timing, its input URL and its raw output, written at the moment it
+happened. So the 166s figure survives the cap, and it survives as a measurement
+with its evidence attached rather than a number in a README.
+
+The engine is unaffected by any of this, because every outside call goes through
+`CycleDeps`. The classifier, contract and refusal logic are testable, and tested,
+with no network at all.
+
+## 9. The fixture is labelled, always
 
 We cannot ask a real marketplace to redesign itself on cue, so breakage is demonstrated
 against a target we control and are permitted to break. It is labelled a synthetic test
