@@ -102,7 +102,10 @@ export function classify(input: ClassifyInput): Diagnosis {
         `404 or 410: ${withdrawnRefs.slice(0, 5).join(", ")}` +
         (withdrawnRefs.length > 5 ? ` and ${withdrawnRefs.length - 5} more` : "")
     );
-    evidence.push("withdrawn by the regulator, not lost by us: retained as last-good, never healed");
+    // Source-neutral wording. This line is rendered in the incident timeline, and the
+    // same code path covers a regulator withdrawing a notice and a marketplace seller
+    // delisting an item.
+    evidence.push("removed at source, not lost by us: retained as last-good, never healed");
   }
 
   // 3. Every loss is explained by withdrawal and nothing else is structurally wrong.

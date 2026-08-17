@@ -61,3 +61,16 @@ TWO SELF-INFLICTED FALSE HEALS along the way, both from a missing adapter:
      collector that was working perfectly.
   Both times the verify-then-serve gate refused to serve the unverified result, which
   is the gate doing exactly its job. But a wrong contract MANUFACTURES false repairs.
+--- 2026-08-17 17:40-17:50Z both refusal paths proven LIVE ---
+delisted variant: 3 items removed, permalinks 404 (controls still 200)
+  cycle -> 11 rows, contract FAILED on 21.4% row-count cliff (limit 20%)
+        -> diagnosis "gone", REFUSED to heal, served 11 rows as VERIFIED
+        -> withdrawn recorded: TW-88214, TW-33887, TW-44903
+  A naive healer would have fabricated 3 replacement listings here.
+blocked variant: anti-bot interstitial served at HTTP 200
+  first attempt CRASHED: sync run times out server-side after 50s, CLI exits non-zero,
+    the exception killed the cycle before the classifier could say "blocked".
+    Fixed: a failed run is data, not an exception.
+  cycle -> diagnosis "blocked" from the 200 + signature, REFUSED to heal,
+        -> served 11 last-good rows as UNVERIFIED, 38.7s
+engine tests: 78 pass

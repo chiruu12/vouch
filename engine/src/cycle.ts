@@ -143,7 +143,20 @@ function makeDeps(normalise: (raw: unknown) => Row[]): CycleDeps {
     };
   },
   async runScraper(collectorId, url) {
-    const result = await runScraper(collectorId, url);
+    // A failed run is data, not an exception. Measured against the blocked fixture: the
+    // sync endpoint times out server-side after 50s while the scraper sits on an
+    // interstitial, and the CLI exits non-zero. Letting that throw crashed the cycle
+    // before the classifier could call it "blocked", losing one of the two refusal paths
+    // at exactly the moment it matters. probeListing has already recorded the block
+    // signature by this point, so returning zero rows lets classify() reach the right
+    // verdict instead of the process dying.
+    let result;
+    try {
+      result = await runScraper(collectorId, url);
+    } catch (e) {
+      return { rows: [], errors: [{ error: e instanceof Error ? e.message : String(e) }] };
+    }
+
     // Normalise here, so everything downstream of this line speaks one vocabulary.
     // Rows the adapter rejects are counted as errors rather than silently vanishing:
     // an unparseable row is a contract signal, not nothing.
