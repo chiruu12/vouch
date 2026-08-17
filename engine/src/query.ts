@@ -16,6 +16,7 @@
 
 import type { RecallRecord } from "./types.js";
 import { parseRecallTitle } from "./match.js";
+import { singular } from "./text.js";
 
 /** Hazard and legal boilerplate. CPSC titles are mostly this, and every word of it
  *  narrows a marketplace search towards zero results. */
@@ -42,27 +43,6 @@ function meaningful(tok: string): boolean {
   if (UNITY.test(t)) return false;
   if (/^\d+(?:-\d+)?$/.test(t)) return false; // bare numbers and ranges
   return true;
-}
-
-/** Words ending in s that are not plurals. Stripping these produces "ga" and "len",
- *  which match nothing. Short list on purpose: it only has to cover words that
- *  plausibly appear in a product name. */
-const NOT_PLURAL = new Set([
-  "gas", "lens", "bus", "glass", "brass", "press", "class", "dress", "cross",
-  "axis", "series", "species", "hose", "case", "base",
-]);
-
-/** Singularise just enough that "Minifridges" finds "minifridge" listings. Crude on
- *  purpose: a real stemmer would be more accurate and is not worth the dependency.
- *  The length guard is what keeps three-letter words like "gas" intact. */
-function singular(tok: string): string {
-  if (NOT_PLURAL.has(tok.toLowerCase())) return tok;
-  if (tok.length < 4) return tok;
-  // boxes -> box, dishes -> dish, churches -> church
-  if (/(?:s|x|z|ch|sh)es$/i.test(tok)) return tok.slice(0, -2);
-  // cubes -> cube, minifridges -> minifridge, washers -> washer, cans -> can
-  if (/[^s]s$/i.test(tok)) return tok.slice(0, -1);
-  return tok;
 }
 
 export interface RecallQuery {

@@ -36,3 +36,13 @@ CONCLUSION: account-wide cap across Web Unlocker AND Scraper Studio.
 bdata scrape our fixture -> OK (real markup)
 bdata scrape ebay search -> OK (real eBay search page)
 Cap lifted after account verification. Recovery watcher stopped.
+--- 2026-08-17 16:46-17:10Z recall-driven search validation ---
+recall-derived query "Cooluli Minifridge" -> 193 rows, 0 errors (~6min)
+first hand-picked query "pressure washer" -> 169 rows but 0 publishable matches
+  (5 of 6 recalls were for products nobody searched for: the experiment was wrong,
+   not the matcher)
+match result on real data, after four fixes:
+  193 listings | 185 matched | 17 publishable | 168 quarantined
+  quarantine reasons: 123 capacity clash, 36 accessory, 9 weak basis
+  key true positive "Cooluli Infinity Black 15 Liter fridge" publishes at 0.72
+engine tests: 78 pass, 0 fail
