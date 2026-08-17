@@ -193,10 +193,24 @@ const VARIANTS = {
   baseline: { renderRecord: recordBaseline, listClass: "recall-list", records: data.records },
   redesign: { renderRecord: recordRedesign, listClass: "rc-list", records: data.records },
   // Notice APS-2026-0415 is withdrawn: gone from the listing, not merely restyled.
+  // A single withdrawal does not trip any row-count threshold, which is exactly why
+  // reconciliation against the last good run has to happen even when the contract passes.
   withdrawn: {
     renderRecord: recordBaseline,
     listClass: "recall-list",
     records: data.records.filter((r) => r.ref !== "APS-2026-0415"),
+  },
+  // Four notices withdrawn at once: 12 rows down to 8, a 33% drop that breaches the
+  // 20% cliff limit. This is the case that separates us from every other self-healing
+  // scraper. The contract fails, so a naive healer fires and invents four replacement
+  // notices. Our permalink probe returns 404 for all four, so we refuse to heal and
+  // mark them withdrawn instead.
+  purge: {
+    renderRecord: recordBaseline,
+    listClass: "recall-list",
+    records: data.records.filter(
+      (r) => !["APS-2026-0417", "APS-2026-0415", "APS-2026-0411", "APS-2026-0408"].includes(r.ref)
+    ),
   },
 };
 
