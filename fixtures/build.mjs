@@ -226,6 +226,10 @@ function build(name) {
       listClass: v.listClass,
     });
     writeFileSync(join(outDir, p === 1 ? "index.html" : `page-${p}.html`), html);
+    // Page 1 is reachable both as / and as /page-1.html. Real listings commonly
+    // serve both, and a scraper that infers the /page-N.html pattern from page 2
+    // will ask for page-1.html rather than the bare root.
+    if (p === 1) writeFileSync(join(outDir, "page-1.html"), html);
   }
 
   // Permalinks. A notice absent here 404s, which is the withdrawal signal.

@@ -13,3 +13,7 @@ out/
 scratch/
 runs/*.json
 !runs/.gitkeep
+
+# local agent fleet config (dev tooling, not part of the submission)
+fleet.config.yaml
+.marshal/

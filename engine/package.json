@@ -1,0 +1,16 @@
+{
+  "name": "@vouch/engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Contracts, drift counters, failure classification and the heal loop for Vouch.",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test dist/**/*.test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}
