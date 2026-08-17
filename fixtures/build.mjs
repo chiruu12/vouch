@@ -72,7 +72,7 @@ const longDate = (iso) => {
 const recordBaseline = (r) => `
     <li class="recall-card" data-recall-id="${esc(r.ref)}">
       <div class="recall-card__ref ref">Reference ${esc(r.ref)}</div>
-      <h3 class="recall-card__title">${esc(r.title)}</h3>
+      <h3 class="recall-card__title"><a class="recall-card__link" href="/notice/${esc(r.ref)}.html">${esc(r.title)}</a></h3>
       <dl class="recall-meta">
         <dt>Brand</dt><dd class="recall-meta__brand">${esc(r.brand)}</dd>
         <dt>Hazard</dt><dd class="recall-meta__hazard">${esc(r.hazard)}</dd>
@@ -89,7 +89,7 @@ const recordBaseline = (r) => `
 const recordRedesign = (r) => `
     <li class="rc-item" data-notice-ref="${esc(r.ref)}">
       <div class="rc-item__meta-ref ref">Reference ${esc(r.ref)}</div>
-      <h3 class="rc-item__heading">${esc(r.title)}</h3>
+      <h3 class="rc-item__heading"><a data-testid="notice-link" href="/notice/${esc(r.ref)}.html">${esc(r.title)}</a></h3>
       <dl class="rc-detail">
         <dt>Brand</dt><dd data-testid="brand">${esc(r.brand)}</dd>
         <dt>Hazard</dt><dd data-testid="hazard-desc">${esc(r.hazard)}</dd>
@@ -100,6 +100,51 @@ const recordRedesign = (r) => `
         <dt>Action</dt><dd data-testid="consumer-action">${esc(r.action)}</dd>
       </dl>
     </li>`;
+
+// --- detail pages ----------------------------------------------------------
+//
+// Every notice gets its own permalink. This is the load-bearing part of the
+// fixture, not decoration: real regulators break a notice's public URL when the
+// notice is withdrawn, so permalink liveness is how we tell "the page changed
+// shape" (heal) from "this notice is gone" (never heal, preserve last-good).
+
+const detailPage = (r) => `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${esc(r.ref)} ${esc(r.title)} — ${esc(data.authority)} (TEST FIXTURE)</title>
+  <style>
+${CSS}
+  </style>
+</head>
+<body>
+
+${BANNER}
+
+<header class="site">
+  <div class="crest">${esc(data.authority)}</div>
+  <div class="dept">${esc(data.directorate)}</div>
+</header>
+
+<main>
+  <p class="result-count"><a href="/">Back to all notices</a></p>
+  <div class="ref">Reference ${esc(r.ref)}</div>
+  <h1>${esc(r.title)}</h1>
+  <dl class="recall-meta">
+    <dt>Brand</dt><dd class="recall-meta__brand">${esc(r.brand)}</dd>
+    <dt>Hazard</dt><dd class="recall-meta__hazard">${esc(r.hazard)}</dd>
+    <dt>Risk level</dt><dd class="recall-meta__risk risk" data-level="${esc(r.risk)}">${esc(r.risk)}</dd>
+    <dt>Category</dt><dd class="recall-meta__category">${esc(r.category)}</dd>
+    <dt>Batch codes</dt><dd class="recall-meta__batch">${esc(r.batch)}</dd>
+    <dt>Published</dt><dd class="recall-meta__date">${esc(r.published)}</dd>
+    <dt>Action</dt><dd class="recall-meta__action">${esc(r.action)}</dd>
+  </dl>
+</main>
+
+</body>
+</html>
+`;
 
 // --- page assembly ---------------------------------------------------------
 
@@ -183,7 +228,18 @@ function build(name) {
     writeFileSync(join(outDir, p === 1 ? "index.html" : `page-${p}.html`), html);
   }
 
-  console.log(`built ${name}: ${total} notices across ${pageCount} page(s) -> fixtures/dist/${name}/`);
+  // Permalinks. A notice absent here 404s, which is the withdrawal signal.
+  mkdirSync(join(outDir, "notice"), { recursive: true });
+  for (const r of v.records) {
+    writeFileSync(join(outDir, "notice", `${r.ref}.html`), detailPage(r));
+  }
+
+  const omitted = data.records.length - total;
+  console.log(
+    `built ${name}: ${total} notices across ${pageCount} page(s), ${total} permalinks` +
+      (omitted ? `, ${omitted} withdrawn (permalink now 404s)` : "") +
+      ` -> fixtures/dist/${name}/`
+  );
 }
 
 const requested = process.argv.slice(2);
