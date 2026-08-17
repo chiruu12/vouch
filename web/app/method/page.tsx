@@ -1,21 +1,24 @@
 // Method and limits.
 //
-// The numbers on this page are the ones that could embarrass the project, which is why
-// they are on a page of their own rather than folded into a summary. 17 publishable
-// matches out of 193 real listings is a low rate. It is also the honest rate for a
-// matcher that refuses to name a seller on a fuzzy title match, and tuning the fixture
-// until the number flattered us would have produced a better demo and a worse system.
+// The numbers on this page are the ones that could embarrass the project,
+// which is why they are on a page of their own rather than folded into a
+// summary. 17 publishable matches out of 193 real listings is a low rate. It
+// is also the honest rate for a matcher that refuses to name a seller on a
+// fuzzy title match, and tuning the fixture until the number flattered us
+// would have produced a better demo and a worse system.
 
+import { Figure } from "../../components/parts";
 import { snapshot } from "../../lib/data";
 
 export default function Page() {
   const snap = snapshot();
   const s = snap.study;
   const pct = (n: number) => (s.listings === 0 ? "0%" : `${((n / s.listings) * 100).toFixed(1)}%`);
+  const maxReason = Math.max(1, ...s.quarantineReasons.map((q) => q.count));
 
   return (
     <>
-      <header>
+      <header className="page-head">
         <p className="eyebrow">Method and limits</p>
         <h1 className="page">What this feed will not tell you</h1>
         <p className="lede">
@@ -25,9 +28,11 @@ export default function Page() {
         </p>
       </header>
 
-      <section>
+      <section className="block" aria-labelledby="claim-h">
         <div className="section-head">
-          <h2 className="section">The claim we make</h2>
+          <h2 className="section" id="claim-h">
+            The claim we make
+          </h2>
         </div>
         <div className="prose">
           <p>
@@ -40,7 +45,7 @@ export default function Page() {
             establish that a listing is for the same product line as a recall. That is a
             materially weaker claim, and it is the only one the feed makes.
           </p>
-          <p className="caveat">{snap.caveat}</p>
+          <p className="notice">{snap.caveat}</p>
           <h3>What follows from that</h3>
           <ul>
             <li>
@@ -63,39 +68,55 @@ export default function Page() {
         </div>
       </section>
 
-      <section>
+      <section className="block" aria-labelledby="study-h">
         <div className="section-head">
-          <h2 className="section">Measured on a real marketplace</h2>
+          <h2 className="section" id="study-h">
+            Measured on a real marketplace
+          </h2>
           <p className="section-note">
-            {s.recalls} real recalls from {s.recallSource} against {s.listings} real listings from{" "}
-            {s.listingSource}, captured {s.capturedAt}. One run, reported whole.
+            {s.recalls} real recalls from {s.recallSource} against {s.listings} real listings
+            from {s.listingSource}, captured {s.capturedAt}. One run, reported whole.
           </p>
         </div>
 
-        <div className="figures">
-          <div className="figure">
-            <b>{s.listings}</b>
-            <span>real listings examined</span>
+        <div className="figures" aria-label="Study at a glance">
+          <Figure value={s.listings} label="real listings examined" />
+          <Figure value={s.publishable} label={`asserted, ${pct(s.publishable)} of listings`} />
+          <Figure value={s.quarantined} label={`quarantined, ${pct(s.quarantined)}`} emphasis="refusal" />
+          <Figure value={s.unmatched} label="no match at all" />
+        </div>
+
+        <div>
+          <div
+            className="bar"
+            role="img"
+            aria-label={`Of ${s.listings} listings: ${s.publishable} asserted, ${s.quarantined} quarantined, ${s.unmatched} no match`}
+          >
+            <span data-seg="publishable" style={{ width: pct(s.publishable) }} />
+            <span data-seg="quarantined" style={{ width: pct(s.quarantined) }} />
+            <span data-seg="unmatched" style={{ width: pct(s.unmatched) }} />
           </div>
-          <div className="figure">
-            <b>{s.publishable}</b>
-            <span>asserted, {pct(s.publishable)} of listings</span>
-          </div>
-          <div className="figure" data-emphasis="refusal">
-            <b>{s.quarantined}</b>
-            <span>quarantined, {pct(s.quarantined)}</span>
-          </div>
-          <div className="figure">
-            <b>{s.unmatched}</b>
-            <span>no match at all</span>
-          </div>
+          <ul className="bar-legend">
+            <li>
+              <i data-seg="publishable" />
+              asserted ({s.publishable})
+            </li>
+            <li>
+              <i data-seg="quarantined" />
+              quarantined with a stated reason ({s.quarantined})
+            </li>
+            <li>
+              <i data-seg="unmatched" />
+              no match ({s.unmatched})
+            </li>
+          </ul>
         </div>
 
         <div className="prose">
           <p>
             The rate is low and it is meant to be. {s.quarantined} of {s.matched} matches were
-            held back, and the reasons below are checkable rather than a score. Most of them are
-            a stated capacity that the recall does not cover, which is exactly the case a
+            held back, and the reasons below are checkable rather than a score. Most of them
+            are a stated capacity that the recall does not cover, which is exactly the case a
             keyword search gets wrong and reports as a hit.
           </p>
         </div>
@@ -113,8 +134,13 @@ export default function Page() {
               <tbody>
                 {s.quarantineReasons.map((q) => (
                   <tr key={q.reason}>
-                    <td style={{ fontFamily: "var(--mono)", fontSize: "0.78rem" }}>{q.reason}</td>
-                    <td className="num">{q.count}</td>
+                    <td className="mono">{q.reason}</td>
+                    <td className="num">
+                      {q.count}
+                      <span className="meter" aria-hidden="true">
+                        <i style={{ width: `${((q.count / maxReason) * 100).toFixed(1)}%` }} />
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -136,7 +162,7 @@ export default function Page() {
               <tbody>
                 {s.byBasis.map((b) => (
                   <tr key={b.basis}>
-                    <td style={{ fontFamily: "var(--mono)" }}>{b.basis}</td>
+                    <td className="mono">{b.basis}</td>
                     <td className="num">{b.count}</td>
                     <td>
                       {b.basis === "upc"
@@ -176,10 +202,7 @@ export default function Page() {
                       >
                         {e.verdict === "publishable" ? "asserted" : "held"}
                       </span>
-                      <div
-                        className="source-meta"
-                        style={{ marginTop: "0.3rem", whiteSpace: "nowrap" }}
-                      >
+                      <div className="source-meta" style={{ marginTop: "0.3rem", whiteSpace: "nowrap" }}>
                         {e.confidence.toFixed(2)} {e.basis}
                       </div>
                     </td>
@@ -205,9 +228,11 @@ export default function Page() {
         </div>
       </section>
 
-      <section>
+      <section className="block" aria-labelledby="judged-h">
         <div className="section-head">
-          <h2 className="section">How a source is judged</h2>
+          <h2 className="section" id="judged-h">
+            How a source is judged
+          </h2>
         </div>
         <div className="prose">
           <p>
@@ -228,7 +253,7 @@ export default function Page() {
             </thead>
             <tbody>
               <tr>
-                <td style={{ fontFamily: "var(--mono)" }}>blocked</td>
+                <td className="mono">blocked</td>
                 <td>
                   A refusal status, or a block signature in a body served at HTTP 200. The
                   dangerous block is the one that does not announce itself with a 4xx.
@@ -236,7 +261,7 @@ export default function Page() {
                 <td>Back off. Serve the last verified copy, labelled stale.</td>
               </tr>
               <tr>
-                <td style={{ fontFamily: "var(--mono)" }}>gone</td>
+                <td className="mono">gone</td>
                 <td>
                   The record is absent from the listing and its own permalink returns 404 or
                   410. The permalink is the oracle that separates a withdrawal from a read
@@ -245,15 +270,14 @@ export default function Page() {
                 <td>Never repair. Keep the record, mark it withdrawn.</td>
               </tr>
               <tr>
-                <td style={{ fontFamily: "var(--mono)" }}>pagination</td>
-                <td>
-                  Row count lands on one page of the known page size while every missing
+                <td className="mono">pagination</td>
+                <td>Row count lands on one page of the known page size while every missing
                   record still returns 200.
                 </td>
                 <td>Repair, then verify against the contract before serving.</td>
               </tr>
               <tr>
-                <td style={{ fontFamily: "var(--mono)" }}>drift</td>
+                <td className="mono">drift</td>
                 <td>Fields breached their limits and the missing records are still published.</td>
                 <td>Repair, then verify against the contract before serving.</td>
               </tr>
@@ -264,16 +288,19 @@ export default function Page() {
           <h3>The gate that matters most</h3>
           <p>
             A repair reporting success is not evidence that it worked. Every repair is followed
-            by a fresh run measured against the same contract, and the result is only served if
-            that run passes. This has already caught a repair that finished cleanly and returned
-            nothing, which is on the <a href="/incidents">incident log</a> as the oldest entry.
+            by a fresh run measured against the same contract, and the result is only served
+            if that run passes. This has already caught a repair that finished cleanly and
+            returned nothing, which is on the <a href="/incidents">incident log</a> as the
+            oldest entry.
           </p>
         </div>
       </section>
 
-      <section>
+      <section className="block" aria-labelledby="open-h">
         <div className="section-head">
-          <h2 className="section">Still open</h2>
+          <h2 className="section" id="open-h">
+            Still open
+          </h2>
         </div>
         <div className="prose">
           <ul>

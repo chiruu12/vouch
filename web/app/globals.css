@@ -1,112 +1,123 @@
-/* Vouch feed.
+/* Vouch feed. Design system.
  *
- * The design register is a regulator's gazette rather than a consumer app: dated,
- * hairline-ruled, typographically plain, with severity encoded in form as well as
- * words. Three choices carry meaning and are not decoration.
+ * Register: a public notices docket. The feed is a record of decisions, so it
+ * borrows from gazettes and stamped forms: hairline rules, reference numbers in
+ * mono, small-caps labels, and verdicts rendered as stamps. Nothing on the page
+ * is decorative; every device below encodes a fact about the record it sits on.
  *
- *   Mono is reserved for text the system wrote itself. Contract breaches, classifier
- *   evidence, heal prompts and matched tokens are quoted verbatim, and the typeface
- *   change is the signal that nobody edited them on the way to the page.
+ * Two channels are kept separate on purpose, because the whole argument of the
+ * project is that a refusal is not an error:
  *
- *   The clay accent is reserved for refusals and withdrawals. Nothing else uses it,
- *   so a page with clay on it is a page where we declined to publish something.
+ *   1. Hue means one thing only: what the system decided about a record.
+ *      green    verified    the last run passed its contract
+ *      amber    healed      repaired, then re-measured against the contract
+ *      slate    unverified  last-good copy, source not currently readable
+ *      clay     refused     a decision not to publish: refusals, withdrawals,
+ *                           quarantine holds, contract failures
+ *      Clay is the ink of the stamp. It is never a fill for alarms, and no
+ *      other meaning is allowed to use it, so a reader who sees clay knows the
+ *      system declined something and stood behind the decline.
  *
- *   The severity stripe on a recall card reads risk before the type does.
+ *   2. Severity is form, never hue. A recall's risk band is a 4-segment bar
+ *      plus the band's word. It cannot be mistaken for a trust state, and a
+ *      missing band renders as the absence of the device, not a greyed-out
+ *      measurement.
  *
- * Palette neutrals carry a green bias so they read as chosen rather than inherited,
- * and so the verified green sits inside the same family as the paper.
+ * Mono is reserved for text the system wrote itself (evidence, refusals, repair
+ * prompts, contract breaches, matched tokens) and for values a reader might
+ * check (refs, timestamps, counts). Everything in mono is quoted verbatim.
+ *
+ * Themes: three states are supported. The full light palette lives on :root.
+ * Dark redefines tokens only, in two places that must stay in sync: the
+ * prefers-color-scheme media query guarded by :not([data-theme="light"]), and
+ * :root[data-theme="dark"]. No colour is defined only inside a theme block.
+ * The viewer control stamps data-theme="light" or "dark", or removes the
+ * attribute entirely and lets the media query decide.
+ *
+ * Type scale (rem): 0.70 micro/eyebrow, 0.78 small/meta, 0.9375 body,
+ * 1.05 lede, 1.25 card title, 1.6 section, clamp(2, 4vw, 2.8) page.
+ * Spacing scale (rem): 0.25 0.5 0.75 1 1.5 2 3 4.5. Radius 2px throughout.
+ * Measure for prose: 68ch.
  */
 
 :root {
-  --paper: #f1f4f0;
-  --card: #fbfcfa;
-  --sunken: #e7ebe5;
-  --ink: #141a16;
-  --ink-2: #3d4741;
-  --ink-3: #6b756e;
-  --rule: #ccd4cb;
-  --rule-strong: #9ea89d;
+  /* light palette, the full definition */
+  --paper: #e9ede4;
+  --card: #f7f8f2;
+  --sunken: #dfe3d8;
+  --ink: #161b17;
+  --ink-2: #3e463f;
+  --ink-3: #57615a;
+  --rule: #c9cfc0;
+  --rule-strong: #8f998a;
 
-  --verified: #1c6349;
-  --verified-bg: #e0ece6;
-  --healed: #7f5510;
-  --healed-bg: #f2e9d7;
-  --stale: #44515c;
-  --stale-bg: #e2e7ea;
-  --refused: #97291f;
-  --refused-bg: #f4e2df;
+  --verified: #11603a;
+  --verified-bg: #dcebe0;
+  --healed: #74520d;
+  --healed-bg: #f0e6cb;
+  --stale: #3f4e5a;
+  --stale-bg: #dfe4ea;
+  --clay: #8c1d12;
+  --clay-bg: #f3e2db;
+  --clay-ink: #f7f2ee;
 
-  --risk-serious: #97291f;
-  --risk-high: #a85f14;
-  --risk-medium: #7f6b12;
-  --risk-low: #3f5a4c;
-  --risk-unknown: #6b756e;
-
-  /* next/font self-hosts these and exposes them as --font-*. The fallbacks are real
-     rather than ceremonial: a silent fallback to a system sans is survivable, but a
-     fallback that loses the mono would erase the distinction between the system's own
-     words and ours, which is the one typographic job on this page. */
+  /* next/font self-hosts these and exposes them as --font-*. The fallbacks are
+     real rather than ceremonial: losing the serif costs tone, but losing the
+     mono would erase the distinction between the system's words and ours,
+     which is the one typographic job on this page. */
   --sans: var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
   --serif: var(--font-serif), Georgia, "Times New Roman", serif;
   --mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --measure: 68ch;
-  --rail: 19rem;
+  --gutter: clamp(1rem, 4vw, 2.5rem);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --paper: #101410;
-    --card: #171d18;
-    --sunken: #1e2520;
-    --ink: #e6ebe5;
-    --ink-2: #b3bcb4;
-    --ink-3: #7e887f;
-    --rule: #2b332c;
-    --rule-strong: #4a544b;
+    --card: #171d16;
+    --sunken: #1f261d;
+    --ink: #e4eae0;
+    --ink-2: #b4bdae;
+    --ink-3: #8e9889;
+    --rule: #2b3329;
+    --rule-strong: #57624f;
 
-    --verified: #6cc39c;
-    --verified-bg: #16281f;
-    --healed: #d8a54c;
-    --healed-bg: #2a2113;
-    --stale: #9fb0bd;
-    --stale-bg: #1a2127;
-    --refused: #e58b7f;
-    --refused-bg: #2c1815;
-
-    --risk-serious: #e58b7f;
-    --risk-high: #dfa057;
-    --risk-medium: #c8b657;
-    --risk-low: #8fb3a0;
-    --risk-unknown: #7e887f;
+    --verified: #7cc7a1;
+    --verified-bg: #152a1e;
+    --healed: #d9a94e;
+    --healed-bg: #2b2210;
+    --stale: #a2b3c0;
+    --stale-bg: #1b232a;
+    --clay: #e8978a;
+    --clay-bg: #341b13;
+    --clay-ink: #17110d;
   }
 }
 
 :root[data-theme="dark"] {
   --paper: #101410;
-  --card: #171d18;
-  --sunken: #1e2520;
-  --ink: #e6ebe5;
-  --ink-2: #b3bcb4;
-  --ink-3: #7e887f;
-  --rule: #2b332c;
-  --rule-strong: #4a544b;
+  --card: #171d16;
+  --sunken: #1f261d;
+  --ink: #e4eae0;
+  --ink-2: #b4bdae;
+  --ink-3: #8e9889;
+  --rule: #2b3329;
+  --rule-strong: #57624f;
 
-  --verified: #6cc39c;
-  --verified-bg: #16281f;
-  --healed: #d8a54c;
-  --healed-bg: #2a2113;
-  --stale: #9fb0bd;
-  --stale-bg: #1a2127;
-  --refused: #e58b7f;
-  --refused-bg: #2c1815;
-
-  --risk-serious: #e58b7f;
-  --risk-high: #dfa057;
-  --risk-medium: #c8b657;
-  --risk-low: #8fb3a0;
-  --risk-unknown: #7e887f;
+  --verified: #7cc7a1;
+  --verified-bg: #152a1e;
+  --healed: #d9a94e;
+  --healed-bg: #2b2210;
+  --stale: #a2b3c0;
+  --stale-bg: #1b232a;
+  --clay: #e8978a;
+  --clay-bg: #341b13;
+  --clay-ink: #17110d;
 }
+
+/* --- base ----------------------------------------------------------------- */
 
 *,
 *::before,
@@ -123,7 +134,7 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--sans);
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 1.55;
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
@@ -144,63 +155,79 @@ a:hover {
   outline-offset: 2px;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip {
+  position: absolute;
+  left: var(--gutter);
+  top: 0.5rem;
+  z-index: 10;
+  padding: 0.4rem 0.7rem;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.skip:not(:focus-visible) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 /* --- shell ---------------------------------------------------------------- */
 
 .shell {
-  display: grid;
-  grid-template-columns: var(--rail) minmax(0, 1fr);
-  gap: 0;
-  align-items: start;
-  max-width: 78rem;
+  max-width: 76rem;
   margin: 0 auto;
-  padding: 0 1.5rem;
-}
-
-.rail {
-  position: sticky;
-  top: 0;
-  align-self: start;
-  max-height: 100vh;
-  overflow-y: auto;
-  padding: 2rem 1.75rem 2rem 0;
-  border-right: 1px solid var(--rule);
-  display: flex;
-  flex-direction: column;
-  gap: 1.75rem;
+  padding: 0 var(--gutter);
 }
 
 .main {
   min-width: 0;
-  padding: 2rem 0 6rem 2rem;
+  padding: 2.25rem 0 5rem;
   display: flex;
   flex-direction: column;
-  gap: 2.5rem;
-}
-
-@media (max-width: 60rem) {
-  .shell {
-    grid-template-columns: minmax(0, 1fr);
-    padding: 0 1.1rem;
-  }
-  .rail {
-    position: static;
-    max-height: none;
-    border-right: 0;
-    border-bottom: 1px solid var(--rule);
-    padding: 1.5rem 0;
-  }
-  .main {
-    padding: 1.5rem 0 4rem;
-  }
+  gap: 3rem;
 }
 
 /* --- masthead ------------------------------------------------------------- */
 
+.masthead {
+  border-bottom: 3px double var(--ink);
+  padding: 1.4rem 0 1.1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem 2.5rem;
+}
+
+.masthead-id {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 14rem;
+}
+
 .wordmark {
   font-family: var(--serif);
-  font-size: 2.6rem;
-  line-height: 0.95;
-  letter-spacing: -0.01em;
+  font-size: 2rem;
+  line-height: 1;
+  letter-spacing: 0.01em;
   margin: 0;
 }
 
@@ -209,153 +236,110 @@ a:hover {
 }
 
 .tagline {
-  margin: 0.55rem 0 0;
-  font-size: 0.85rem;
+  margin: 0;
+  font-size: 0.82rem;
   line-height: 1.45;
   color: var(--ink-2);
-  max-width: 24ch;
+  max-width: 34ch;
+}
+
+.masthead-side {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.9rem 1.75rem;
 }
 
 .nav {
   display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  font-size: 0.85rem;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.4rem;
+  font-size: 0.88rem;
 }
 
 .nav a {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.3rem 0;
   text-decoration: none;
-  border-bottom: 1px solid var(--rule);
   color: var(--ink-2);
+  padding: 0.2rem 0;
+  border-bottom: 1px solid transparent;
 }
 
 .nav a:hover {
   color: var(--ink);
+  border-bottom-color: var(--ink);
 }
 
 .nav .count {
   font-family: var(--mono);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--ink-3);
+  margin-left: 0.35ch;
 }
 
-/* --- labels and eyebrows -------------------------------------------------- */
-
-.eyebrow {
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  font-weight: 500;
-  margin: 0 0 0.75rem;
-}
-
-h1.page {
-  font-family: var(--serif);
-  font-size: clamp(2rem, 4vw, 2.9rem);
-  line-height: 1.05;
-  margin: 0 0 0.6rem;
-  text-wrap: balance;
-  max-width: 30ch;
-}
-
-.lede {
-  margin: 0;
-  max-width: var(--measure);
-  font-size: 1.02rem;
-  color: var(--ink-2);
-}
-
-h2.section {
-  font-family: var(--serif);
-  font-size: 1.6rem;
-  line-height: 1.15;
-  margin: 0;
-  text-wrap: balance;
-}
-
-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.section-head {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--ink);
-}
-
-.section-note {
-  margin: 0;
-  max-width: var(--measure);
-  font-size: 0.9rem;
-  color: var(--ink-2);
-}
-
-/* --- trust badges --------------------------------------------------------- */
-
-.badge {
+.theme {
   display: inline-flex;
-  align-items: baseline;
-  gap: 0.4ch;
-  font-family: var(--mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  padding: 0.15rem 0.45rem;
-  border: 1px solid currentColor;
+  border: 1px solid var(--rule-strong);
   border-radius: 2px;
-  white-space: nowrap;
+  overflow: hidden;
 }
 
-.badge[data-trust="verified"] {
-  color: var(--verified);
-  background: var(--verified-bg);
-}
-.badge[data-trust="healed"] {
-  color: var(--healed);
-  background: var(--healed-bg);
-}
-.badge[data-trust="unverified"] {
-  color: var(--stale);
-  background: var(--stale-bg);
-}
-.badge[data-trust="withdrawn"],
-.badge[data-trust="held"] {
-  color: var(--refused);
-  background: var(--refused-bg);
-}
-.badge[data-trust="listed"] {
-  color: var(--verified);
-  background: var(--verified-bg);
+.theme button {
+  appearance: none;
+  border: 0;
+  border-left: 1px solid var(--rule-strong);
+  margin: 0;
+  padding: 0.28rem 0.6rem;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
 }
 
-/* --- source health rail --------------------------------------------------- */
-
-.sources {
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
+.theme button:first-child {
+  border-left: 0;
 }
 
-.source {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  padding-bottom: 0.9rem;
+.theme button[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* --- source health strip --------------------------------------------------- */
+/* On every page, above the fold line of the content, because a feed that only
+ * shows the state of its sources when asked is asking to be trusted. */
+
+.health {
   border-bottom: 1px solid var(--rule);
 }
 
-.source:last-child {
-  border-bottom: 0;
-  padding-bottom: 0;
+.health-inner {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.source {
+  min-width: 0;
+  padding: 0.9rem 1.25rem 1rem;
+  border-left: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.source:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+
+.source-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.3rem 0.8rem;
 }
 
 .source-name {
@@ -367,86 +351,307 @@ section {
 .source-meta {
   font-family: var(--mono);
   font-size: 0.7rem;
+  line-height: 1.6;
   color: var(--ink-3);
-  line-height: 1.5;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
-.tally {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.1rem 0.75rem;
-  font-size: 0.82rem;
-}
-
-.tally dt {
-  color: var(--ink-2);
-}
-
-.tally dd {
-  margin: 0;
-  font-family: var(--mono);
-  font-size: 0.78rem;
-}
-
-.tally dd[data-emphasis="refusal"] {
-  color: var(--refused);
+.source-meta .fail {
+  color: var(--clay);
   font-weight: 600;
 }
 
-/* --- recall card ---------------------------------------------------------- */
+@media (max-width: 62rem) {
+  .health-inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .source {
+    border-left: 0;
+    border-top: 1px solid var(--rule);
+    padding: 0.8rem 0;
+  }
+  .source:first-child {
+    border-top: 0;
+  }
+}
 
-.card {
-  background: var(--card);
-  border: 1px solid var(--rule);
-  border-left: 4px solid var(--risk-unknown);
-  border-radius: 2px;
-  padding: 1.15rem 1.25rem 1rem;
+/* --- headings, eyebrows, prose -------------------------------------------- */
+
+.eyebrow {
+  font-size: 0.7rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+  margin: 0 0 0.6rem;
+}
+
+.eyebrow .dot {
+  color: var(--rule-strong);
+  margin: 0 0.5ch;
+}
+
+h1.page {
+  font-family: var(--serif);
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-weight: 400;
+  line-height: 1.04;
+  margin: 0 0 0.7rem;
+  text-wrap: balance;
+  max-width: 26ch;
+}
+
+.lede {
+  margin: 0;
+  max-width: var(--measure);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.page-head {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0;
 }
 
-.card[data-risk="Serious"] {
-  border-left-color: var(--risk-serious);
-}
-.card[data-risk="High"] {
-  border-left-color: var(--risk-high);
-}
-.card[data-risk="Medium"] {
-  border-left-color: var(--risk-medium);
-}
-.card[data-risk="Low"] {
-  border-left-color: var(--risk-low);
+.page-head .stamp-line {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--ink-3);
+  margin-top: 0.9rem;
 }
 
-.card-top {
+.block {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.5rem 0.75rem;
+  flex-direction: column;
+  gap: 1.1rem;
 }
 
-.risk {
+.section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px solid var(--ink);
+}
+
+h2.section {
+  font-family: var(--serif);
+  font-size: 1.6rem;
+  font-weight: 400;
+  line-height: 1.15;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.section-note {
+  margin: 0;
+  max-width: var(--measure);
+  font-size: 0.9rem;
+  color: var(--ink-2);
+}
+
+.prose {
+  max-width: var(--measure);
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.prose p {
+  margin: 0;
+}
+
+.prose h3 {
+  font-family: var(--serif);
+  font-size: 1.2rem;
+  font-weight: 400;
+  margin: 0.7rem 0 0;
+}
+
+.prose ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.85em;
+  background: var(--sunken);
+  padding: 0.05rem 0.3rem;
+  border-radius: 2px;
+}
+
+/* --- trust badges and decision stamps -------------------------------------- */
+/* Quiet tints for assurances, a solid stamp for decisions not to publish.
+ * The hierarchy is the thesis: what we declined is rendered more solidly than
+ * what we accepted. */
+
+.badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4ch;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 500;
+  padding: 0.14rem 0.45rem;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.badge[data-trust="verified"] {
+  color: var(--verified);
+  background: var(--verified-bg);
+}
+
+.badge[data-trust="healed"] {
+  color: var(--healed);
+  background: var(--healed-bg);
+}
+
+.badge[data-trust="unverified"] {
+  color: var(--stale);
+  background: var(--stale-bg);
+}
+
+.badge[data-trust="listed"] {
+  color: var(--verified);
+  background: var(--verified-bg);
+}
+
+.badge[data-trust="withdrawn"],
+.badge[data-trust="held"] {
+  color: var(--clay-ink);
+  background: var(--clay);
+  border-color: var(--clay);
+  font-weight: 600;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.12rem 0.4rem;
+  border: 1px dashed var(--rule-strong);
+  border-radius: 2px;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+/* --- severity: form, not hue ----------------------------------------------- */
+
+.sev {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 0.8rem;
+}
+
+.sev i {
+  display: block;
+  width: 0.5rem;
+  border: 1px solid var(--rule-strong);
+  background: transparent;
+}
+
+.sev i:nth-child(1) { height: 0.3rem; }
+.sev i:nth-child(2) { height: 0.45rem; }
+.sev i:nth-child(3) { height: 0.62rem; }
+.sev i:nth-child(4) { height: 0.8rem; }
+
+.sev[data-level="Low"] i:nth-child(-n + 1),
+.sev[data-level="Medium"] i:nth-child(-n + 2),
+.sev[data-level="High"] i:nth-child(-n + 3),
+.sev[data-level="Serious"] i:nth-child(-n + 4) {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.sev-word {
   font-family: var(--mono);
   font-size: 0.7rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-weight: 600;
-  color: var(--risk-unknown);
+  color: var(--ink);
 }
 
-.card[data-risk="Serious"] .risk {
-  color: var(--risk-serious);
+/* --- ledger figures --------------------------------------------------------- */
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
 }
-.card[data-risk="High"] .risk {
-  color: var(--risk-high);
+
+.figure {
+  background: var(--card);
+  padding: 0.85rem 1rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
 }
-.card[data-risk="Medium"] .risk {
-  color: var(--risk-medium);
+
+.figure b {
+  font-family: var(--serif);
+  font-size: 1.9rem;
+  line-height: 1;
+  font-weight: 400;
 }
-.card[data-risk="Low"] .risk {
-  color: var(--risk-low);
+
+.figure span {
+  font-size: 0.75rem;
+  color: var(--ink-3);
+  line-height: 1.35;
+}
+
+.figure[data-emphasis="refusal"] {
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--clay);
+}
+
+.figure[data-emphasis="refusal"] b {
+  color: var(--clay);
+}
+
+.figure[data-emphasis="refusal"] span {
+  color: var(--ink-2);
+}
+
+/* --- recall card ------------------------------------------------------------- */
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 1.1rem 1.25rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.card-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.9rem;
+}
+
+.card-top .gap {
+  flex: 1;
 }
 
 .ref {
@@ -455,10 +660,16 @@ section {
   color: var(--ink-3);
 }
 
+.absent {
+  font-size: 0.78rem;
+  color: var(--ink-3);
+}
+
 .card h3 {
   font-family: var(--serif);
-  font-size: 1.3rem;
-  line-height: 1.2;
+  font-size: 1.28rem;
+  font-weight: 400;
+  line-height: 1.22;
   margin: 0;
   text-wrap: balance;
 }
@@ -471,10 +682,9 @@ section {
 
 .facts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-  gap: 0.5rem 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+  gap: 0.55rem 1.25rem;
   margin: 0;
-  padding-top: 0.15rem;
 }
 
 .facts > div {
@@ -482,10 +692,11 @@ section {
 }
 
 .facts dt {
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
+  font-size: 0.66rem;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--ink-3);
+  font-weight: 600;
 }
 
 .facts dd {
@@ -494,13 +705,15 @@ section {
   overflow-wrap: break-word;
 }
 
-/* --- provenance footer ---------------------------------------------------- */
+/* --- provenance footer -------------------------------------------------------- */
+/* Inline on the record, never behind a hover. The stamp is a UTC time a reader
+ * can hold against their own clock. */
 
 .prov {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem 0.7rem;
+  gap: 0.45rem 0.7rem;
   padding-top: 0.7rem;
   border-top: 1px solid var(--rule);
   font-family: var(--mono);
@@ -513,15 +726,15 @@ section {
   margin-right: 0.7rem;
 }
 
-/* --- nested match blocks -------------------------------------------------- */
+/* --- attached listing blocks --------------------------------------------------- */
 
 .attached {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.55rem;
   background: var(--sunken);
   border-radius: 2px;
-  padding: 0.85rem 0.95rem;
+  padding: 0.85rem 0.95rem 0.8rem;
 }
 
 .attached-head {
@@ -529,7 +742,7 @@ section {
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: 0.4rem 1rem;
+  gap: 0.35rem 1rem;
 }
 
 .attached-title {
@@ -539,15 +752,17 @@ section {
   font-weight: 600;
 }
 
-/* A held-back match is a refusal, so it is tinted like one. Sharing the on-sale
-   block's ground made the two read as the same kind of statement at a glance, which
-   is the misreading that matters most on this page. */
+/* A held-back match is a decision, so the block carries clay on its rule and
+ * title. The ground stays plain so the rows inside read as records, not as an
+ * error banner. */
 .attached[data-kind="held"] {
-  background: var(--refused-bg);
+  background: var(--card);
+  border: 1px solid var(--clay);
+  border-left-width: 3px;
 }
 
 .attached[data-kind="held"] .attached-title {
-  color: var(--refused);
+  color: var(--clay);
 }
 
 .attached[data-kind="held"] .token {
@@ -559,6 +774,10 @@ section {
   font-size: 0.82rem;
   color: var(--ink-2);
   max-width: var(--measure);
+}
+
+.attached .prov {
+  border-top-style: dashed;
 }
 
 .listing {
@@ -583,7 +802,8 @@ section {
 
 .listing[data-withdrawn="true"] .listing-title {
   text-decoration: line-through;
-  text-decoration-color: var(--refused);
+  text-decoration-color: var(--clay);
+  text-decoration-thickness: 2px;
   color: var(--ink-3);
 }
 
@@ -591,6 +811,8 @@ section {
   font-family: var(--mono);
   font-size: 0.7rem;
   color: var(--ink-3);
+  line-height: 1.6;
+  overflow-wrap: break-word;
 }
 
 .basis {
@@ -614,28 +836,52 @@ section {
   margin: 0;
   font-family: var(--mono);
   font-size: 0.72rem;
-  color: var(--refused);
+  color: var(--clay);
 }
 
-/* --- machine text: quoted verbatim, never paraphrased --------------------- */
+/* --- machine text: the system's own words, verbatim ----------------------------- */
+/* Full text always. There is no truncating variant, because a shortened refusal
+ * reads as a softer refusal. The refusal tone sets the words in full-strength
+ * ink under a clay rule: a recorded decision, not an error message. */
+
+.machine-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.machine-label {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
 
 .machine {
   margin: 0;
-  padding: 0.7rem 0.85rem;
+  padding: 0.75rem 0.9rem;
   background: var(--sunken);
   border-left: 2px solid var(--rule-strong);
   border-radius: 0 2px 2px 0;
   font-family: var(--mono);
-  font-size: 0.76rem;
-  line-height: 1.6;
+  font-size: 0.78rem;
+  line-height: 1.65;
   white-space: pre-wrap;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
+  overflow-x: auto;
 }
 
 .machine[data-tone="refusal"] {
-  border-left-color: var(--refused);
-  background: var(--refused-bg);
-  color: var(--refused);
+  background: var(--card);
+  border-left: 3px solid var(--clay);
+  color: var(--ink);
+  font-size: 0.85rem;
+}
+
+.machine-label[data-tone="refusal"] {
+  color: var(--clay);
+  font-weight: 600;
 }
 
 ul.evidence {
@@ -654,48 +900,51 @@ ul.evidence li {
   color: var(--ink-2);
   padding-left: 1.1rem;
   position: relative;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 ul.evidence li::before {
   content: "\203A";
   position: absolute;
   left: 0.15rem;
-  color: var(--ink-3);
+  color: var(--rule-strong);
 }
 
-/* --- incident timeline ---------------------------------------------------- */
+/* --- incident log --------------------------------------------------------------- */
 
 .timeline {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.4rem;
   margin: 0;
   padding: 0;
+  list-style: none;
+  counter-reset: incident;
 }
 
 .incident {
   border: 1px solid var(--rule);
+  border-top: 3px solid var(--rule-strong);
   border-radius: 2px;
   background: var(--card);
-  padding: 1.1rem 1.2rem;
+  padding: 1.1rem 1.2rem 1.2rem;
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 0.85rem;
 }
 
 .incident[data-refused="true"] {
-  border-left: 4px solid var(--refused);
+  border-top-color: var(--clay);
 }
 
-.incident[data-refused="false"] {
-  border-left: 4px solid var(--healed);
+.incident[data-refused="true"]:has(.verdict[data-kind="waiting"]) {
+  border-top-color: var(--rule-strong);
 }
 
 .incident-top {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   gap: 0.4rem 0.8rem;
 }
 
@@ -703,27 +952,35 @@ ul.evidence li::before {
   font-family: var(--mono);
   font-size: 0.78rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 
 .incident[data-refused="true"] .cause {
-  color: var(--refused);
+  color: var(--clay);
+}
+
+.incident:has(.verdict[data-kind="waiting"]) .cause {
+  color: var(--ink-2);
 }
 
 .verdict {
   font-family: var(--mono);
-  font-size: 0.7rem;
-  padding: 0.1rem 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 500;
+  padding: 0.14rem 0.45rem;
   border: 1px solid currentColor;
   border-radius: 2px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
 .verdict[data-kind="refused"] {
-  color: var(--refused);
-  background: var(--refused-bg);
+  color: var(--clay-ink);
+  background: var(--clay);
+  border-color: var(--clay);
+  font-weight: 600;
 }
 
 .verdict[data-kind="healed"] {
@@ -731,31 +988,52 @@ ul.evidence li::before {
   background: var(--healed-bg);
 }
 
-/* A queue conflict is not a verdict, so it gets the neutral slate rather than the clay
-   the page reserves for things we decided not to do. */
+/* A queue conflict is not a verdict, so it gets the neutral slate rather than
+ * the clay the page reserves for things we decided not to do. */
 .verdict[data-kind="waiting"] {
   color: var(--stale);
   background: var(--stale-bg);
 }
 
-.incident[data-refused="true"]:has(.verdict[data-kind="waiting"]) {
-  border-left-color: var(--rule-strong);
+.anchor {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--ink-3);
+  text-decoration: none;
 }
 
-.incident:has(.verdict[data-kind="waiting"]) .cause {
-  color: var(--ink-2);
+.anchor:hover {
+  color: var(--ink);
+  text-decoration: underline;
 }
 
 .sub {
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
+  font-size: 0.74rem;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--ink-3);
   font-weight: 600;
-  margin: 0;
+  margin: 0 0 0.35rem;
 }
 
-/* --- tables (method page) ------------------------------------------------- */
+/* --- notice box (the match caveat) ------------------------------------------------ */
+
+.notice {
+  margin: 0;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  background: var(--card);
+  font-size: 0.9rem;
+  max-width: var(--measure);
+}
+
+.notice b {
+  font-weight: 600;
+}
+
+/* --- tables ------------------------------------------------------------------------ */
 
 .scroll {
   overflow-x: auto;
@@ -764,27 +1042,31 @@ ul.evidence li::before {
   background: var(--card);
 }
 
-table {
+.scroll table {
   border-collapse: collapse;
   width: 100%;
   font-size: 0.86rem;
 }
 
-th,
-td {
+.scroll th,
+.scroll td {
   text-align: left;
   padding: 0.5rem 0.8rem;
   border-bottom: 1px solid var(--rule);
   vertical-align: top;
 }
 
-th {
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
+.scroll th {
+  font-size: 0.68rem;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--ink-3);
   font-weight: 600;
   white-space: nowrap;
+}
+
+.scroll tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 td.num {
@@ -793,109 +1075,112 @@ td.num {
   white-space: nowrap;
 }
 
+td.mono {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+}
+
 td.nowrap {
   white-space: nowrap;
 }
 
-td.nowrap .source-meta {
-  white-space: nowrap;
-}
+/* --- proportion bars (method page) ---------------------------------------------------- */
+/* Widths are computed from the data, so the bar is a figure, not a texture. */
 
-tbody tr:last-child td {
-  border-bottom: 0;
-}
-
-/* --- big number strip ---------------------------------------------------- */
-
-.figures {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-  gap: 1px;
-  background: var(--rule);
-  border: 1px solid var(--rule);
+.bar {
+  display: flex;
+  height: 1.1rem;
+  border: 1px solid var(--rule-strong);
   border-radius: 2px;
+  overflow: hidden;
+  background: var(--card);
+}
+
+.bar span {
+  display: block;
+  height: 100%;
+}
+
+.bar span[data-seg="publishable"] { background: var(--verified); }
+.bar span[data-seg="quarantined"] { background: var(--clay); }
+.bar span[data-seg="unmatched"] { background: var(--rule-strong); }
+
+.bar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.4rem;
+  font-size: 0.78rem;
+  color: var(--ink-2);
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bar-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.bar-legend i {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 1px;
+}
+
+.bar-legend i[data-seg="publishable"] { background: var(--verified); }
+.bar-legend i[data-seg="quarantined"] { background: var(--clay); }
+.bar-legend i[data-seg="unmatched"] { background: var(--rule-strong); }
+
+.meter {
+  display: block;
+  height: 0.4rem;
+  background: var(--sunken);
+  border-radius: 1px;
+  margin-top: 0.3rem;
   overflow: hidden;
 }
 
-.figure {
-  background: var(--card);
-  padding: 0.85rem 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
+.meter i {
+  display: block;
+  height: 100%;
+  background: var(--clay);
 }
 
-.figure b {
-  font-family: var(--serif);
-  font-size: 2rem;
-  line-height: 1;
-  font-weight: 400;
-}
-
-.figure span {
-  font-size: 0.75rem;
-  color: var(--ink-3);
-  line-height: 1.35;
-}
-
-.figure[data-emphasis="refusal"] b {
-  color: var(--refused);
-}
-
-/* --- prose --------------------------------------------------------------- */
-
-.prose {
-  max-width: var(--measure);
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-}
-
-.prose p {
-  margin: 0;
-}
-
-.prose h3 {
-  font-family: var(--serif);
-  font-size: 1.2rem;
-  margin: 0.6rem 0 0;
-}
-
-.prose ul {
-  margin: 0;
-  padding-left: 1.2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-code {
-  font-family: var(--mono);
-  font-size: 0.85em;
-  background: var(--sunken);
-  padding: 0.05rem 0.3rem;
-  border-radius: 2px;
-}
-
-.caveat {
-  margin: 0;
-  padding: 0.85rem 1rem;
-  border: 1px solid var(--rule-strong);
-  border-radius: 2px;
-  background: var(--sunken);
-  font-size: 0.88rem;
-  max-width: var(--measure);
-}
+/* --- footer --------------------------------------------------------------------------- */
 
 footer.foot {
   border-top: 1px solid var(--rule);
-  padding-top: 1.25rem;
-  font-size: 0.8rem;
+  padding-top: 1.2rem;
+  font-size: 0.82rem;
   color: var(--ink-3);
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.5rem;
   max-width: var(--measure);
+}
+
+footer.foot p {
+  margin: 0;
+}
+
+/* --- responsive and motion ------------------------------------------------------------- */
+
+@media (max-width: 40rem) {
+  .masthead {
+    gap: 0.9rem;
+  }
+  .main {
+    padding-top: 1.6rem;
+    gap: 2.4rem;
+  }
+  .card {
+    padding: 0.9rem 0.9rem 0.85rem;
+  }
+  .incident {
+    padding: 0.9rem 0.9rem 1rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

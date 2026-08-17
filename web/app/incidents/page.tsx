@@ -1,15 +1,15 @@
 // The incident log.
 //
-// This page is the argument. Every other self-healing scraper has a heal log; the
-// interesting column here is the one that says we did not heal, and why. The evidence
-// is the classifier's own sentences, unedited, so a reader can disagree with the
-// verdict on the same information the engine had.
+// This page is the argument. Every other self-healing scraper has a heal log;
+// the interesting column here is the one that says we did not heal, and why.
+// The evidence is the classifier's own sentences, unedited, so a reader can
+// disagree with the verdict on the same information the engine had.
 //
-// Incidents caused by our own mistakes are included. One of the four below is a heal
-// we should never have started, caught by the gate that checks a repair before serving
-// it. Leaving it out would make the log a brochure.
+// Incidents caused by our own mistakes are included. One of the four below is
+// a heal we should never have started, caught by the gate that checks a repair
+// before serving it. Leaving it out would make the log a brochure.
 
-import { Evidence, Machine } from "../../components/parts";
+import { Evidence, Figure, Machine } from "../../components/parts";
 import { seconds, snapshot, stamp, type PubIncident } from "../../lib/data";
 
 const CAUSE_MEANING: Record<string, string> = {
@@ -21,11 +21,11 @@ const CAUSE_MEANING: Record<string, string> = {
   healthy: "nothing was wrong.",
 };
 
-/** Four outcomes, not two. Refusing to start a repair, being unable to start one, and
- *  throwing away a repair that finished are three different events, and collapsing them
- *  into "refused" both hid the interesting one (a repair that reported success and was
- *  rejected on measurement) and mislabelled the boring one (a queue conflict) as a
- *  judgement we made. */
+/** Four outcomes, not two. Refusing to start a repair, being unable to start
+ *  one, and throwing away a repair that finished are three different events,
+ *  and collapsing them into "refused" both hid the interesting one (a repair
+ *  that reported success and was rejected on measurement) and mislabelled the
+ *  boring one (a queue conflict) as a judgement we made. */
 function outcome(i: PubIncident): { label: string; kind: "refused" | "healed" | "waiting" } {
   if (i.verified && i.healAttempted) return { label: "repaired and verified", kind: "healed" };
   if (i.healAttempted) return { label: "repair ran, result rejected", kind: "refused" };
@@ -38,7 +38,7 @@ function Incident({ i }: { i: PubIncident }) {
   const refused = i.refusal !== null;
   const out = outcome(i);
   return (
-    <li className="incident" data-refused={refused}>
+    <li className="incident" data-refused={refused} id={i.id}>
       <div className="incident-top">
         <span className="cause">{i.cause}</span>
         <span className="verdict" data-kind={out.kind}>
@@ -47,6 +47,9 @@ function Incident({ i }: { i: PubIncident }) {
         <span className="ref">
           {i.sourceLabel} · opened {stamp(i.openedAt)}
         </span>
+        <a className="anchor" href={`#${i.id}`} aria-label={`Link to incident ${i.id}`}>
+          #
+        </a>
       </div>
 
       <p className="attached-why" style={{ maxWidth: "68ch" }}>
@@ -55,7 +58,7 @@ function Incident({ i }: { i: PubIncident }) {
 
       <div>
         <p className="sub">What the contract measured</p>
-        <div className="source-meta" style={{ marginTop: "0.3rem" }}>
+        <div className="source-meta">
           {i.rows} rows extracted · {i.breaches.length} contract breach
           {i.breaches.length === 1 ? "" : "es"}
           {i.mttrMs !== null ? ` · time to resolution ${seconds(i.mttrMs)}` : " · unresolved"}
@@ -70,8 +73,10 @@ function Incident({ i }: { i: PubIncident }) {
 
       {refused ? (
         <div>
-          <p className="sub">Refusal</p>
-          <Machine tone="refusal">{i.refusal ?? ""}</Machine>
+          <p className="sub">What we declined to do</p>
+          <Machine tone="refusal" label="Refusal, recorded verbatim">
+            {i.refusal ?? ""}
+          </Machine>
         </div>
       ) : null}
 
@@ -81,19 +86,17 @@ function Incident({ i }: { i: PubIncident }) {
             Repair prompt sent to the collector
             {i.healDurationMs !== null ? ` · took ${seconds(i.healDurationMs)}` : ""}
           </p>
-          <Machine>{i.prompt ?? ""}</Machine>
+          <Machine label="Verbatim">{i.prompt ?? ""}</Machine>
         </div>
       ) : null}
 
+      {/* Rendered in full, not behind a disclosure: these are the numbers the
+          verdict rests on, and a hidden breach is a hidden argument. */}
       {i.breaches.length > 0 ? (
-        <details>
-          <summary className="sub" style={{ cursor: "pointer" }}>
-            All {i.breaches.length} contract breaches
-          </summary>
-          <div style={{ marginTop: "0.5rem" }}>
-            <Evidence lines={i.breaches} />
-          </div>
-        </details>
+        <div>
+          <p className="sub">All {i.breaches.length} contract breaches, verbatim</p>
+          <Evidence lines={i.breaches} />
+        </div>
       ) : null}
     </li>
   );
@@ -102,15 +105,15 @@ function Incident({ i }: { i: PubIncident }) {
 export default function Page() {
   const snap = snapshot();
   const incidents = [...snap.incidents].reverse();
-  // A deferral is not a refusal. See the snapshot builder for why that distinction is
-  // worth the extra clause.
+  // A deferral is not a refusal. See the snapshot builder for why that
+  // distinction is worth the extra clause.
   const refusals = incidents.filter((i) => i.refusal !== null && !i.healDeferred).length;
   const attempted = incidents.filter((i) => i.healAttempted);
   const served = attempted.filter((i) => i.verified).length;
 
   return (
     <>
-      <header>
+      <header className="page-head">
         <p className="eyebrow">Incident log</p>
         <h1 className="page">Every failure, and whether we repaired it</h1>
         <p className="lede">
@@ -120,35 +123,26 @@ export default function Page() {
         </p>
       </header>
 
-      <div className="figures">
-        <div className="figure">
-          <b>{incidents.length}</b>
-          <span>incidents recorded</span>
-        </div>
-        <div className="figure" data-emphasis="refusal">
-          <b>{refusals}</b>
-          <span>repairs refused</span>
-        </div>
-        <div className="figure">
-          <b>
-            {served}/{attempted.length}
-          </b>
-          <span>repairs attempted that survived measurement</span>
-        </div>
-        <div className="figure">
-          <b>{incidents.reduce((n, i) => n + i.withdrawnRefs.length, 0)}</b>
-          <span>records removed at source, kept as history</span>
-        </div>
+      <div className="figures" aria-label="Incident log at a glance">
+        <Figure value={incidents.length} label="incidents recorded" />
+        <Figure value={refusals} label="repairs refused" emphasis="refusal" />
+        <Figure value={`${served}/${attempted.length}`} label="repairs attempted that survived measurement" />
+        <Figure
+          value={incidents.reduce((n, i) => n + i.withdrawnRefs.length, 0)}
+          label="records removed at source, kept as history"
+        />
       </div>
 
-      <section>
+      <section className="block" aria-labelledby="timeline-h">
         <div className="section-head">
-          <h2 className="section">Timeline</h2>
+          <h2 className="section" id="timeline-h">
+            Timeline
+          </h2>
           <p className="section-note">
-            Each entry shows what the contract measured, the classifier&rsquo;s evidence word for
-            word, and either the refusal or the prompt that was sent. The prompt is included in
-            full because a repair instruction is the part of a self-healing scraper nobody
-            normally lets you read.
+            Each entry shows what the contract measured, the classifier&rsquo;s evidence word
+            for word, and either the refusal or the prompt that was sent. The prompt is
+            included in full because a repair instruction is the part of a self-healing
+            scraper nobody normally lets you read.
           </p>
         </div>
         <ol className="timeline">
@@ -163,8 +157,8 @@ export default function Page() {
           The oldest entry is our own fault and is kept for that reason. A source adapter was
           reused for the wrong collector, every field read as null, and the engine started a
           repair on a scraper that was working correctly. The repair finished, the contract
-          still failed, and the gate refused to serve the result. The bug cost four minutes of
-          credits; without the gate it would have cost the feed its accuracy.
+          still failed, and the gate refused to serve the result. The bug cost four minutes
+          of credits; without the gate it would have cost the feed its accuracy.
         </p>
       </footer>
     </>
