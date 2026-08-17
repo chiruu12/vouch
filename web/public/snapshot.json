@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T19:44:57.340Z",
+  "generatedAt": "2026-08-17T20:08:16.073Z",
   "caveat": "Matched on product line, not on unit. Recalls are often limited to specific batches or serial ranges, and marketplace listings rarely show them, so a match here means this listing appears to be the same product as a recall, not that this particular item is affected.",
   "publishThreshold": 0.7,
   "sources": [
@@ -50,7 +50,7 @@
       "baselineRows": 11,
       "contractPassed": true,
       "breaches": [],
-      "lastVerifiedAt": "2026-08-17T17:24:49.672Z",
+      "lastVerifiedAt": "2026-08-17T19:49:10.357Z",
       "withdrawnRefs": [
         "TW-88214",
         "TW-33887",
@@ -125,8 +125,8 @@
             "synthetic": true,
             "contractVersion": "tradewell@1",
             "trust": "verified",
-            "fetchedAt": "2026-08-17T17:24:49.672Z",
-            "lastVerifiedAt": "2026-08-17T17:24:49.672Z",
+            "fetchedAt": "2026-08-17T19:49:10.357Z",
+            "lastVerifiedAt": "2026-08-17T19:49:10.357Z",
             "heals": 0
           },
           "match": {
@@ -158,8 +158,8 @@
             "synthetic": true,
             "contractVersion": "tradewell@1",
             "trust": "verified",
-            "fetchedAt": "2026-08-17T17:24:49.672Z",
-            "lastVerifiedAt": "2026-08-17T17:24:49.672Z",
+            "fetchedAt": "2026-08-17T19:49:10.357Z",
+            "lastVerifiedAt": "2026-08-17T19:49:10.357Z",
             "heals": 0
           },
           "match": {
@@ -217,8 +217,8 @@
             "synthetic": true,
             "contractVersion": "tradewell@1",
             "trust": "verified",
-            "fetchedAt": "2026-08-17T17:24:49.672Z",
-            "lastVerifiedAt": "2026-08-17T17:24:49.672Z",
+            "fetchedAt": "2026-08-17T19:49:10.357Z",
+            "lastVerifiedAt": "2026-08-17T19:49:10.357Z",
             "heals": 0
           },
           "match": {
@@ -280,8 +280,8 @@
             "synthetic": true,
             "contractVersion": "tradewell@1",
             "trust": "verified",
-            "fetchedAt": "2026-08-17T17:24:49.672Z",
-            "lastVerifiedAt": "2026-08-17T17:24:49.672Z",
+            "fetchedAt": "2026-08-17T19:49:10.357Z",
+            "lastVerifiedAt": "2026-08-17T19:49:10.357Z",
             "heals": 0
           },
           "match": {
@@ -666,8 +666,8 @@
         "synthetic": true,
         "contractVersion": "tradewell@1",
         "trust": "withdrawn",
-        "fetchedAt": "2026-08-17T17:24:49.672Z",
-        "lastVerifiedAt": "2026-08-17T17:24:49.672Z",
+        "fetchedAt": "2026-08-17T19:49:10.357Z",
+        "lastVerifiedAt": "2026-08-17T19:49:10.357Z",
         "heals": 0
       },
       "match": {
@@ -700,8 +700,8 @@
         "synthetic": true,
         "contractVersion": "tradewell@1",
         "trust": "withdrawn",
-        "fetchedAt": "2026-08-17T17:24:49.672Z",
-        "lastVerifiedAt": "2026-08-17T17:24:49.672Z",
+        "fetchedAt": "2026-08-17T19:49:10.357Z",
+        "lastVerifiedAt": "2026-08-17T19:49:10.357Z",
         "heals": 0
       },
       "match": {
@@ -733,8 +733,8 @@
         "synthetic": true,
         "contractVersion": "tradewell@1",
         "trust": "withdrawn",
-        "fetchedAt": "2026-08-17T17:24:49.672Z",
-        "lastVerifiedAt": "2026-08-17T17:24:49.672Z",
+        "fetchedAt": "2026-08-17T19:49:10.357Z",
+        "lastVerifiedAt": "2026-08-17T19:49:10.357Z",
         "heals": 0
       },
       "match": {
@@ -792,35 +792,6 @@
       ]
     },
     {
-      "id": "tradewell-1786987490007",
-      "sourceId": "tradewell",
-      "sourceLabel": "Tradewell Market (synthetic)",
-      "openedAt": "2026-08-17T17:24:43.159Z",
-      "closedAt": "2026-08-17T17:24:49.672Z",
-      "cause": "gone",
-      "healable": false,
-      "evidence": [
-        "3 notice(s) absent from the listing AND their permalinks return 404 or 410: TW-88214, TW-33887, TW-44903",
-        "withdrawn by the regulator, not lost by us: retained as last-good, never healed",
-        "all 3 missing record(s) accounted for by withdrawal; remaining 11 rows satisfy contract tradewell@1"
-      ],
-      "refusal": "records were withdrawn at source and their permalinks no longer resolve; healing would fabricate replacements for records that were deliberately removed",
-      "healAttempted": false,
-      "healDurationMs": null,
-      "prompt": null,
-      "verified": true,
-      "mttrMs": 0,
-      "withdrawnRefs": [
-        "TW-88214",
-        "TW-33887",
-        "TW-44903"
-      ],
-      "rows": 11,
-      "breaches": [
-        "row count fell from 14 to 11, a 21.4% drop, limit 20.0%"
-      ]
-    },
-    {
       "id": "tradewell-1786987678278",
       "sourceId": "tradewell",
       "sourceLabel": "Tradewell Market (synthetic)",
@@ -854,36 +825,57 @@
       ]
     },
     {
-      "id": "tradewell-1786987729444",
+      "id": "tradewell-1786996150942",
       "sourceId": "tradewell",
       "sourceLabel": "Tradewell Market (synthetic)",
-      "openedAt": "2026-08-17T17:28:10.753Z",
-      "closedAt": null,
-      "cause": "blocked",
+      "openedAt": "2026-08-17T19:49:05.922Z",
+      "closedAt": "2026-08-17T19:49:10.357Z",
+      "cause": "gone",
       "healable": false,
       "evidence": [
-        "listing returned HTTP 200 with block signature \"verify you are a human\"",
-        "healing cannot clear a block; backing off instead"
+        "3 notice(s) absent from the listing AND their permalinks return 404 or 410: TW-88214, TW-44903, TW-33887",
+        "removed at source, not lost by us: retained as last-good, never healed",
+        "all 3 missing record(s) accounted for by withdrawal; remaining 11 rows satisfy contract tradewell@1"
       ],
-      "refusal": "the source refused the request; healing cannot clear a block",
+      "refusal": "records were withdrawn at source and their permalinks no longer resolve; healing would fabricate replacements for records that were deliberately removed",
       "healAttempted": false,
       "healDurationMs": null,
       "prompt": null,
+      "verified": true,
+      "mttrMs": 0,
+      "withdrawnRefs": [
+        "TW-88214",
+        "TW-44903",
+        "TW-33887"
+      ],
+      "rows": 11,
+      "breaches": [
+        "row count fell from 14 to 11, a 21.4% drop, limit 20.0%"
+      ]
+    },
+    {
+      "id": "tradewell-drift-1786997246996",
+      "sourceId": "tradewell",
+      "sourceLabel": "Tradewell Market (synthetic)",
+      "openedAt": "2026-08-17T20:07:11.314Z",
+      "closedAt": null,
+      "cause": "pagination",
+      "healable": true,
+      "evidence": [
+        "returned 7 rows against a baseline of 14, which is one page of 7",
+        "all 7 missing notice(s) still return HTTP 200 at their permalinks, so they are published but unreached"
+      ],
+      "refusal": "a repair is already running on this collector, so this one could not start; nothing was attempted and the collector is unchanged",
+      "healAttempted": false,
+      "healDurationMs": 9135,
+      "prompt": "Extraction returned 7 rows against a baseline of 14, and every field it did read satisfied contract tradewell@1. Rows are missing, not fields. The listing at https://tradewell-market-p5kff05i7-chirus-projects-a2862453.vercel.app/ still returns HTTP 200 with 8631 bytes, so it is not blocked. Permalinks for the previously extracted notices still return HTTP 200, so nothing was withdrawn. The previously working selector .permalink now matches 0 elements. Attribute hooks present in the live document: data-testid, data-listing-ref, data-explicit-opt-in, data-deployment-id. Visible field labels are now: Brand, Item condition, Seller, Location, Shipping, Listed. Re-extract every notice across https://tradewell-market-p5kff05i7-chirus-projects-a2862453.vercel.app/ and /page-2.html.",
       "verified": false,
       "mttrMs": null,
       "withdrawnRefs": [],
-      "rows": 0,
+      "rows": 7,
       "breaches": [
-        "field id null rate 100.0% exceeds limit 0.0% over 0 rows",
-        "field permalink null rate 100.0% exceeds limit 0.0% over 0 rows",
-        "field title null rate 100.0% exceeds limit 0.0% over 0 rows",
-        "field brand null rate 100.0% exceeds limit 0.0% over 0 rows",
-        "field price null rate 100.0% exceeds limit 0.0% over 0 rows",
-        "field condition null rate 100.0% exceeds limit 0.0% over 0 rows",
-        "field location null rate 100.0% exceeds limit 0.0% over 0 rows",
-        "field listedOn null rate 100.0% exceeds limit 0.0% over 0 rows",
-        "returned 0 rows, contract requires at least 10",
-        "row count fell from 11 to 0, a 100.0% drop, limit 20.0%"
+        "returned 7 rows, contract requires at least 10",
+        "row count fell from 14 to 7, a 50.0% drop, limit 20.0%"
       ]
     }
   ],
@@ -1029,34 +1021,6 @@
         "verdict": "quarantined",
         "recallRef": "26685",
         "recallTitle": "Cooluli Recalls 10-Liter and 15-Liter Minifridges Due to Fire and Burn Hazards",
-        "listingTitle": "Cooluli Mini Fridge 4L Portable Electric Cooler and Warmer Black",
-        "confidence": 0.35,
-        "basis": "brand+product",
-        "matchedTokens": [
-          "minifridge",
-          "cooluli",
-          "fridge"
-        ],
-        "contradiction": "recall covers 10L, 15L; this listing states 4L"
-      },
-      {
-        "verdict": "quarantined",
-        "recallRef": "26685",
-        "recallTitle": "Cooluli Recalls 10-Liter and 15-Liter Minifridges Due to Fire and Burn Hazards",
-        "listingTitle": "Cooluli 4 Liter Portable Compact Multipurpose Cooler Warmer Mini Fridge, Working",
-        "confidence": 0.35,
-        "basis": "brand+product",
-        "matchedTokens": [
-          "minifridge",
-          "cooluli",
-          "fridge"
-        ],
-        "contradiction": "recall covers 10L, 15L; this listing states 4L"
-      },
-      {
-        "verdict": "quarantined",
-        "recallRef": "26685",
-        "recallTitle": "Cooluli Recalls 10-Liter and 15-Liter Minifridges Due to Fire and Burn Hazards",
         "listingTitle": "Cooluli 12L Beauty Mini Fridge. Brand New. Never Used. In Original Box.",
         "confidence": 0.35,
         "basis": "brand+product",
@@ -1066,6 +1030,34 @@
           "fridge"
         ],
         "contradiction": "recall covers 10L, 15L; this listing states 12L"
+      },
+      {
+        "verdict": "quarantined",
+        "recallRef": "26685",
+        "recallTitle": "Cooluli Recalls 10-Liter and 15-Liter Minifridges Due to Fire and Burn Hazards",
+        "listingTitle": "Cooluli 20 Liter Mini Fridge with Temperature Control - White Thermoelectric ...",
+        "confidence": 0.35,
+        "basis": "brand+product",
+        "matchedTokens": [
+          "minifridge",
+          "cooluli",
+          "fridge"
+        ],
+        "contradiction": "recall covers 10L, 15L; this listing states 20L"
+      },
+      {
+        "verdict": "quarantined",
+        "recallRef": "26685",
+        "recallTitle": "Cooluli Recalls 10-Liter and 15-Liter Minifridges Due to Fire and Burn Hazards",
+        "listingTitle": "UL AC Power Cable for most brands of mini fridges such as Cooluli Mini Fridge",
+        "confidence": 0.35,
+        "basis": "brand+product",
+        "matchedTokens": [
+          "minifridge",
+          "cooluli",
+          "fridge"
+        ],
+        "contradiction": "listing is for an accessory (\"cable\"), not the recalled product"
       }
     ]
   },

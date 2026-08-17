@@ -144,12 +144,19 @@ export async function healScraper(
       ...(env.error !== undefined ? { error: env.error } : {}),
     };
   } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    // Heal is exclusive per collector. A second call while one is running returns
+    // HTTP 409 "Another refactor job is still in progress" and the CLI exits non-zero,
+    // which arrives here looking exactly like a failed repair. It is not: nothing was
+    // attempted and the collector is untouched. Reporting it as a failure invites the
+    // caller to escalate when the correct action is to wait, so it gets its own status.
+    const busy = /another refactor job is still in progress|\b409\b/i.test(message);
     return {
       ok: false,
-      status: "heal_call_failed",
+      status: busy ? "heal_busy" : "heal_call_failed",
       completedSteps: [],
       durationMs: Date.now() - started,
-      error: e instanceof Error ? e.message : String(e),
+      error: message,
     };
   }
 }

@@ -92,8 +92,17 @@ export function synthesiseHealPrompt(args: SynthesiseArgs): string {
       .slice(0, 4)
       .map((f) => `${f.field} (${(f.nullRate * 100).toFixed(0)}% null)`)
       .join(", ");
+    // Every field can be intact while the run still breaches: a pagination change
+    // drops whole rows and leaves the ones it did read perfect. Naming zero fields
+    // after a colon produced "breached contract tradewell@1: ." and told the healer
+    // nothing, so the row shortfall is stated instead, which is the actual symptom.
     clauses.push(
-      `Extraction returned ${report.rows} rows but these fields breached contract ${report.contractVersion}: ${named}.`
+      named === ""
+        ? `Extraction returned ${report.rows} rows against a baseline of ` +
+            `${report.baselineRows ?? "more"}, and every field it did read satisfied ` +
+            `contract ${report.contractVersion}. Rows are missing, not fields.`
+        : `Extraction returned ${report.rows} rows but these fields breached contract ` +
+            `${report.contractVersion}: ${named}.`
     );
   }
 

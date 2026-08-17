@@ -247,9 +247,27 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
   }
 
   incident.prompt = prompt;
-  incident.healAttempted = true;
   const healed = await deps.heal(collectorId, prompt, url);
   incident.healDurationMs = healed.durationMs;
+
+  // Heal is exclusive per collector: a second call while one is running is rejected
+  // outright and nothing is attempted. That is a deferral, not a failed repair, and
+  // conflating them would put "we tried to fix this and could not" in the incident log
+  // for an event where we never got to try. Serve last-good and come back.
+  if (healed.status === "heal_busy") {
+    incident.refusal =
+      "a repair is already running on this collector, so this one could not start; " +
+      "nothing was attempted and the collector is unchanged";
+    return {
+      report,
+      diagnosis,
+      incident,
+      serving: { rows: state.lastGoodRows, state: "unverified" },
+      nextState: { ...state, withdrawnRefs: knownWithdrawn },
+    };
+  }
+
+  incident.healAttempted = true;
 
   // Verify. The heal reporting "done" is not evidence; a measured run of it is.
   const after = await deps.runScraper(collectorId, url);

@@ -79,6 +79,33 @@ Treat a wedged collector as a real operational state, not a transient error. We 
 standby collector against the same fixture with the same intent, because five free
 minutes beforehand is cheaper than discovering it mid-demo.
 
+### Heal is exclusive per collector, and "busy" looks exactly like "failed"
+
+A second `scraper heal` while one is already running returns:
+
+```
+Status: 409
+error: "Another refactor job is still in progress"
+```
+
+Which is correct behaviour. The problem is what the CLI puts in its own `status` field:
+`heal_trigger_failed`, with `completed_steps: []`. A caller reading the status sees a
+failed repair, when what actually happened is that no repair was attempted and the
+collector is untouched. The two call for opposite responses: escalate, versus wait and
+retry.
+
+The CLI does say the right thing in its human-readable output, to its credit:
+
+```
+Note: the heal did not complete, but scraper c_... is unchanged and still works as
+it did before.
+```
+
+We now detect the 409 and report it as `heal_busy`, a deferral rather than a failure, so
+it does not land in the incident log as an attempted repair that did not work. This is
+easy to get wrong, because the first time you see it you will be looking at a real
+breakage and will read the status field.
+
 ### The repair prompt has undocumented limits
 
 Angle brackets in a heal prompt produce HTTP 422 `Invalid message`. The prompt is also
