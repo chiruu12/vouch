@@ -109,9 +109,14 @@ timings are in [`runs/timing.log`](runs/timing.log).
 | Healthy cycle, Tradewell | 14 rows, contract passed, served verified, 6.0s |
 | Three listings delisted | Contract failed on a 21.4% row-count cliff. Diagnosed `gone`, refused to repair, served the remaining 11 as verified, withdrew the three. 5.0s |
 | Anti-bot interstitial at HTTP 200 | Diagnosed `blocked` from the body signature, refused to repair, served last-good as unverified. 38.7s |
-| Page redesign that broke paging | Returned 7 rows against a baseline of 14, and all 7 missing records still returned 200 at their own URLs. Diagnosed `pagination`, which is repairable |
+| Page redesign that broke paging | Returned 7 rows against a baseline of 14, and all 7 missing records still returned 200 at their own URLs. Diagnosed `pagination`, repaired in 330.6s, re-measured, contract passed, served as `healed`. **MTTR 347.6s** |
 | Repair that reported success and returned nothing | Contract still failed after the repair, result rejected, last-good served as unverified |
-| Full detect, classify, repair and verify | 166s end to end on the Arcadia collector, measured before the account cap |
+| Repair that could not start | A repair was already running on that collector, so this one was recorded as deferred rather than as a repair that failed |
+
+An earlier full detect, classify, repair and verify cycle on the Arcadia collector
+completed in 166s, measured before the account cap. All four causes have now been
+produced against live collectors, and the repairable two are the only two that were
+repaired.
 
 The refusal is enforced in code rather than by convention. Flipping the `gone` branch to
 healable `drift` fails exactly four tests and nothing else.

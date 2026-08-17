@@ -328,7 +328,7 @@ function loadIncidents(): PubIncident[] {
   }
 
   const out: PubIncident[] = [];
-  for (const f of files.sort()) {
+  for (const f of files) {
     const raw = load(join("runs", f)) as {
       incident: Incident;
       report: { rows: number; breaches: string[] };
@@ -356,7 +356,10 @@ function loadIncidents(): PubIncident[] {
       breaches: raw.report.breaches,
     });
   }
-  return out;
+  // By when it happened, not by filename. Filenames carry the state key as well as the
+  // timestamp, so sorting them put every incident from one collector before every
+  // incident from another regardless of order, and the page claims to be a timeline.
+  return out.sort((a, b) => a.openedAt.localeCompare(b.openedAt));
 }
 
 /** Take up to `n` items, preferring one per distinct key before repeating any key. */
@@ -552,7 +555,10 @@ export function buildSnapshot(now = new Date()): Snapshot {
       asserted: recalls.reduce((n, r) => n + r.onSale.length, 0),
       quarantined: recalls.reduce((n, r) => n + r.quarantined.length, 0),
       withdrawn: withdrawn.length,
-      refusals: incidents.filter((i) => i.refusal !== null).length,
+      // A deferral carries a refusal string but is not one: the repair was not declined,
+      // it was not allowed to start. Counting it here would inflate the one number the
+      // whole project is judged on, which is the last place to be loose.
+      refusals: incidents.filter((i) => i.refusal !== null && !i.healDeferred).length,
     },
   };
 }

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T20:16:53.663Z",
+  "generatedAt": "2026-08-17T20:31:52.741Z",
   "caveat": "Matched on product line, not on unit. Recalls are often limited to specific batches or serial ranges, and marketplace listings rarely show them, so a match here means this listing appears to be the same product as a recall, not that this particular item is affected.",
   "publishThreshold": 0.7,
   "sources": [
@@ -33,7 +33,7 @@
       "baselineRows": 12,
       "contractPassed": true,
       "breaches": [],
-      "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+      "lastVerifiedAt": "2026-08-17T20:31:43.760Z",
       "withdrawnRefs": [],
       "heals": 0
     },
@@ -348,6 +348,31 @@
       "quarantined": []
     },
     {
+      "ref": "APS-2026-0416",
+      "permalink": "https://arcadia-safety.vercel.app/notice/APS-2026-0416.html",
+      "title": "Calder & Vane 1.7L cordless kettle, CV-K17",
+      "brand": "Calder & Vane",
+      "hazard": "Base connector overheats and can ignite surrounding material",
+      "risk": "Serious",
+      "category": "Electrical appliances",
+      "affectedUnits": "Manufactured 2025-11 through 2026-03",
+      "published": "2026-08-12",
+      "action": "Unplug and stop using; return to point of sale",
+      "provenance": {
+        "sourceId": "arcadia",
+        "sourceLabel": "Arcadia Product Safety (synthetic)",
+        "scraped": true,
+        "synthetic": true,
+        "contractVersion": "arcadia@1",
+        "trust": "verified",
+        "fetchedAt": "2026-08-17T20:31:43.760Z",
+        "lastVerifiedAt": "2026-08-17T20:31:43.760Z",
+        "heals": 0
+      },
+      "onSale": [],
+      "quarantined": []
+    },
+    {
       "ref": "APS-2026-0413",
       "permalink": "https://arcadia-safety.vercel.app/notice/APS-2026-0413.html",
       "title": "Marrow & Pike infant teething ring, assorted colours",
@@ -365,33 +390,8 @@
         "synthetic": true,
         "contractVersion": "arcadia@1",
         "trust": "verified",
-        "fetchedAt": "2026-08-17T17:17:37.717Z",
-        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
-        "heals": 0
-      },
-      "onSale": [],
-      "quarantined": []
-    },
-    {
-      "ref": "APS-2026-0417",
-      "permalink": "https://arcadia-safety.vercel.app/notice/APS-2026-0417.html",
-      "title": "Nimbus Rest travel cot, model NR-220",
-      "brand": "Nimbus Rest",
-      "hazard": "Side rail can disengage under load, creating an entrapment gap",
-      "risk": "Serious",
-      "category": "Childcare articles and children's equipment",
-      "affectedUnits": "NR220-2451 to NR220-2488",
-      "published": "2026-08-14",
-      "action": "Stop using immediately and contact the retailer for a full refund",
-      "provenance": {
-        "sourceId": "arcadia",
-        "sourceLabel": "Arcadia Product Safety (synthetic)",
-        "scraped": true,
-        "synthetic": true,
-        "contractVersion": "arcadia@1",
-        "trust": "verified",
-        "fetchedAt": "2026-08-17T17:17:37.717Z",
-        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+        "fetchedAt": "2026-08-17T20:31:43.760Z",
+        "lastVerifiedAt": "2026-08-17T20:31:43.760Z",
         "heals": 0
       },
       "onSale": [],
@@ -415,8 +415,8 @@
         "synthetic": true,
         "contractVersion": "arcadia@1",
         "trust": "verified",
-        "fetchedAt": "2026-08-17T17:17:37.717Z",
-        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+        "fetchedAt": "2026-08-17T20:31:43.760Z",
+        "lastVerifiedAt": "2026-08-17T20:31:43.760Z",
         "heals": 0
       },
       "onSale": [],
@@ -440,8 +440,8 @@
         "synthetic": true,
         "contractVersion": "arcadia@1",
         "trust": "verified",
-        "fetchedAt": "2026-08-17T17:17:37.717Z",
-        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+        "fetchedAt": "2026-08-17T20:31:43.760Z",
+        "lastVerifiedAt": "2026-08-17T20:31:43.760Z",
         "heals": 0
       },
       "onSale": [],
@@ -465,24 +465,24 @@
         "synthetic": true,
         "contractVersion": "arcadia@1",
         "trust": "verified",
-        "fetchedAt": "2026-08-17T17:17:37.717Z",
-        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+        "fetchedAt": "2026-08-17T20:31:43.760Z",
+        "lastVerifiedAt": "2026-08-17T20:31:43.760Z",
         "heals": 0
       },
       "onSale": [],
       "quarantined": []
     },
     {
-      "ref": "APS-2026-0416",
-      "permalink": "https://arcadia-safety.vercel.app/notice/APS-2026-0416.html",
-      "title": "Calder & Vane 1.7L cordless kettle, CV-K17",
-      "brand": "Calder & Vane",
-      "hazard": "Base connector overheats and can ignite surrounding material",
+      "ref": "APS-2026-0417",
+      "permalink": "https://arcadia-safety.vercel.app/notice/APS-2026-0417.html",
+      "title": "Nimbus Rest travel cot, model NR-220",
+      "brand": "Nimbus Rest",
+      "hazard": "Side rail can disengage under load, creating an entrapment gap",
       "risk": "Serious",
-      "category": "Electrical appliances",
-      "affectedUnits": "Manufactured 2025-11 through 2026-03",
-      "published": "2026-08-12",
-      "action": "Unplug and stop using; return to point of sale",
+      "category": "Childcare articles and children's equipment",
+      "affectedUnits": "NR220-2451 to NR220-2488",
+      "published": "2026-08-14",
+      "action": "Stop using immediately and contact the retailer for a full refund",
       "provenance": {
         "sourceId": "arcadia",
         "sourceLabel": "Arcadia Product Safety (synthetic)",
@@ -490,58 +490,8 @@
         "synthetic": true,
         "contractVersion": "arcadia@1",
         "trust": "verified",
-        "fetchedAt": "2026-08-17T17:17:37.717Z",
-        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
-        "heals": 0
-      },
-      "onSale": [],
-      "quarantined": []
-    },
-    {
-      "ref": "APS-2026-0408",
-      "permalink": "https://arcadia-safety.vercel.app/notice/APS-2026-0408.html",
-      "title": "Wexley wooden stacking toy set, 12 pieces",
-      "brand": "Wexley",
-      "hazard": "Painted rings detach into small parts; coating exceeds migration limits",
-      "risk": "Serious",
-      "category": "Toys",
-      "affectedUnits": "WX-STK-12 all batches",
-      "published": "2026-07-16",
-      "action": "Remove from children immediately and return for a refund",
-      "provenance": {
-        "sourceId": "arcadia",
-        "sourceLabel": "Arcadia Product Safety (synthetic)",
-        "scraped": true,
-        "synthetic": true,
-        "contractVersion": "arcadia@1",
-        "trust": "verified",
-        "fetchedAt": "2026-08-17T17:17:37.717Z",
-        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
-        "heals": 0
-      },
-      "onSale": [],
-      "quarantined": []
-    },
-    {
-      "ref": "APS-2026-0406",
-      "permalink": "https://arcadia-safety.vercel.app/notice/APS-2026-0406.html",
-      "title": "Iselin Kitchen 6L pressure cooker, IK-PC6",
-      "brand": "Iselin Kitchen",
-      "hazard": "Lid interlock permits opening while the vessel is pressurised; scalding risk",
-      "risk": "Serious",
-      "category": "Kitchen and cookware",
-      "affectedUnits": "IKPC6 serials 4400-6200",
-      "published": "2026-07-07",
-      "action": "Stop using immediately and return for a full refund",
-      "provenance": {
-        "sourceId": "arcadia",
-        "sourceLabel": "Arcadia Product Safety (synthetic)",
-        "scraped": true,
-        "synthetic": true,
-        "contractVersion": "arcadia@1",
-        "trust": "verified",
-        "fetchedAt": "2026-08-17T17:17:37.717Z",
-        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+        "fetchedAt": "2026-08-17T20:31:43.760Z",
+        "lastVerifiedAt": "2026-08-17T20:31:43.760Z",
         "heals": 0
       },
       "onSale": [],
@@ -565,8 +515,33 @@
         "synthetic": true,
         "contractVersion": "arcadia@1",
         "trust": "verified",
-        "fetchedAt": "2026-08-17T17:17:37.717Z",
-        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+        "fetchedAt": "2026-08-17T20:31:43.760Z",
+        "lastVerifiedAt": "2026-08-17T20:31:43.760Z",
+        "heals": 0
+      },
+      "onSale": [],
+      "quarantined": []
+    },
+    {
+      "ref": "APS-2026-0406",
+      "permalink": "https://arcadia-safety.vercel.app/notice/APS-2026-0406.html",
+      "title": "Iselin Kitchen 6L pressure cooker, IK-PC6",
+      "brand": "Iselin Kitchen",
+      "hazard": "Lid interlock permits opening while the vessel is pressurised; scalding risk",
+      "risk": "Serious",
+      "category": "Kitchen and cookware",
+      "affectedUnits": "IKPC6 serials 4400-6200",
+      "published": "2026-07-07",
+      "action": "Stop using immediately and return for a full refund",
+      "provenance": {
+        "sourceId": "arcadia",
+        "sourceLabel": "Arcadia Product Safety (synthetic)",
+        "scraped": true,
+        "synthetic": true,
+        "contractVersion": "arcadia@1",
+        "trust": "verified",
+        "fetchedAt": "2026-08-17T20:31:43.760Z",
+        "lastVerifiedAt": "2026-08-17T20:31:43.760Z",
         "heals": 0
       },
       "onSale": [],
@@ -590,8 +565,8 @@
         "synthetic": true,
         "contractVersion": "arcadia@1",
         "trust": "verified",
-        "fetchedAt": "2026-08-17T17:17:37.717Z",
-        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+        "fetchedAt": "2026-08-17T20:31:43.760Z",
+        "lastVerifiedAt": "2026-08-17T20:31:43.760Z",
         "heals": 0
       },
       "onSale": [],
@@ -615,8 +590,33 @@
         "synthetic": true,
         "contractVersion": "arcadia@1",
         "trust": "verified",
-        "fetchedAt": "2026-08-17T17:17:37.717Z",
-        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+        "fetchedAt": "2026-08-17T20:31:43.760Z",
+        "lastVerifiedAt": "2026-08-17T20:31:43.760Z",
+        "heals": 0
+      },
+      "onSale": [],
+      "quarantined": []
+    },
+    {
+      "ref": "APS-2026-0408",
+      "permalink": "https://arcadia-safety.vercel.app/notice/APS-2026-0408.html",
+      "title": "Wexley wooden stacking toy set, 12 pieces",
+      "brand": "Wexley",
+      "hazard": "Painted rings detach into small parts; coating exceeds migration limits",
+      "risk": "Serious",
+      "category": "Toys",
+      "affectedUnits": "WX-STK-12 all batches",
+      "published": "2026-07-16",
+      "action": "Remove from children immediately and return for a refund",
+      "provenance": {
+        "sourceId": "arcadia",
+        "sourceLabel": "Arcadia Product Safety (synthetic)",
+        "scraped": true,
+        "synthetic": true,
+        "contractVersion": "arcadia@1",
+        "trust": "verified",
+        "fetchedAt": "2026-08-17T20:31:43.760Z",
+        "lastVerifiedAt": "2026-08-17T20:31:43.760Z",
         "heals": 0
       },
       "onSale": [],
@@ -640,8 +640,8 @@
         "synthetic": true,
         "contractVersion": "arcadia@1",
         "trust": "verified",
-        "fetchedAt": "2026-08-17T17:17:37.717Z",
-        "lastVerifiedAt": "2026-08-17T17:17:37.717Z",
+        "fetchedAt": "2026-08-17T20:31:43.760Z",
+        "lastVerifiedAt": "2026-08-17T20:31:43.760Z",
         "heals": 0
       },
       "onSale": [],
@@ -857,30 +857,27 @@
       ]
     },
     {
-      "id": "tradewell-drift-1786997608048",
+      "id": "tradewell-drift2-1786998379616",
       "sourceId": "tradewell",
       "sourceLabel": "Tradewell Market (synthetic)",
-      "openedAt": "2026-08-17T20:13:05.787Z",
-      "closedAt": null,
+      "openedAt": "2026-08-17T20:20:32.031Z",
+      "closedAt": "2026-08-17T20:26:19.612Z",
       "cause": "pagination",
       "healable": true,
       "evidence": [
         "returned 7 rows against a baseline of 14, which is one page of 7",
         "all 7 missing notice(s) still return HTTP 200 at their permalinks, so they are published but unreached"
       ],
-      "refusal": "a repair is already running on this collector, so this one could not start; nothing was attempted and the collector is unchanged",
-      "healAttempted": false,
+      "refusal": null,
+      "healAttempted": true,
       "healDeferred": false,
-      "healDurationMs": 6861,
+      "healDurationMs": 330551,
       "prompt": "Extraction returned 7 rows against a baseline of 14, and every field it did read satisfied contract tradewell@1. Rows are missing, not fields. The listing at https://tradewell-market-p5kff05i7-chirus-projects-a2862453.vercel.app/ still returns HTTP 200 with 8631 bytes, so it is not blocked. Permalinks for the previously extracted notices still return HTTP 200, so nothing was withdrawn. The previously working selector .permalink now matches 0 elements. Attribute hooks present in the live document: data-testid, data-listing-ref, data-explicit-opt-in, data-deployment-id. Visible field labels are now: Brand, Item condition, Seller, Location, Shipping, Listed. Re-extract every notice across https://tradewell-market-p5kff05i7-chirus-projects-a2862453.vercel.app/ and /page-2.html.",
-      "verified": false,
-      "mttrMs": null,
+      "verified": true,
+      "mttrMs": 347580,
       "withdrawnRefs": [],
-      "rows": 7,
-      "breaches": [
-        "returned 7 rows, contract requires at least 10",
-        "row count fell from 14 to 7, a 50.0% drop, limit 20.0%"
-      ]
+      "rows": 14,
+      "breaches": []
     }
   ],
   "study": {
@@ -1071,6 +1068,6 @@
     "asserted": 3,
     "quarantined": 1,
     "withdrawn": 3,
-    "refusals": 4
+    "refusals": 3
   }
 }

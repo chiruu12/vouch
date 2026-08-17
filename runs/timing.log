@@ -120,3 +120,29 @@ production collector stayed clean. Findings:
    attempts. Same family as the arcadia wedge (c_msx7fknprsolywx8g). Second data
    point: a heal that fails to trigger can leave a collector permanently locked.
    Created tradewell-drift-2 to finish the drift experiment.
+
+## Repair path proved live end to end (2026-08-18)
+Third collector c_msxobu122gws5sye6w ("tradewell-drift-2"), clean from creation.
+Adapter handled its output first try, no false heal.
+
+  cycle on baseline preview  -> 14 rows, contract PASSED, healthy, 6.6s
+  cycle on redesign preview  -> 7 rows, one page of 7, all 7 permalinks 200
+                                diagnosis pagination (healable)
+                                heal 330.5s
+                                re-run -> 14 rows, contract PASSED, verified=true
+                                SERVING 14 rows as "healed"
+                                MTTR 347.6s
+
+All four causes are now proved against live collectors:
+  drift      -> repair ran, contract still failed, result rejected (17:17Z)
+  blocked    -> refused, served last-good unverified                (17:28Z)
+  gone       -> refused, served survivors verified                  (19:49Z)
+  pagination -> repaired and verified, MTTR 347.6s                  (20:20Z)
+
+Removed incident-tradewell-drift-1786997608048.json. It recorded the same pagination
+scenario as the run seven minutes later, and it was written before the healDeferred
+flag existed, so the published log would have counted a queue conflict as a refusal we
+made. Not backfilled, because editing a recorded incident is the one thing this project
+cannot do. The deferral path is covered by runner.test.ts instead.
+
+The incident log now holds one incident per cause, all written by current code.

@@ -102,8 +102,11 @@ function Incident({ i }: { i: PubIncident }) {
 export default function Page() {
   const snap = snapshot();
   const incidents = [...snap.incidents].reverse();
-  const refusals = incidents.filter((i) => i.refusal !== null).length;
-  const healed = incidents.filter((i) => i.healAttempted).length;
+  // A deferral is not a refusal. See the snapshot builder for why that distinction is
+  // worth the extra clause.
+  const refusals = incidents.filter((i) => i.refusal !== null && !i.healDeferred).length;
+  const attempted = incidents.filter((i) => i.healAttempted);
+  const served = attempted.filter((i) => i.verified).length;
 
   return (
     <>
@@ -127,8 +130,10 @@ export default function Page() {
           <span>repairs refused</span>
         </div>
         <div className="figure">
-          <b>{healed}</b>
-          <span>repairs attempted{healed > 0 ? ", none served" : ""}</span>
+          <b>
+            {served}/{attempted.length}
+          </b>
+          <span>repairs attempted that survived measurement</span>
         </div>
         <div className="figure">
           <b>{incidents.reduce((n, i) => n + i.withdrawnRefs.length, 0)}</b>
