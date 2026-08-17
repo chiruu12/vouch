@@ -105,21 +105,32 @@ export function classify(input: ClassifyInput): Diagnosis {
     evidence.push("withdrawn by the regulator, not lost by us: retained as last-good, never healed");
   }
 
-  // 3. Every loss is explained by withdrawal and the contract otherwise holds.
+  // 3. Every loss is explained by withdrawal and nothing else is structurally wrong.
   //    This is the case a naive healer gets wrong: it sees the row count fall, calls
   //    it a cliff, heals, and invents replacements for records that were deliberately
   //    removed. We report it as "gone" rather than "healthy" because a withdrawal is
   //    an event worth surfacing, and because the refusal to heal has to be visible
   //    rather than implied by an absence.
-  const structuralBreaches = report.breaches.filter((b) => !isRowCountBreach(b));
-  if (lostRefs.length === 0 && structuralBreaches.length === 0) {
-    if (withdrawnRefs.length > 0) {
-      evidence.push(
-        `all ${withdrawnRefs.length} missing record(s) accounted for by withdrawal; ` +
-          `remaining ${report.rows} rows satisfy contract ${report.contractVersion}`
-      );
-      return { cause: "gone", withdrawnRefs, lostRefs: [], healable: false, evidence };
-    }
+  //
+  //    Structural evidence means a field that broke for some reason other than there
+  //    being nothing to measure. Over zero rows every field is trivially 100% null, so
+  //    an empty extraction yields a full set of field breaches that say nothing about
+  //    whether the page changed or legitimately emptied. Only withdrawal evidence
+  //    separates those two, so field reports are discounted entirely on an empty run.
+  const structuralEvidence = report.rows === 0 ? [] : report.fields.filter((f) => f.breached);
+
+  if (lostRefs.length === 0 && withdrawnRefs.length > 0 && structuralEvidence.length === 0) {
+    evidence.push(
+      report.rows === 0
+        ? `every previously extracted notice was withdrawn, so the empty result is the ` +
+            `source's own state rather than a failure to read it`
+        : `all ${withdrawnRefs.length} missing record(s) accounted for by withdrawal; ` +
+            `remaining ${report.rows} rows satisfy contract ${report.contractVersion}`
+    );
+    return { cause: "gone", withdrawnRefs, lostRefs: [], healable: false, evidence };
+  }
+
+  if (lostRefs.length === 0 && withdrawnRefs.length === 0 && report.passed) {
     return { cause: "healthy", withdrawnRefs, lostRefs: [], healable: false, evidence };
   }
 
@@ -134,7 +145,7 @@ export function classify(input: ClassifyInput): Diagnosis {
     report.baselineRows !== null &&
     report.baselineRows > perPage &&
     everyLostStillLive &&
-    structuralBreaches.length === 0
+    structuralEvidence.length === 0
   ) {
     evidence.push(
       `returned ${report.rows} rows against a baseline of ${report.baselineRows}, ` +
@@ -173,10 +184,4 @@ export function classify(input: ClassifyInput): Diagnosis {
   }
 
   return { cause: "drift", withdrawnRefs, lostRefs, healable: true, evidence };
-}
-
-/** Row-count breaches are ambiguous on their own: withdrawals cause them too.
- *  We only treat them as structural once withdrawal has been ruled out. */
-function isRowCountBreach(breach: string): boolean {
-  return breach.startsWith("row count fell") || breach.startsWith("returned ");
 }
