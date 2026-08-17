@@ -46,3 +46,18 @@ match result on real data, after four fixes:
   quarantine reasons: 123 capacity clash, 36 accessory, 9 weak basis
   key true positive "Cooluli Infinity Black 15 Liter fridge" publishes at 0.72
 engine tests: 78 pass, 0 fail
+17:09:10Z
+create-tradewell finished (297 polls) collector: c_msxhnjyoflutq9tt8
+NOTE: launched a cycle concurrently with create -> cycle stalled with no output.
+  Confirms the serial-only rule. Killed the cycle, waited, then ran it alone.
+--- 2026-08-17 17:15-17:35Z live cycle wiring ---
+cycle arcadia   -> 12 rows, contract PASSED, healthy, serving verified, 5.6s
+cycle tradewell -> 14 rows, contract PASSED, healthy, serving verified, 7.1s
+TWO SELF-INFLICTED FALSE HEALS along the way, both from a missing adapter:
+  1. arcadia: contract compared canonical names (ref/title/risk) to raw collector
+     names (reference/product_title/risk_level). All fields read null. Heal fired.
+  2. tradewell: reused the eBay adapter. Its id comes from /itm/<digits>, tradewell
+     uses /item/TW-nnnnn.html, so every row was rejected -> 0 rows -> 246s heal on a
+     collector that was working perfectly.
+  Both times the verify-then-serve gate refused to serve the unverified result, which
+  is the gate doing exactly its job. But a wrong contract MANUFACTURES false repairs.

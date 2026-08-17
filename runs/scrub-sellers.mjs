@@ -27,16 +27,30 @@ const sellerKey = (name) =>
 const rows = JSON.parse(readFileSync(inPath, "utf8"));
 let redacted = 0;
 
-const scrubbed = rows.map((row) => {
-  const { seller_name, ...rest } = row;
-  if (seller_name === undefined) return rest;
-  redacted++;
-  return { ...rest, sellerKey: sellerKey(seller_name) };
-});
+// Two shapes seen so far: eBay puts `seller_name` at the top level, Tradewell puts
+// `seller` inside a nested `results[]`. A scrub that only knew the first shape would
+// report success while publishing every name from the second.
+function scrubRow(row) {
+  const out = {};
+  for (const [k, v] of Object.entries(row)) {
+    if (k === "seller_name" || k === "seller") {
+      redacted++;
+      out.sellerKey = sellerKey(v);
+    } else if (k === "results" && Array.isArray(v)) {
+      out.results = v.map((r) => (typeof r === "object" && r !== null ? scrubRow(r) : r));
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+const scrubbed = rows.map(scrubRow);
 
 writeFileSync(outPath, JSON.stringify(scrubbed, null, 2) + "\n");
 
-const distinct = new Set(scrubbed.map((r) => r.sellerKey).filter(Boolean)).size;
+const flat = scrubbed.flatMap((r) => (Array.isArray(r.results) ? r.results : [r]));
+const distinct = new Set(flat.map((r) => r.sellerKey).filter(Boolean)).size;
 console.log(`rows: ${scrubbed.length}`);
-console.log(`seller_name redacted: ${redacted}`);
+console.log(`seller fields redacted: ${redacted}`);
 console.log(`distinct sellers: ${distinct}`);
