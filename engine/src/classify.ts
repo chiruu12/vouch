@@ -28,6 +28,9 @@ export interface ListingProbe {
   bodyBytes: number;
   /** A recognisable challenge or block signature in the body, if any. */
   blockSignature: string | null;
+  /** Raw body, when the caller kept it. Used to observe the live markup for the
+   *  heal prompt; the classifier itself only needs status and signature. */
+  body?: string;
 }
 
 export interface PermalinkProbe {
@@ -102,16 +105,20 @@ export function classify(input: ClassifyInput): Diagnosis {
     evidence.push("withdrawn by the regulator, not lost by us: retained as last-good, never healed");
   }
 
-  // 3. If every loss is explained by withdrawal and the contract otherwise holds,
-  //    nothing is broken. This is the case a naive healer gets wrong: it sees the
-  //    row count fall, calls it a cliff, and invents replacements.
+  // 3. Every loss is explained by withdrawal and the contract otherwise holds.
+  //    This is the case a naive healer gets wrong: it sees the row count fall, calls
+  //    it a cliff, heals, and invents replacements for records that were deliberately
+  //    removed. We report it as "gone" rather than "healthy" because a withdrawal is
+  //    an event worth surfacing, and because the refusal to heal has to be visible
+  //    rather than implied by an absence.
   const structuralBreaches = report.breaches.filter((b) => !isRowCountBreach(b));
   if (lostRefs.length === 0 && structuralBreaches.length === 0) {
     if (withdrawnRefs.length > 0) {
       evidence.push(
-        `all ${withdrawnRefs.length} missing notice(s) accounted for by withdrawal; ` +
+        `all ${withdrawnRefs.length} missing record(s) accounted for by withdrawal; ` +
           `remaining ${report.rows} rows satisfy contract ${report.contractVersion}`
       );
+      return { cause: "gone", withdrawnRefs, lostRefs: [], healable: false, evidence };
     }
     return { cause: "healthy", withdrawnRefs, lostRefs: [], healable: false, evidence };
   }
