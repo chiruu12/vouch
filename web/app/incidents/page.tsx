@@ -18,6 +18,8 @@ const CAUSE_MEANING: Record<string, string> = {
   gone: "the records were removed at source and their permalinks no longer resolve. A repair here fabricates replacements for records somebody deliberately took down.",
   drift: "the data is still published in a different shape. This class of failure is repairable, so a repair was attempted.",
   pagination: "the listing is intact and the paging scheme moved. Repairable.",
+  resurrected:
+    "a record we published as withdrawn is on sale again. Nothing broke and the contract passed, which is exactly why this used to pass in silence. It is the only entry here that is not a failure.",
   healthy: "nothing was wrong.",
 };
 
@@ -27,6 +29,9 @@ const CAUSE_MEANING: Record<string, string> = {
  *  that reported success and was rejected on measurement) and mislabelled the
  *  boring one (a queue conflict) as a judgement we made. */
 function outcome(i: PubIncident): { label: string; kind: "refused" | "healed" | "waiting" } {
+  // A resurrection needs no repair and refused nothing, so neither the clay verdict nor
+  // the repaired label fits. It gets the neutral kind and says what it actually is.
+  if (i.cause === "resurrected") return { label: "reported, nothing repaired", kind: "waiting" };
   if (i.verified && i.healAttempted) return { label: "repaired and verified", kind: "healed" };
   if (i.healAttempted) return { label: "repair ran, result rejected", kind: "refused" };
   if (i.healDeferred) return { label: "repair deferred, collector busy", kind: "waiting" };
@@ -63,6 +68,7 @@ function Incident({ i }: { i: PubIncident }) {
           {i.breaches.length === 1 ? "" : "es"}
           {i.mttrMs !== null ? ` · time to resolution ${seconds(i.mttrMs)}` : " · unresolved"}
           {i.withdrawnRefs.length > 0 ? ` · withdrawn: ${i.withdrawnRefs.join(", ")}` : ""}
+          {i.resurrectedRefs.length > 0 ? ` · back on sale: ${i.resurrectedRefs.join(", ")}` : ""}
         </div>
       </div>
 

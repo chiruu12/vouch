@@ -137,7 +137,14 @@ node --import tsx src/snapshot.ts         # publish web/public/snapshot.json
 cd ../web
 npm install
 npm run dev                               # the feed
+npm run build                             # export, then verify the exported HTML
 ```
+
+`npm run build` ends by running `verify-output.mjs` against the exported HTML, which
+fails the build if any string the engine wrote was truncated or paraphrased on its way to
+the page, or if a seller field reached it. The check runs per page, because the first
+version concatenated them and passed a refusal that was intact on one page and truncated
+on another.
 
 The engine has no network calls of its own. Everything that touches the outside world
 goes through `CycleDeps`, injected at the entry point, which is why the classifier,

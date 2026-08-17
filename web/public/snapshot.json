@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T20:31:52.741Z",
+  "generatedAt": "2026-08-17T21:48:35.177Z",
   "caveat": "Matched on product line, not on unit. Recalls are often limited to specific batches or serial ranges, and marketplace listings rarely show them, so a match here means this listing appears to be the same product as a recall, not that this particular item is affected.",
   "publishThreshold": 0.7,
   "sources": [
@@ -780,6 +780,7 @@
       "verified": false,
       "mttrMs": null,
       "withdrawnRefs": [],
+      "resurrectedRefs": [],
       "rows": 0,
       "breaches": [
         "field id null rate 100.0% exceeds limit 0.0% over 0 rows",
@@ -812,6 +813,7 @@
       "verified": false,
       "mttrMs": null,
       "withdrawnRefs": [],
+      "resurrectedRefs": [],
       "rows": 0,
       "breaches": [
         "field id null rate 100.0% exceeds limit 0.0% over 0 rows",
@@ -851,6 +853,7 @@
         "TW-44903",
         "TW-33887"
       ],
+      "resurrectedRefs": [],
       "rows": 11,
       "breaches": [
         "row count fell from 14 to 11, a 21.4% drop, limit 20.0%"
@@ -876,6 +879,7 @@
       "verified": true,
       "mttrMs": 347580,
       "withdrawnRefs": [],
+      "resurrectedRefs": [],
       "rows": 14,
       "breaches": []
     }

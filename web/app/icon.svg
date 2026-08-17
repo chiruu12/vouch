@@ -1,4 +1,9 @@
+<!-- A stamp, not a tick. The first mark here was a checkmark, which says "all verified"
+     and is the opposite of the argument: this feed's distinguishing act is declining to
+     publish. A struck rule inside a stamp frame reads as a decision recorded, which is
+     the job clay does everywhere else in the design. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" rx="3" fill="#161b17"/>
-  <path d="M8 17.5 13.5 23 24 9.5" fill="none" stroke="#e9ede4" stroke-width="3.5" stroke-linecap="square"/>
+  <rect x="6.25" y="9.25" width="19.5" height="13.5" rx="1.5" fill="none" stroke="#c1554a" stroke-width="2.5"/>
+  <path d="M9.75 16h12.5" fill="none" stroke="#c1554a" stroke-width="2.5"/>
 </svg>

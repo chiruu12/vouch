@@ -160,3 +160,23 @@ event there is, so silence was the wrong default.
 
 Observed for real earlier tonight: restoring the baseline fixture brought TW-88214,
 TW-44903 and TW-33887 back and the cycle said nothing. That run is what prompted this.
+
+## UI redesign delegated to Kimi, and an output verifier (2026-08-18)
+Design pass by kimi-k3-max in an isolated worktree, reviewed then integrated.
+The change that mattered: hue now means exactly one thing (what the system decided
+about a record) and severity moved to a segmented bar, so a refusal and a serious
+risk no longer share the same clay. Refusals promoted to the front page verbatim
+under solid stamps. A <details> disclosure hiding contract breaches was removed.
+Verified independently before integrating: build passes, no horizontal overflow at
+390/768/1280/1920, one h1 per page, no seller rendering, quarantine visually
+distinct with source trust moved off the row.
+
+Added web/verify-output.mjs, run at the end of `npm run build`. Checks the exported
+HTML against the snapshot: every engine-authored string verbatim, no seller field.
+Mutation-tested both rules.
+
+  First version was WRONG and reported success on a truncated refusal. It joined all
+  pages into one blob, and the same refusal is quoted on the front page and in the
+  incident log, so the intact copy satisfied the search for the mangled one. Now
+  checked per page: any page containing the first 40 characters must contain the whole
+  string. 51 strings, 59 renderings, and the truncation is caught and located.

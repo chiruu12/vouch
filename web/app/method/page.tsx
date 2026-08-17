@@ -309,9 +309,10 @@ export default function Page() {
               certainty is out of reach by construction, not by effort.
             </li>
             <li>
-              A record that is withdrawn at source and later reappears is served again
-              without comment. The system remembers the withdrawal but does not treat a
-              resurrection as an event worth flagging, and it should.
+              A record that is withdrawn at source and later reappears is reported as an
+              incident and stops being marked withdrawn, but nothing escalates it above an
+              ordinary record in the feed. A marketplace relisting a recalled product should
+              probably be the loudest thing on this site, and right now it is a log entry.
             </li>
             <li>
               Two collectors in the account are permanently stuck, one on a repair prompt

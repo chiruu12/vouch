@@ -5,7 +5,8 @@
   "scripts": {
     "snapshot": "cd ../engine && node --import tsx src/snapshot.ts",
     "dev": "npm run snapshot && next dev",
-    "build": "npm run snapshot && next build",
+    "build": "npm run snapshot && next build && node verify-output.mjs",
+    "verify": "node verify-output.mjs",
     "start": "next start",
     "typecheck": "tsc --noEmit"
   },
