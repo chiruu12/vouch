@@ -14,7 +14,7 @@
 
 import type { RecallRecord, SourceId } from "./types.js";
 
-export type FieldType = "string" | "date" | "enum";
+export type FieldType = "string" | "date" | "enum" | "number";
 
 export interface FieldRule {
   type: FieldType;
@@ -92,14 +92,32 @@ function isTypeError(v: unknown, rule: FieldRule): boolean {
       return typeof v !== "string" || !ISO_DATE.test(v);
     case "enum":
       return typeof v !== "string" || !(rule.values ?? []).includes(v);
+    case "number":
+      // A price arriving as the string "1,099.99" means the adapter stopped parsing,
+      // which is the same class of silent drift as a date arriving unformatted.
+      return typeof v !== "number" || !Number.isFinite(v);
   }
 }
 
+/** How a row identifies itself in breach evidence. Recall notices carry `ref`;
+ *  marketplace listings carry `id`. Sample refs end up quoted into heal prompts, so
+ *  a source whose rows key on something else has to say so rather than silently
+ *  reporting a column of empty strings. */
+export type RefOf = (row: Record<string, unknown>) => string;
+
+const defaultRefOf: RefOf = (row) => {
+  const v = row.ref;
+  return typeof v === "string" ? v : "";
+};
+
 export function checkContract(
   contract: SourceContract,
-  rows: Candidate[],
+  // `object` rather than a Record: an interface like Listing has no implicit index
+  // signature, so a Record parameter would reject the very rows we need to check.
+  rows: readonly object[],
   baselineRows: number | null,
-  now: () => Date = () => new Date()
+  now: () => Date = () => new Date(),
+  refOf: RefOf = defaultRefOf
 ): ContractReport {
   const breaches: string[] = [];
   const fields: FieldReport[] = [];
@@ -111,13 +129,14 @@ export function checkContract(
     const sampleRefs: string[] = [];
 
     for (const row of rows) {
-      const value = (row as unknown as Record<string, unknown>)[field];
+      const record = row as unknown as Record<string, unknown>;
+      const value = record[field];
       if (isNullish(value, rule)) {
         nulls++;
-        if (sampleRefs.length < 3) sampleRefs.push(row.ref);
+        if (sampleRefs.length < 3) sampleRefs.push(refOf(record));
       } else if (isTypeError(value, rule)) {
         typeErrors++;
-        if (sampleRefs.length < 3) sampleRefs.push(row.ref);
+        if (sampleRefs.length < 3) sampleRefs.push(refOf(record));
       }
     }
 

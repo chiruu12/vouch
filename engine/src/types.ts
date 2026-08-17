@@ -2,7 +2,16 @@
 // classifier and the feed both speak. This file is the contract between the
 // source adapters, the engine, and the web feed. Change it deliberately.
 
-export type SourceId = "arcadia" | "cpsc" | "eu-safety-gate" | "uk-opss";
+/** Recall sources publish notices; marketplace sources publish listings we match
+ *  against them. Both are supervised by the same cycle, so they share one id space.
+ *  `arcadia` and `tradewell` are the synthetic fixtures (docs/decisions.md §9). */
+export type SourceId =
+  | "arcadia"
+  | "cpsc"
+  | "eu-safety-gate"
+  | "uk-opss"
+  | "ebay"
+  | "tradewell";
 
 export type RiskLevel = "Serious" | "High" | "Medium" | "Low" | "Unknown";
 
