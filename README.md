@@ -120,14 +120,17 @@ produced against live collectors, and the repairable two are the only two that w
 repaired.
 
 The refusal is enforced in code rather than by convention. Flipping the `gone` branch to
-healable `drift` fails exactly four tests and nothing else.
+healable `drift` fails exactly six tests and nothing else: four on the classifier's
+verdict, and two on what the cycle then does, which is the half that actually matters.
+One of those two asserts that `deps.heal` is never called, not that its result is
+discarded.
 
 ## Running it
 
 ```bash
 cd engine
 npm install
-npm test                                  # 83 tests, no network
+npm test                                  # 105 tests, no network
 node --import tsx src/cycle.ts arcadia    # one supervision cycle, needs BRIGHTDATA_API_KEY
 node --import tsx src/snapshot.ts         # publish web/public/snapshot.json
 

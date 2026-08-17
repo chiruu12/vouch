@@ -17,7 +17,7 @@ central argument, and every call about what the system is allowed to claim are m
 - **The fixture markup.** `fixtures/*/build.mjs` generates the synthetic sites and
   their variants. The generators were written with assistance; the product data in
   `data.json` was chosen by hand so the fixtures mirror real recalled products.
-- **Tests.** The 83 tests were written with assistance. Several caught real bugs, and
+- **Tests.** The 105 tests were written with assistance. Several caught real bugs, and
   where they did the fix is described in the file the bug lived in.
 - **Prose.** These documents and the README were drafted with assistance and edited by
   me.
