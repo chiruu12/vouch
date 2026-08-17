@@ -268,6 +268,11 @@ async function main(): Promise<void> {
     console.log(`withdrawn   ${diagnosis.withdrawnRefs.join(", ")}`);
   }
 
+  if (result.resurrectedRefs.length > 0) {
+    console.log(`BACK ON SALE ${result.resurrectedRefs.join(", ")}`);
+    console.log(`            previously published as withdrawn; no longer marked withdrawn`);
+  }
+
   if (incident !== null) {
     console.log("");
     if (incident.refusal !== null) console.log(`REFUSED     ${incident.refusal}`);

@@ -112,6 +112,7 @@ timings are in [`runs/timing.log`](runs/timing.log).
 | Page redesign that broke paging | Returned 7 rows against a baseline of 14, and all 7 missing records still returned 200 at their own URLs. Diagnosed `pagination`, repaired in 330.6s, re-measured, contract passed, served as `healed`. **MTTR 347.6s** |
 | Repair that reported success and returned nothing | Contract still failed after the repair, result rejected, last-good served as unverified |
 | Repair that could not start | A repair was already running on that collector, so this one was recorded as deferred rather than as a repair that failed |
+| A withdrawn record relisted | Reported as a `resurrected` incident and dropped from the withdrawn list. Nothing is broken and the contract passes, which is exactly why it used to pass in silence |
 
 An earlier full detect, classify, repair and verify cycle on the Arcadia collector
 completed in 166s, measured before the account cap. All four causes have now been
@@ -175,6 +176,7 @@ runs/timing.log   every measurement, written when it was taken
   serve the result.
 - `bdata scraper run --version dev` is unreachable from the CLI, so a repair cannot be
   inspected before it reaches production. The gate sits at serving time instead.
-- A withdrawn record that reappears at source is served again without comment.
-  Resurrection is unhandled.
+- A resurrection is reported but not yet acted on beyond reporting. If a marketplace
+  relists a recalled product it is flagged as an incident and stops being marked
+  withdrawn, but nothing escalates it above an ordinary record in the feed.
 - Coverage is two recall sources and one marketplace.

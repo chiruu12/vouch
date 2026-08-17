@@ -213,6 +213,42 @@ test("the listing is probed before the collector runs", async () => {
   assert.deepEqual(order, ["probe", "run"]);
 });
 
+// --- resurrection -----------------------------------------------------------
+
+test("a withdrawn record that comes back is reported, not served silently", async () => {
+  // The marketplace took a recalled listing down, and has put it back up. Nothing is
+  // broken, the contract passes, and this is the most actionable event the feed can
+  // carry. It used to pass in silence for exactly that reason.
+  const state: SourceState = { ...seeded(ROWS), withdrawnRefs: ["r3"] };
+  const { deps: d, calls } = deps();
+  const r = await runCycle(args(state), d);
+
+  assert.deepEqual(r.resurrectedRefs, ["r3"]);
+  assert.equal(r.diagnosis.cause, "healthy", "a resurrection is not a failure");
+  assert.equal(calls.heal, 0);
+  assert.equal(r.serving.state, "verified");
+  assert.equal(r.serving.rows.length, 6, "the record is live again, so it is served");
+
+  assert.notEqual(r.incident, null, "a silent resurrection is the bug this guards");
+  assert.equal(r.incident?.cause, "resurrected");
+  assert.equal(r.incident?.refusal, null, "nothing was refused");
+  assert.match(r.incident?.evidence.join(" ") ?? "", /withdrawn.*present in the listing again/s);
+
+  // Withdrawn is a current status, so it leaves the list. Showing the same record as
+  // both withdrawn and on sale would be worse than either.
+  assert.equal(r.nextState.withdrawnRefs.includes("r3"), false);
+});
+
+test("a record that stays withdrawn is not reported as coming back", async () => {
+  const state: SourceState = { ...seeded(ROWS.slice(0, 5)), withdrawnRefs: ["r6"] };
+  const { deps: d } = deps({ runScraper: async () => ({ rows: ROWS.slice(0, 5), errors: [] }) });
+  const r = await runCycle(args(state), d);
+
+  assert.deepEqual(r.resurrectedRefs, []);
+  assert.equal(r.incident, null);
+  assert.deepEqual(r.nextState.withdrawnRefs, ["r6"], "still withdrawn, still recorded");
+});
+
 test("withdrawals are recorded even when the contract passes", async () => {
   // One record out of six is gone: a 16.7% drop, under the 20% limit. That trips no
   // threshold, and if it is not reconciled it stays in the feed as an active recall

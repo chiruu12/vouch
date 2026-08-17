@@ -42,7 +42,11 @@ export interface Incident {
   sourceId: SourceId;
   openedAt: string;
   closedAt: string | null;
-  cause: FailureCause | "healthy";
+  /** `resurrected` is not a failure. It is the one event in this system that is worth
+   *  surfacing without anything being broken: a record we published as withdrawn is
+   *  being offered for sale again. In a recall feed that is the most actionable thing
+   *  that can happen, and it used to pass silently because the contract passes. */
+  cause: FailureCause | "healthy" | "resurrected";
   evidence: string[];
   /** The synthesised prompt, or null when we refused to heal. */
   prompt: string | null;
@@ -59,6 +63,8 @@ export interface Incident {
   /** Time from detection to serving verified data again. Null while unresolved. */
   mttrMs: number | null;
   withdrawnRefs: string[];
+  /** Refs that were recorded as withdrawn and have reappeared at the source. */
+  resurrectedRefs: string[];
   /** Populated when we declined to heal, with the reason. */
   refusal: string | null;
 }
@@ -66,6 +72,8 @@ export interface Incident {
 export interface CycleResult {
   report: ContractReport;
   diagnosis: Diagnosis;
+  /** Refs that came back after being published as withdrawn. Empty on a normal cycle. */
+  resurrectedRefs: string[];
   incident: Incident | null;
   serving: { rows: Row[]; state: RecordState };
   nextState: SourceState;
@@ -145,23 +153,67 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
     ...(args.rowsPerPage !== undefined ? { rowsPerPage: args.rowsPerPage } : {}),
   });
 
-  const knownWithdrawn = [...new Set([...state.withdrawnRefs, ...diagnosis.withdrawnRefs])];
+  // A ref we published as withdrawn, present in the extraction again. Its permalink is
+  // not probed here: the record is in the listing, which is stronger evidence of being
+  // live than a 200 on its own page would be.
+  const resurrectedRefs = state.withdrawnRefs.filter((r) => currentRefs.includes(r));
+  const resurrected = new Set(resurrectedRefs);
 
-  // --- healthy -------------------------------------------------------------
+  // Withdrawn is a current status, not a permanent mark, so a resurrected ref leaves the
+  // list. The incident is what preserves that it was withdrawn and came back; keeping it
+  // in withdrawnRefs as well would show the same record as both withdrawn and on sale.
+  const knownWithdrawn = [...new Set([...state.withdrawnRefs, ...diagnosis.withdrawnRefs])].filter(
+    (r) => !resurrected.has(r)
+  );
+
+  const nextStateOnGoodRun = {
+    baselineRefs: currentRefs,
+    baselineRows: rows.length,
+    lastVerifiedAt: report.at,
+    lastGoodRows: rows,
+    healHistory: state.healHistory,
+    withdrawnRefs: knownWithdrawn,
+  };
+
+  // --- healthy, and possibly a resurrection --------------------------------
   if (diagnosis.cause === "healthy") {
+    // Nothing is wrong, so the rows are served either way. What changes is whether the
+    // cycle stays silent about it.
+    const resurrectionIncident: Incident | null =
+      resurrectedRefs.length === 0
+        ? null
+        : {
+            sourceId,
+            openedAt,
+            closedAt: report.at,
+            cause: "resurrected",
+            evidence: [
+              `${resurrectedRefs.length} record(s) previously published as withdrawn are ` +
+                `present in the listing again: ${resurrectedRefs.slice(0, 5).join(", ")}` +
+                (resurrectedRefs.length > 5 ? ` and ${resurrectedRefs.length - 5} more` : ""),
+              `contract ${report.contractVersion} passed over ${report.rows} rows, so this ` +
+                `is the source's own change rather than a reading error on our part`,
+              "no longer marked withdrawn; the withdrawal and the return are both on the record",
+            ],
+            prompt: null,
+            healAttempted: false,
+            healDeferred: false,
+            healDurationMs: null,
+            verified: true,
+            serving: true,
+            mttrMs: 0,
+            withdrawnRefs: [],
+            resurrectedRefs,
+            refusal: null,
+          };
+
     return {
       report,
       diagnosis,
-      incident: null,
+      resurrectedRefs,
+      incident: resurrectionIncident,
       serving: { rows, state: "verified" },
-      nextState: {
-        baselineRefs: currentRefs,
-        baselineRows: rows.length,
-        lastVerifiedAt: report.at,
-        lastGoodRows: rows,
-        healHistory: state.healHistory,
-        withdrawnRefs: knownWithdrawn,
-      },
+      nextState: nextStateOnGoodRun,
     };
   }
 
@@ -179,6 +231,7 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
     serving: false,
     mttrMs: null,
     withdrawnRefs: diagnosis.withdrawnRefs,
+    resurrectedRefs,
     refusal: null,
   };
 
@@ -197,6 +250,7 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
     return {
       report,
       diagnosis,
+      resurrectedRefs,
       incident,
       serving: { rows, state: "verified" },
       nextState: {
@@ -222,6 +276,7 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
     return {
       report,
       diagnosis,
+      resurrectedRefs,
       incident,
       serving: { rows: state.lastGoodRows, state: "unverified" },
       nextState: { ...state, withdrawnRefs: knownWithdrawn },
@@ -245,6 +300,7 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
     return {
       report,
       diagnosis,
+      resurrectedRefs,
       incident,
       serving: { rows: state.lastGoodRows, state: "unverified" },
       nextState: { ...state, withdrawnRefs: knownWithdrawn },
@@ -267,6 +323,7 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
     return {
       report,
       diagnosis,
+      resurrectedRefs,
       incident,
       serving: { rows: state.lastGoodRows, state: "unverified" },
       nextState: { ...state, withdrawnRefs: knownWithdrawn },
@@ -298,6 +355,7 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
     return {
       report: afterReport,
       diagnosis,
+      resurrectedRefs,
       incident,
       serving: { rows: after.rows, state: "healed" },
       nextState: {
@@ -320,6 +378,7 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
   return {
     report: afterReport,
     diagnosis,
+    resurrectedRefs,
     incident,
     serving: { rows: state.lastGoodRows, state: "unverified" },
     nextState: {

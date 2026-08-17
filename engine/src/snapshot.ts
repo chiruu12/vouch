@@ -132,6 +132,8 @@ export interface PubIncident {
   verified: boolean;
   mttrMs: number | null;
   withdrawnRefs: string[];
+  /** Refs published as withdrawn that the source is offering again. */
+  resurrectedRefs: string[];
   rows: number;
   breaches: string[];
 }
@@ -352,6 +354,7 @@ function loadIncidents(): PubIncident[] {
       verified: raw.incident.verified,
       mttrMs: raw.incident.mttrMs,
       withdrawnRefs: raw.incident.withdrawnRefs,
+      resurrectedRefs: raw.incident.resurrectedRefs ?? [],
       rows: raw.report.rows,
       breaches: raw.report.breaches,
     });

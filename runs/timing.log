@@ -146,3 +146,17 @@ made. Not backfilled, because editing a recorded incident is the one thing this 
 cannot do. The deferral path is covered by runner.test.ts instead.
 
 The incident log now holds one incident per cause, all written by current code.
+
+## Resurrection now reported (2026-08-18)
+Was a known gap: a record published as withdrawn that reappears at the source was
+served again with nothing said, because the contract passes and the classifier has no
+failure to report. In a recall feed a relisted recalled product is the most actionable
+event there is, so silence was the wrong default.
+
+  runCycle now computes resurrectedRefs from state.withdrawnRefs against the current
+  extraction, drops them from withdrawnRefs (withdrawn is a current status, not a
+  permanent mark), and opens an incident with cause "resurrected". Not a failure: no
+  repair, no refusal, rows served verified. Two tests in runner.test.ts.
+
+Observed for real earlier tonight: restoring the baseline fixture brought TW-88214,
+TW-44903 and TW-33887 back and the cycle said nothing. That run is what prompted this.
