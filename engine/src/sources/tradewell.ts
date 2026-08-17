@@ -1,4 +1,4 @@
-// Tradewell fixture adapter (synthetic marketplace, docs/decisions.md §9).
+// Tradewell fixture adapter (synthetic marketplace, docs/decisions.md §12).
 //
 // Written after trying to reuse the eBay adapter for this source, which failed
 // completely and quietly. Two reasons, both worth stating because they generalise:
@@ -12,7 +12,8 @@
 //
 // The result was worse than a crash: the contract read 0 rows, called it drift, and
 // spent four minutes healing a collector that was working perfectly. One adapter per
-// collector is not ceremony, it is the thing that stops false repairs.
+// collector is not ceremony, it is the thing that stops false repairs. See
+// docs/decisions.md §9, and sources/tradewell.test.ts for both real captures.
 //
 // This source also returns a plain seller handle, which is hashed on the way in so it
 // never reaches the rest of the pipeline. See docs/decisions.md §7.
@@ -126,10 +127,14 @@ export function normaliseTradewell(raw: unknown): Listing[] {
 export const tradewellRefOf = (row: Record<string, unknown>): string =>
   typeof row.id === "string" ? row.id : "";
 
-// Calibrated against the real 14-row capture. Every field this source does publish is
+// Calibrated against the real 14-row captures. Every field this source does publish is
 // mandatory, because we generate the data, so any null is drift rather than a genuinely
-// absent value. `currency` is excluded rather than given a loose limit: the collector
-// never returns it, so a limit would fail every healthy run.
+// absent value.
+//
+// `currency` is deliberately absent from the contract. One collector reports it and
+// another does not, over the same page, so any limit would either fail every healthy run
+// of the first or pass a genuine loss on the second. A field the sources disagree about
+// is not a field a contract can police.
 export const TRADEWELL_CONTRACT: SourceContract = {
   version: "tradewell@1",
   sourceId: "tradewell",
@@ -140,7 +145,7 @@ export const TRADEWELL_CONTRACT: SourceContract = {
     permalink: { type: "string", maxNullRate: 0, minLength: 20 }, // observed 0/14
     title: { type: "string", maxNullRate: 0, minLength: 8 }, // observed 0/14
     brand: { type: "string", maxNullRate: 0, minLength: 2 }, // observed 0/14
-    price: { type: "number", maxNullRate: 0 }, // observed 0/14, arrives as a number
+    price: { type: "number", maxNullRate: 0 }, // observed 0/14; a number here, whatever shape it arrived in
     condition: { type: "string", maxNullRate: 0, minLength: 3 }, // observed 0/14
     location: { type: "string", maxNullRate: 0, minLength: 3 }, // observed 0/14
     listedOn: { type: "date", maxNullRate: 0 }, // observed 0/14, already ISO date-only

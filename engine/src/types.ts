@@ -4,7 +4,7 @@
 
 /** Recall sources publish notices; marketplace sources publish listings we match
  *  against them. Both are supervised by the same cycle, so they share one id space.
- *  `arcadia` and `tradewell` are the synthetic fixtures (docs/decisions.md §9). */
+ *  `arcadia` and `tradewell` are the synthetic fixtures (docs/decisions.md §12). */
 export type SourceId =
   | "arcadia"
   | "cpsc"

@@ -131,7 +131,59 @@ The engine is unaffected by any of this, because every outside call goes through
 `CycleDeps`. The classifier, contract and refusal logic are testable, and tested,
 with no network at all.
 
-## 9. The fixture is labelled, always
+## 9. One adapter per collector, not one per site
+
+We assumed a collector's output shape follows the site it reads. It does not. It follows
+the collector.
+
+Three collectors over the same fixture, created from near-identical intent sentences,
+returned three different shapes. One nested every row inside a `results[]` envelope; the
+others were flat. One reported `price` as a number with no currency, another as
+`{ value, currency, symbol }`. One called the permalink `url`, another `item_url`. One
+returned `listed` as a date, another `listed_date` as a full timestamp.
+
+The first time we hit this we reused an adapter across two collectors, every row was
+rejected, a working collector looked like a total extraction failure, and the engine
+spent four minutes healing it. That is the false repair this project argues against,
+produced by the project, for the most boring possible reason.
+
+So each collector gets an adapter, each adapter accepts a set of aliases per canonical
+field, and `sources/tradewell.test.ts` runs both real captures through it and asserts
+they agree on the facts rather than merely parsing. Alias tolerance is not defensive
+padding here, it is the thing that stops a rename from reading as a data loss.
+
+## 10. A repair that could not start is not a repair that failed
+
+Heal is exclusive per collector. A second call while one is running returns HTTP 409
+`Another refactor job is still in progress`, and the CLI reports that as
+`heal_trigger_failed` with zero completed steps.
+
+Read literally, that is a failed repair. It is not. Nothing was attempted and the
+collector is untouched. The two states call for opposite responses: escalate, versus
+wait and try later. Worse, the refusal count is the number this project is judged on, and
+treating a queue conflict as a refusal inflates it with something we did not decide.
+
+So `bdata.ts` detects the 409 and returns `heal_busy`, `runCycle` records a deferral
+without marking a heal attempted, and the feed labels it as waiting rather than as a
+judgement. There is a test for it, because the distinction is invisible until it is wrong.
+
+## 11. A recorded incident is never edited
+
+Two incidents in the log were wrong after the fact. One carried evidence wording that
+said "withdrawn by the regulator" for a marketplace, written before that string was made
+source-neutral. One predated the deferral flag, so the published log would have counted a
+queue conflict as a refusal.
+
+Neither was corrected in place. The first was re-produced by re-running the whole
+scenario against the live collector, and the superseded record deleted. The second was
+deleted outright, with the reason written to `runs/timing.log` and the behaviour it
+demonstrated moved into a unit test.
+
+Editing a recorded measurement to match a later understanding of it is the one thing a
+project built on "we only publish what we verified" cannot do. Re-run it or drop it and
+say so.
+
+## 12. The fixture is labelled, always
 
 We cannot ask a real marketplace to redesign itself on cue, so breakage is demonstrated
 against a target we control and are permitted to break. It is labelled a synthetic test
