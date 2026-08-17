@@ -1,0 +1,118 @@
+{
+  "incident": {
+    "sourceId": "tradewell",
+    "openedAt": "2026-08-17T19:49:05.922Z",
+    "closedAt": "2026-08-17T19:49:10.357Z",
+    "cause": "gone",
+    "evidence": [
+      "3 notice(s) absent from the listing AND their permalinks return 404 or 410: TW-88214, TW-44903, TW-33887",
+      "removed at source, not lost by us: retained as last-good, never healed",
+      "all 3 missing record(s) accounted for by withdrawal; remaining 11 rows satisfy contract tradewell@1"
+    ],
+    "prompt": null,
+    "healAttempted": false,
+    "healDurationMs": null,
+    "verified": true,
+    "serving": true,
+    "mttrMs": 0,
+    "withdrawnRefs": [
+      "TW-88214",
+      "TW-44903",
+      "TW-33887"
+    ],
+    "refusal": "records were withdrawn at source and their permalinks no longer resolve; healing would fabricate replacements for records that were deliberately removed"
+  },
+  "report": {
+    "sourceId": "tradewell",
+    "contractVersion": "tradewell@1",
+    "at": "2026-08-17T19:49:10.357Z",
+    "rows": 11,
+    "baselineRows": 14,
+    "rowDropRate": 0.21428571428571427,
+    "passed": false,
+    "breaches": [
+      "row count fell from 14 to 11, a 21.4% drop, limit 20.0%"
+    ],
+    "fields": [
+      {
+        "field": "id",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "permalink",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "title",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "brand",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "price",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "condition",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "location",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "listedOn",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      }
+    ]
+  },
+  "diagnosis": {
+    "cause": "gone",
+    "withdrawnRefs": [
+      "TW-88214",
+      "TW-44903",
+      "TW-33887"
+    ],
+    "lostRefs": [],
+    "healable": false,
+    "evidence": [
+      "3 notice(s) absent from the listing AND their permalinks return 404 or 410: TW-88214, TW-44903, TW-33887",
+      "removed at source, not lost by us: retained as last-good, never healed",
+      "all 3 missing record(s) accounted for by withdrawal; remaining 11 rows satisfy contract tradewell@1"
+    ]
+  }
+}

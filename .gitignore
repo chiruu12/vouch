@@ -10,13 +10,23 @@ out/
 .DS_Store
 
 # Local run artifacts from timing/measurement work.
-# Raw captures stay out: marketplace output carries seller names and this repo is
-# public. Scrubbed samples go to engine/samples/ instead. timing.log is kept, since
-# it is the measurement record the write-up cites.
+#
+# Raw captures stay out: marketplace output carries plain seller names and this repo is
+# public. Scrubbed samples go to engine/samples/ instead.
+#
+# Supervision state and incidents are IN, for two reasons. They are the evidence the
+# write-up and the feed both cite, and `snapshot.ts` reads them, so without them a fresh
+# clone cannot build and one test fails. Both files were checked for seller identity
+# before being added: state-tradewell.json carries 11 sellerKey hashes and no names.
+# Anything new under runs/ is excluded by default, so a raw capture cannot arrive here
+# by accident.
 scratch/
 runs/*.json
 !runs/.gitkeep
 !runs/timing.log
+!runs/state-arcadia.json
+!runs/state-tradewell.json
+!runs/incident-*.json
 
 # local agent fleet config (dev tooling, not part of the submission)
 fleet.config.yaml

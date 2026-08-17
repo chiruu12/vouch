@@ -1,0 +1,119 @@
+{
+  "incident": {
+    "sourceId": "tradewell",
+    "openedAt": "2026-08-17T17:17:44.036Z",
+    "closedAt": null,
+    "cause": "drift",
+    "evidence": [
+      "field id null rate 100.0% against a limit of 0.0% over 0 rows (examples: )",
+      "field permalink null rate 100.0% against a limit of 0.0% over 0 rows (examples: )",
+      "field title null rate 100.0% against a limit of 0.0% over 0 rows (examples: )",
+      "field price null rate 100.0% against a limit of 2.0% over 0 rows (examples: )",
+      "field currency null rate 100.0% against a limit of 2.0% over 0 rows (examples: )",
+      "field condition null rate 100.0% against a limit of 5.0% over 0 rows (examples: )",
+      "field location null rate 100.0% against a limit of 5.0% over 0 rows (examples: )",
+      "listing fetched cleanly (HTTP 200, 8470 bytes) but yielded no rows"
+    ],
+    "prompt": "Extraction returned an empty array: 0 rows where several were expected, and no errors were raised. The listing at https://tradewell-market.vercel.app/ still returns HTTP 200 with 8470 bytes, so it is not blocked. Permalinks for the previously extracted notices still return HTTP 200, so nothing was withdrawn. The previously working selector .permalink now matches 0 elements. Attribute hooks present in the live document: data-testid, data-item-id. Visible field labels are now: Brand, Condition, Seller, Location, Shipping, Listed. Re-extract every notice across https://tradewell-market.vercel.app/ and /page-2.html.",
+    "healAttempted": true,
+    "healDurationMs": 246455,
+    "verified": false,
+    "serving": false,
+    "mttrMs": null,
+    "withdrawnRefs": [],
+    "refusal": "heal reported \"done\" but the result still fails the contract: field id null rate 100.0% exceeds limit 0.0% over 0 rows; field permalink null rate 100.0% exceeds limit 0.0% over 0 rows"
+  },
+  "report": {
+    "sourceId": "tradewell",
+    "contractVersion": "tradewell@1",
+    "at": "2026-08-17T17:22:08.720Z",
+    "rows": 0,
+    "baselineRows": null,
+    "rowDropRate": null,
+    "passed": false,
+    "breaches": [
+      "field id null rate 100.0% exceeds limit 0.0% over 0 rows",
+      "field permalink null rate 100.0% exceeds limit 0.0% over 0 rows",
+      "field title null rate 100.0% exceeds limit 0.0% over 0 rows",
+      "field price null rate 100.0% exceeds limit 2.0% over 0 rows",
+      "field currency null rate 100.0% exceeds limit 2.0% over 0 rows",
+      "field condition null rate 100.0% exceeds limit 5.0% over 0 rows",
+      "field location null rate 100.0% exceeds limit 5.0% over 0 rows",
+      "returned 0 rows, contract requires at least 5"
+    ],
+    "fields": [
+      {
+        "field": "id",
+        "nullRate": 1,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": true,
+        "sampleRefs": []
+      },
+      {
+        "field": "permalink",
+        "nullRate": 1,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": true,
+        "sampleRefs": []
+      },
+      {
+        "field": "title",
+        "nullRate": 1,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": true,
+        "sampleRefs": []
+      },
+      {
+        "field": "price",
+        "nullRate": 1,
+        "nullRateLimit": 0.02,
+        "typeErrors": 0,
+        "breached": true,
+        "sampleRefs": []
+      },
+      {
+        "field": "currency",
+        "nullRate": 1,
+        "nullRateLimit": 0.02,
+        "typeErrors": 0,
+        "breached": true,
+        "sampleRefs": []
+      },
+      {
+        "field": "condition",
+        "nullRate": 1,
+        "nullRateLimit": 0.05,
+        "typeErrors": 0,
+        "breached": true,
+        "sampleRefs": []
+      },
+      {
+        "field": "location",
+        "nullRate": 1,
+        "nullRateLimit": 0.05,
+        "typeErrors": 0,
+        "breached": true,
+        "sampleRefs": []
+      }
+    ]
+  },
+  "diagnosis": {
+    "cause": "drift",
+    "withdrawnRefs": [],
+    "lostRefs": [],
+    "healable": true,
+    "evidence": [
+      "field id null rate 100.0% against a limit of 0.0% over 0 rows (examples: )",
+      "field permalink null rate 100.0% against a limit of 0.0% over 0 rows (examples: )",
+      "field title null rate 100.0% against a limit of 0.0% over 0 rows (examples: )",
+      "field price null rate 100.0% against a limit of 2.0% over 0 rows (examples: )",
+      "field currency null rate 100.0% against a limit of 2.0% over 0 rows (examples: )",
+      "field condition null rate 100.0% against a limit of 5.0% over 0 rows (examples: )",
+      "field location null rate 100.0% against a limit of 5.0% over 0 rows (examples: )",
+      "listing fetched cleanly (HTTP 200, 8470 bytes) but yielded no rows"
+    ]
+  }
+}

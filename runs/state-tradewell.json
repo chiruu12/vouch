@@ -1,0 +1,157 @@
+{
+  "baselineRefs": [
+    "TW-91028",
+    "TW-66420",
+    "TW-55118",
+    "TW-91035",
+    "TW-77301",
+    "TW-91004",
+    "TW-91011",
+    "TW-91066",
+    "TW-22765",
+    "TW-91042",
+    "TW-91059"
+  ],
+  "baselineRows": 11,
+  "lastVerifiedAt": "2026-08-17T19:49:10.357Z",
+  "lastGoodRows": [
+    {
+      "id": "TW-91028",
+      "permalink": "https://tradewell-market.vercel.app/item/TW-91028.html",
+      "title": "Pellmore dreadnought acoustic, natural finish",
+      "brand": "Pellmore",
+      "price": 185,
+      "currency": null,
+      "condition": "Pre-owned",
+      "location": "Nashville, TN",
+      "listedOn": "2026-08-05",
+      "sellerKey": "sk_65b48d7d7113"
+    },
+    {
+      "id": "TW-66420",
+      "permalink": "https://tradewell-market.vercel.app/item/TW-66420.html",
+      "title": "MGC 5x5 magnetic speed cubes, stickerless",
+      "brand": "CuberShop",
+      "price": 18.99,
+      "currency": null,
+      "condition": "New",
+      "location": "Columbus, OH",
+      "listedOn": "2026-08-06",
+      "sellerKey": "sk_2813612faf66"
+    },
+    {
+      "id": "TW-55118",
+      "permalink": "https://tradewell-market.vercel.app/item/TW-55118.html",
+      "title": "Deli 20L metal jerry can, dark green",
+      "brand": "Deli",
+      "price": 27.5,
+      "currency": null,
+      "condition": "New",
+      "location": "Toledo, OH",
+      "listedOn": "2026-08-04",
+      "sellerKey": "sk_333ba26fde3b"
+    },
+    {
+      "id": "TW-91035",
+      "permalink": "https://tradewell-market.vercel.app/item/TW-91035.html",
+      "title": "Field & Wick merino throw, oatmeal",
+      "brand": "Field & Wick",
+      "price": 41.99,
+      "currency": null,
+      "condition": "New",
+      "location": "Portland, ME",
+      "listedOn": "2026-08-03",
+      "sellerKey": "sk_02632bcff02d"
+    },
+    {
+      "id": "TW-77301",
+      "permalink": "https://tradewell-market.vercel.app/item/TW-77301.html",
+      "title": "Cooluli Infinity 10L mini fridge, black",
+      "brand": "Cooluli",
+      "price": 64.5,
+      "currency": null,
+      "condition": "Used, good",
+      "location": "Austin, TX",
+      "listedOn": "2026-08-08",
+      "sellerKey": "sk_6479c6fba48e"
+    },
+    {
+      "id": "TW-91004",
+      "permalink": "https://tradewell-market.vercel.app/item/TW-91004.html",
+      "title": "Northline 40L hiking pack, forest green",
+      "brand": "Northline",
+      "price": 48,
+      "currency": null,
+      "condition": "Pre-owned",
+      "location": "Bend, OR",
+      "listedOn": "2026-08-09",
+      "sellerKey": "sk_a7f5a6e63796"
+    },
+    {
+      "id": "TW-91011",
+      "permalink": "https://tradewell-market.vercel.app/item/TW-91011.html",
+      "title": "Harbor & Oak 10-inch cast iron skillet",
+      "brand": "Harbor & Oak",
+      "price": 22,
+      "currency": null,
+      "condition": "New",
+      "location": "Asheville, NC",
+      "listedOn": "2026-08-07",
+      "sellerKey": "sk_ba931f5eb80b"
+    },
+    {
+      "id": "TW-91066",
+      "permalink": "https://tradewell-market.vercel.app/item/TW-91066.html",
+      "title": "Ridgeform trail runners, men's 10, slate",
+      "brand": "Ridgeform",
+      "price": 54,
+      "currency": null,
+      "condition": "Used, good",
+      "location": "Seattle, WA",
+      "listedOn": "2026-07-24",
+      "sellerKey": "sk_a196cc73bcc6"
+    },
+    {
+      "id": "TW-22765",
+      "permalink": "https://tradewell-market.vercel.app/item/TW-22765.html",
+      "title": "15 litre Cooluli Classic mini-fridge, white",
+      "brand": "Cooluli",
+      "price": 71,
+      "currency": null,
+      "condition": "Pre-owned",
+      "location": "Brooklyn, NY",
+      "listedOn": "2026-07-26",
+      "sellerKey": "sk_56e34aee6fb5"
+    },
+    {
+      "id": "TW-91042",
+      "permalink": "https://tradewell-market.vercel.app/item/TW-91042.html",
+      "title": "Kestrel 700c road frame, 56cm",
+      "brand": "Kestrel",
+      "price": 240,
+      "currency": null,
+      "condition": "Used, good",
+      "location": "Boulder, CO",
+      "listedOn": "2026-08-01",
+      "sellerKey": "sk_9e5324578d56"
+    },
+    {
+      "id": "TW-91059",
+      "permalink": "https://tradewell-market.vercel.app/item/TW-91059.html",
+      "title": "Marlow ceramic table lamp, sage glaze",
+      "brand": "Marlow",
+      "price": 38,
+      "currency": null,
+      "condition": "Used, good",
+      "location": "Richmond, VA",
+      "listedOn": "2026-07-28",
+      "sellerKey": "sk_143707f71f9c"
+    }
+  ],
+  "healHistory": [],
+  "withdrawnRefs": [
+    "TW-88214",
+    "TW-33887",
+    "TW-44903"
+  ]
+}

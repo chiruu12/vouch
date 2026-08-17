@@ -1,0 +1,117 @@
+{
+  "incident": {
+    "sourceId": "tradewell",
+    "openedAt": "2026-08-17T17:27:23.014Z",
+    "closedAt": null,
+    "cause": "blocked",
+    "evidence": [
+      "listing returned HTTP 200 with block signature \"verify you are a human\"",
+      "healing cannot clear a block; backing off instead"
+    ],
+    "prompt": null,
+    "healAttempted": false,
+    "healDurationMs": null,
+    "verified": false,
+    "serving": false,
+    "mttrMs": null,
+    "withdrawnRefs": [],
+    "refusal": "the source refused the request; healing cannot clear a block"
+  },
+  "report": {
+    "sourceId": "tradewell",
+    "contractVersion": "tradewell@1",
+    "at": "2026-08-17T17:27:57.029Z",
+    "rows": 0,
+    "baselineRows": 11,
+    "rowDropRate": 1,
+    "passed": false,
+    "breaches": [
+      "field id null rate 100.0% exceeds limit 0.0% over 0 rows",
+      "field permalink null rate 100.0% exceeds limit 0.0% over 0 rows",
+      "field title null rate 100.0% exceeds limit 0.0% over 0 rows",
+      "field brand null rate 100.0% exceeds limit 0.0% over 0 rows",
+      "field price null rate 100.0% exceeds limit 0.0% over 0 rows",
+      "field condition null rate 100.0% exceeds limit 0.0% over 0 rows",
+      "field location null rate 100.0% exceeds limit 0.0% over 0 rows",
+      "field listedOn null rate 100.0% exceeds limit 0.0% over 0 rows",
+      "returned 0 rows, contract requires at least 10",
+      "row count fell from 11 to 0, a 100.0% drop, limit 20.0%"
+    ],
+    "fields": [
+      {
+        "field": "id",
+        "nullRate": 1,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": true,
+        "sampleRefs": []
+      },
+      {
+        "field": "permalink",
+        "nullRate": 1,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": true,
+        "sampleRefs": []
+      },
+      {
+        "field": "title",
+        "nullRate": 1,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": true,
+        "sampleRefs": []
+      },
+      {
+        "field": "brand",
+        "nullRate": 1,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": true,
+        "sampleRefs": []
+      },
+      {
+        "field": "price",
+        "nullRate": 1,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": true,
+        "sampleRefs": []
+      },
+      {
+        "field": "condition",
+        "nullRate": 1,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": true,
+        "sampleRefs": []
+      },
+      {
+        "field": "location",
+        "nullRate": 1,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": true,
+        "sampleRefs": []
+      },
+      {
+        "field": "listedOn",
+        "nullRate": 1,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": true,
+        "sampleRefs": []
+      }
+    ]
+  },
+  "diagnosis": {
+    "cause": "blocked",
+    "withdrawnRefs": [],
+    "lostRefs": [],
+    "healable": false,
+    "evidence": [
+      "listing returned HTTP 200 with block signature \"verify you are a human\"",
+      "healing cannot clear a block; backing off instead"
+    ]
+  }
+}

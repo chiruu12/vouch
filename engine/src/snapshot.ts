@@ -280,7 +280,15 @@ function provenanceFor(sourceId: SourceId, state: SourceState | null, trust: Rec
   const at = state?.lastVerifiedAt ?? meta.capturedAt ?? null;
   if (at === null) {
     // Better to fail the build than to publish a record whose age nobody can state.
-    throw new Error(`source ${sourceId} has neither supervision state nor a capture time`);
+    // The state files are committed, so in practice this fires only when one has been
+    // deleted, and the message says how to get it back rather than just what is wrong.
+    throw new Error(
+      `source ${sourceId} has neither supervision state nor a capture time.\n` +
+        `  runs/state-${sourceId}.json is missing. Either restore it from git:\n` +
+        `    git checkout runs/state-${sourceId}.json\n` +
+        `  or run a cycle to produce a fresh one (needs BRIGHTDATA_API_KEY):\n` +
+        `    node --import tsx src/cycle.ts ${sourceId}`
+    );
   }
   return {
     sourceId,

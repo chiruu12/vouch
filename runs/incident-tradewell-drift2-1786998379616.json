@@ -1,0 +1,115 @@
+{
+  "incident": {
+    "sourceId": "tradewell",
+    "openedAt": "2026-08-17T20:20:32.031Z",
+    "closedAt": "2026-08-17T20:26:19.612Z",
+    "cause": "pagination",
+    "evidence": [
+      "returned 7 rows against a baseline of 14, which is one page of 7",
+      "all 7 missing notice(s) still return HTTP 200 at their permalinks, so they are published but unreached"
+    ],
+    "prompt": "Extraction returned 7 rows against a baseline of 14, and every field it did read satisfied contract tradewell@1. Rows are missing, not fields. The listing at https://tradewell-market-p5kff05i7-chirus-projects-a2862453.vercel.app/ still returns HTTP 200 with 8631 bytes, so it is not blocked. Permalinks for the previously extracted notices still return HTTP 200, so nothing was withdrawn. The previously working selector .permalink now matches 0 elements. Attribute hooks present in the live document: data-testid, data-listing-ref, data-explicit-opt-in, data-deployment-id. Visible field labels are now: Brand, Item condition, Seller, Location, Shipping, Listed. Re-extract every notice across https://tradewell-market-p5kff05i7-chirus-projects-a2862453.vercel.app/ and /page-2.html.",
+    "healAttempted": true,
+    "healDeferred": false,
+    "healDurationMs": 330551,
+    "verified": true,
+    "serving": true,
+    "mttrMs": 347580,
+    "withdrawnRefs": [],
+    "refusal": null
+  },
+  "report": {
+    "sourceId": "tradewell",
+    "contractVersion": "tradewell@1",
+    "at": "2026-08-17T20:26:19.612Z",
+    "rows": 14,
+    "baselineRows": 14,
+    "rowDropRate": 0,
+    "passed": true,
+    "breaches": [],
+    "fields": [
+      {
+        "field": "id",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "permalink",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "title",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "brand",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "price",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "condition",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "location",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "listedOn",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      }
+    ]
+  },
+  "diagnosis": {
+    "cause": "pagination",
+    "withdrawnRefs": [],
+    "lostRefs": [
+      "TW-55118",
+      "TW-91011",
+      "TW-91028",
+      "TW-88214",
+      "TW-66420",
+      "TW-77301",
+      "TW-91004"
+    ],
+    "healable": true,
+    "evidence": [
+      "returned 7 rows against a baseline of 14, which is one page of 7",
+      "all 7 missing notice(s) still return HTTP 200 at their permalinks, so they are published but unreached"
+    ]
+  }
+}
