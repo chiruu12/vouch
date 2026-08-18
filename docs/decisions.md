@@ -204,3 +204,20 @@ against a target we control and are permitted to break. It is labelled a synthet
 fixture everywhere it appears, and its variants replay realistic changes rather than
 inventing implausible ones. Passing a fixture off as a real site would forfeit more
 credibility than the demo is worth.
+
+## 13. A returning record outranks a risk band
+
+The feed sorts recalls by the source's risk band. A product that was withdrawn from sale
+and then relisted now sorts above all of them, whatever band it carries.
+
+The band is the regulator's judgement about the product, made once, and every recall in
+the feed has one. A return to sale is a fact about the present, it is rare, and it is the
+only thing on the page that changes what a reader who came yesterday should do today.
+Ranking it under a band would bury the one event that justifies checking again.
+
+It gets weight rather than colour. Hue on this feed means what the system decided about a
+record, and a relisting is not our decision, so the badge and the figure are filled in
+ink instead of clay: the heaviest marks on the page, making no claim about who decided
+anything. Both dates come from the incident log rather than from a flag set at render
+time, so what the feed says about the record can be checked against the record of why it
+says it.

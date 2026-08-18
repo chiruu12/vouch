@@ -125,7 +125,16 @@ export function ListingRow({ listing, threshold }: { listing: PubListing; thresh
   // source-level verified pill here would read as endorsing the match, which is
   // the one thing a quarantined row must not do. The scrape's own state is
   // stated as plain metadata on the row instead.
-  const badge = withdrawn ? "withdrawn" : m !== undefined && !m.publishable ? "held" : "listed";
+  // A record that was pulled and came back is not in the same state as one that was
+  // never pulled, and the badge is the only thing most readers will read. "listed" here
+  // would be true and useless.
+  const badge = withdrawn
+    ? "withdrawn"
+    : listing.resurrected !== undefined
+      ? "back on sale"
+      : m !== undefined && !m.publishable
+        ? "held"
+        : "listed";
   return (
     <div className="listing" data-withdrawn={withdrawn}>
       <div className="listing-top">
@@ -160,6 +169,12 @@ export function ListingRow({ listing, threshold }: { listing: PubListing; thresh
           ))}
         </div>
       )}
+      {listing.resurrected === undefined ? null : (
+        <p className="history">
+          published as withdrawn on {stamp(listing.resurrected.withdrawnAt)} after its
+          permalink stopped resolving, and on sale again at {stamp(listing.resurrected.backOnSaleAt)}
+        </p>
+      )}
       {m?.contradiction != null ? <p className="clash">clash: {m.contradiction}</p> : null}
       {/* A held row with no contradiction was showing "0.30 on product-only" and
           nothing else. That is the basis, not the reason. The reason is that 0.30
@@ -180,7 +195,7 @@ export function Figure({
 }: {
   value: string | number;
   label: string;
-  emphasis?: "refusal";
+  emphasis?: "refusal" | "return";
 }) {
   return (
     <div className="figure" {...(emphasis !== undefined ? { "data-emphasis": emphasis } : {})}>

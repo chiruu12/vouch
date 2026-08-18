@@ -20,7 +20,15 @@ const RISK_ORDER: Record<string, number> = {
   Unknown: 4,
 };
 
+const hasReturn = (r: PubRecall): boolean => r.onSale.some((l) => l.resurrected !== undefined);
+
 function byRisk(a: PubRecall, b: PubRecall): number {
+  // A recalled product that was taken down and put back outranks everything, whatever
+  // its risk band. The band is the source's judgement about the product; a return to
+  // sale after a withdrawal is a fact about right now, and it is the reason a reader
+  // who already saw this feed yesterday should look at it again today.
+  const back = Number(hasReturn(b)) - Number(hasReturn(a));
+  if (back !== 0) return back;
   const risk = (RISK_ORDER[a.risk] ?? 9) - (RISK_ORDER[b.risk] ?? 9);
   if (risk !== 0) return risk;
   return (b.published ?? "").localeCompare(a.published ?? "");
@@ -133,6 +141,10 @@ export default function Page() {
   // one word made the strongest entry in the log read as the weakest.
   const declinedToStart = refusals.filter((i) => !i.healAttempted).length;
   const rejectedResult = refusals.filter((i) => i.healAttempted).length;
+  const returned = snap.recalls.reduce(
+    (n, r) => n + r.onSale.filter((l) => l.resurrected !== undefined).length,
+    0
+  );
 
   return (
     <>
@@ -153,6 +165,9 @@ export default function Page() {
         <Figure value={snap.totals.asserted} label="asserted as the same product line, still listed" />
         <Figure value={snap.totals.quarantined} label="close match held back, reason shown" />
         <Figure value={snap.totals.withdrawn} label="removed at source, kept as history" />
+        {returned === 0 ? null : (
+          <Figure value={returned} label="withdrawn, then back on sale" emphasis="return" />
+        )}
         <Figure value={snap.totals.refusals} label="times the engine declined, on record" emphasis="refusal" />
       </div>
 

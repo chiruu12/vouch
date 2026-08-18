@@ -514,6 +514,17 @@ code {
   background: var(--verified-bg);
 }
 
+/* A record withdrawn at source and now on sale again. This is the most consequential
+ * state the feed can show, and it is not a decision we made, so it cannot take clay
+ * without breaking the rule that hue means what the system decided. It gets weight
+ * instead: solid ink, the heaviest mark on the page, carrying no hue claim at all. */
+.badge[data-trust="back on sale"] {
+  color: var(--paper);
+  background: var(--ink);
+  border-color: var(--ink);
+  font-weight: 600;
+}
+
 .badge[data-trust="withdrawn"],
 .badge[data-trust="held"] {
   color: var(--clay-ink);
@@ -617,6 +628,19 @@ code {
 
 .figure[data-emphasis="refusal"] span {
   color: var(--ink-2);
+}
+
+/* A return to sale is not a decision we made, so it does not take clay. It takes
+ * weight: the only filled figure on the page, which is the right amount of shouting
+ * for the one event that should send a reader back to a feed they already read. */
+.figure[data-emphasis="return"] {
+  background: var(--ink);
+  box-shadow: none;
+}
+
+.figure[data-emphasis="return"] b,
+.figure[data-emphasis="return"] span {
+  color: var(--paper);
 }
 
 /* --- recall card ------------------------------------------------------------- */
@@ -825,6 +849,18 @@ code {
   font-family: var(--mono);
   font-size: 0.72rem;
   color: var(--clay);
+}
+
+/* The two dates of a return to sale. Set in ink rather than clay for the same reason
+ * the badge is: it states what the source did, not what we decided. */
+.history {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--ink);
+  border-left: 2px solid var(--ink);
+  padding-left: 0.55rem;
 }
 
 /* --- machine text: the system's own words, verbatim ----------------------------- */

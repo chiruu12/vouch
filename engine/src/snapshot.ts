@@ -62,6 +62,13 @@ export interface PubListing {
   location: string | null;
   listedOn: string | null;
   provenance: PubProvenance;
+  /** Present when this listing was published as withdrawn and is on sale again.
+   *
+   *  A recalled product returning to sale is the most actionable event this feed can
+   *  report, and until now it was reported only in the incident log while the listing
+   *  itself went back to looking like any other. Both dates come from the incidents
+   *  that recorded them, so the claim is checkable against the log. */
+  resurrected?: { withdrawnAt: string; backOnSaleAt: string };
   /** Present when this listing was matched to a recall. */
   match?: {
     confidence: number;
@@ -195,7 +202,12 @@ const load = (rel: string): unknown => JSON.parse(readFileSync(join(ROOT, rel), 
 
 /** Strip everything the published shape does not name. `sellerKey` is the field this
  *  exists for: it is useful inside the pipeline and must not leave it. */
-function publishListing(l: Listing, provenance: PubProvenance, match?: Match): PubListing {
+function publishListing(
+  l: Listing,
+  provenance: PubProvenance,
+  match?: Match,
+  resurrected?: PubListing["resurrected"]
+): PubListing {
   const out: PubListing = {
     id: l.id,
     permalink: l.permalink,
@@ -208,6 +220,7 @@ function publishListing(l: Listing, provenance: PubProvenance, match?: Match): P
     listedOn: l.listedOn,
     provenance,
   };
+  if (resurrected !== undefined) out.resurrected = resurrected;
   if (match !== undefined) {
     out.match = {
       confidence: match.confidence,
@@ -509,11 +522,28 @@ export function buildSnapshot(now = new Date()): Snapshot {
   const matches = matchListings(allRecalls, twLive);
   const byListing = new Map(twLive.map((l) => [l.id, l]));
 
+  // Both halves of a resurrection come from the incident log rather than from a flag we
+  // set here, so what the feed says about a record is checkable against the record of
+  // why it says it. A ref with a return but no recorded withdrawal is skipped: we would
+  // be asserting a history we cannot show.
+  const incidents = loadIncidents();
+  const backOnSale = new Map<string, PubListing["resurrected"]>();
+  for (const i of incidents) {
+    for (const ref of i.resurrectedRefs) {
+      const gone = incidents.find(
+        (j) => j.withdrawnRefs.includes(ref) && j.openedAt <= i.openedAt
+      );
+      if (gone !== undefined) {
+        backOnSale.set(ref, { withdrawnAt: gone.openedAt, backOnSaleAt: i.openedAt });
+      }
+    }
+  }
+
   const recalls: PubRecall[] = allRecalls.map((r) => {
     const mine = matches.filter((m) => m.recallRef === r.ref);
     const toPub = (m: Match): PubListing | null => {
       const l = byListing.get(m.listingId);
-      return l === undefined ? null : publishListing(l, twProv, m);
+      return l === undefined ? null : publishListing(l, twProv, m, backOnSale.get(m.listingId));
     };
     return {
       ref: r.ref,
@@ -542,7 +572,6 @@ export function buildSnapshot(now = new Date()): Snapshot {
       return m === undefined ? publishListing(l, withdrawnProv) : publishListing(l, withdrawnProv, m);
     });
 
-  const incidents = loadIncidents();
   const study = buildStudy(cpscRecalls, normaliseEbay(load("engine/samples/ebay-cooluli-minifridge.json")));
 
   const sources: PubSource[] = [

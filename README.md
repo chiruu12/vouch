@@ -114,6 +114,13 @@ timings are in [`runs/timing.log`](runs/timing.log).
 | Repair that could not start | Diagnosed `pagination` and was ready to repair, but a repair was already running on that collector and the API returned HTTP 409. Recorded as deferred, not as a repair that failed. Nothing was attempted and the collector was left unchanged. Served last-good 14 rows as unverified. 9.1s |
 | A withdrawn record back on sale | The marketplace relisted one of three delisted products and its permalink resolved again. 12 rows against a baseline of 11, contract passed, nothing broken. Reported as a `resurrected` incident, dropped from the withdrawn list, served 12 rows verified. 8.3s |
 
+The last of those is the only event here that is not about the scraper at all, and it is
+the one a reader of a recall feed most needs. A recalled portable fuel container was
+pulled from sale and put back. Nothing broke, the contract passed, and a supervisor that
+only watches for breakage has nothing to say about it. The listing now carries the date
+it was withdrawn and the date it returned, both read from the incidents that recorded
+them, and its recall sorts above every other recall in the feed regardless of risk band.
+
 An earlier full detect, classify, repair and verify cycle on the Arcadia collector
 completed in 166s, measured before the account cap. All four failure causes have been
 produced against live collectors, and the repairable two are the only two that were
@@ -221,7 +228,8 @@ runs/timing.log   every measurement, written when it was taken
   serve the result.
 - `bdata scraper run --version dev` is unreachable from the CLI, so a repair cannot be
   inspected before it reaches production. The gate sits at serving time instead.
-- A resurrection is reported but not acted on beyond reporting. A relisted recalled
-  product is flagged as an incident and stops being marked withdrawn, but it then sits in
-  the feed as an ordinary listing. It should outrank one.
+- A resurrection is reported and ranked, but the feed has no way to tell anyone. A
+  relisted recalled product sorts to the top of the feed and carries both dates, which
+  helps a reader who opens the page and not one who does not. This wants a subscription,
+  and there is none.
 - Coverage is two recall sources and one marketplace.
