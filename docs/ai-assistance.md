@@ -16,7 +16,7 @@ central argument, and every call about what the system is allowed to claim are m
   Claude Code, working from a design I specified, and revised through review.
 - **The fixture markup.** `fixtures/*/build.mjs` generates the synthetic sites and
   their variants. The generators were written with assistance; the product data in
-  `data.json` was chosen by hand so the fixtures mirror real recalled products.
+  `fixtures/*/data.json` was chosen by hand so the fixtures mirror real recalled products.
 - **Tests.** The 110 tests were written with assistance. Several caught real bugs, and
   where they did the fix is described in the file the bug lived in.
 - **The visual design.** The feed was redesigned by Kimi K3 running headless in an

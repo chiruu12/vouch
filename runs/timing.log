@@ -273,3 +273,10 @@ Fixed while checking the render: the incident log showed "time to resolution 0.0
 on the resurrection. The cycle records 0ms because nothing failed, and printing
 that as a resolution time turns the absence of a repair into a repair that took no
 time. Clause dropped for that cause rather than zeroed.
+
+## Correction (2026-08-18)
+The pagination entry above records "heal 330.5s". The incident file for that run holds
+healDurationMs 330551, which is 330.6s to one decimal. The log line was truncated by
+hand where the record rounds. The README quotes 330.6s, which is the measured value.
+Corrected here rather than in place, because a measurement log that gets edited after
+the fact is not a measurement log.
