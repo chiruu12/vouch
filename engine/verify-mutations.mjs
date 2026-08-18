@@ -113,6 +113,13 @@ const MUTATIONS = [
     from: "const learned = store.learned.map((l) => l.marker).filter((m) => !dead.has(m));",
     to: "const learned = store.learned.map((l) => l.marker);",
   },
+  {
+    name: "a block only the collector saw is healed",
+    breaks: "the flagship refusal, whenever the wall is on the scraper's path and not the operator's",
+    file: "src/classify.ts",
+    from: "const sourceSideBlock = blockedAtSource(input.extractionErrors ?? []);",
+    to: "const sourceSideBlock = null;",
+  },
 ];
 
 /** How many tests fail, or null if the suite passed. The count is the useful part: a

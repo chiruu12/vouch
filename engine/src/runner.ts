@@ -150,6 +150,7 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
     baselineRefs: state.baselineRefs,
     currentRefs,
     permalinks,
+    extractionErrors: run.errors as { error: string; error_code?: string }[],
     ...(args.rowsPerPage !== undefined ? { rowsPerPage: args.rowsPerPage } : {}),
   });
 

@@ -54,6 +54,35 @@ export interface ClassifyInput {
   permalinks: readonly PermalinkProbe[];
   /** Rows one full page yields when healthy. Lets us recognise "we only got page 1". */
   rowsPerPage?: number;
+  /** Error rows the collector itself returned.
+   *
+   *  The listing probe goes out from wherever the supervisor runs. The collector goes
+   *  out from Bright Data's network, and those are different places that get treated
+   *  differently by the same site. A wall the collector hits and the probe does not was
+   *  invisible here: zero rows, a clean 200 from our side, diagnosed as drift, and the
+   *  refusal that this project is built around never fired. The scraper reporting that
+   *  it was refused is first-hand evidence about the path that actually matters. */
+  extractionErrors?: readonly { error: string; error_code?: string }[];
+}
+
+/** Extraction errors that mean "we were refused", not "the page changed". Kept narrow,
+ *  like every other detector here: a false positive stops a repair that should have
+ *  happened, which is a cost, but a false negative heals a block, which is the failure
+ *  this branch exists to prevent. */
+const BLOCK_ERROR_PATTERN =
+  /\b(403|407|429|forbidden|blocked|captcha|challenge|rate.?limit|too many requests|access denied|bot detect)/i;
+
+export function blockedAtSource(
+  errors: readonly { error: string; error_code?: string }[]
+): string | null {
+  for (const e of errors) {
+    // Separators are flattened first. Vendor error codes look like `http_403`, and an
+    // underscore is a word character, so `\b403` does not match inside one. The first
+    // version of this missed exactly the case it was written for, which a test caught.
+    const text = `${e.error_code ?? ""} ${e.error}`.replace(/[_\-.]/g, " ");
+    if (BLOCK_ERROR_PATTERN.test(text)) return (e.error_code ?? e.error).slice(0, 80);
+  }
+  return null;
 }
 
 export interface Diagnosis {
@@ -148,11 +177,26 @@ export function classify(input: ClassifyInput): Diagnosis {
 
   // 1. Refused at the door. Check first: nothing below is meaningful if we never
   //    got the page, and healing a block wastes credits and makes it worse.
-  if (BLOCK_STATUSES.has(listing.status) || listing.blockSignature !== null) {
-    evidence.push(
-      `listing returned HTTP ${listing.status}` +
-        (listing.blockSignature ? ` with block signature "${listing.blockSignature}"` : "")
-    );
+  //
+  //    Either path counts. Our probe being refused is evidence, and so is the collector
+  //    reporting it was refused, and the second one is the one that decides whether the
+  //    extraction could have worked at all.
+  const sourceSideBlock = blockedAtSource(input.extractionErrors ?? []);
+  if (BLOCK_STATUSES.has(listing.status) || listing.blockSignature !== null || sourceSideBlock !== null) {
+    if (sourceSideBlock !== null && !BLOCK_STATUSES.has(listing.status) && listing.blockSignature === null) {
+      // Worth saying explicitly in the log. A reader looking at a clean 200 next to a
+      // refusal would otherwise reasonably think the classifier had lost its mind.
+      evidence.push(
+        `the listing answered HTTP ${listing.status} to us, but the collector was refused: ` +
+          `"${sourceSideBlock}". The wall is on the scraper's path, not ours`
+      );
+    } else {
+      evidence.push(
+        `listing returned HTTP ${listing.status}` +
+          (listing.blockSignature ? ` with block signature "${listing.blockSignature}"` : "") +
+          (sourceSideBlock !== null ? `, and the collector reported "${sourceSideBlock}"` : "")
+      );
+    }
     evidence.push("healing cannot clear a block; backing off instead");
     return {
       cause: "blocked",

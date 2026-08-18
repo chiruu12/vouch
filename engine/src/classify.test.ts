@@ -6,6 +6,7 @@ import {
   type Diagnosis,
   type ListingProbe,
   type PermalinkProbe,
+  blockedAtSource,
 } from "./classify.js";
 import type { ContractReport, FieldReport } from "./contract.js";
 import { NotHealableError, synthesiseHealPrompt, type MarkupObservation } from "./prompt.js";
@@ -703,5 +704,80 @@ describe("a withdrawal alongside an unreachable probe", () => {
     const line = d.evidence.find((e) => e.includes("could not be checked")) ?? "";
     assert.match(line, /HTTP 403/);
     assert.doesNotMatch(line, /transport failure/);
+  });
+});
+
+// A wall the collector hits and our probe does not.
+//
+// The listing probe goes out from wherever the supervisor runs; the collector goes out
+// from Bright Data's network. Sites treat those differently, and the case that matters
+// is the one where the collector is refused and we are not: zero rows, a clean 200 from
+// our side, previously diagnosed as drift and sent to the healer. The flagship refusal
+// depended on the block being visible from the operator's network, which is the one
+// place it does not need to be visible.
+describe("a block on the scraper's path only", () => {
+  const cleanProbe = { status: 200, bodyBytes: 40000, blockSignature: null, body: "<html></html>" };
+
+  it("recognises a refusal the collector reported, on a page that answered us fine", () => {
+    const d = classify({
+      report: report({ rows: 0, passed: false, breaches: ["row count fell to 0"] }),
+      listing: cleanProbe,
+      baselineRefs: ["r1", "r2", "r3"],
+      currentRefs: [],
+      permalinks: [],
+      extractionErrors: [{ error: "Request failed", error_code: "http_403" }],
+    });
+    assert.equal(d.cause, "blocked");
+    assert.equal(d.healable, false);
+    assert.match(d.evidence.join(" "), /wall is on the scraper's path/);
+  });
+
+  it("names both when our probe was refused too", () => {
+    const d = classify({
+      report: report({ rows: 0, passed: false, breaches: ["row count fell to 0"] }),
+      listing: { ...cleanProbe, status: 403 },
+      baselineRefs: ["r1", "r2", "r3"],
+      currentRefs: [],
+      permalinks: [],
+      extractionErrors: [{ error: "blocked by target", error_code: "blocked" }],
+    });
+    assert.equal(d.cause, "blocked");
+    assert.match(d.evidence.join(" "), /collector reported/);
+  });
+
+  it("reads a rate limit and a captcha challenge as refusals", () => {
+    for (const e of [
+      { error: "Too Many Requests", error_code: "http_429" },
+      { error: "captcha challenge presented", error_code: "extraction_failed" },
+      { error: "Access denied", error_code: "http_403" },
+    ]) {
+      assert.equal(blockedAtSource([e]) !== null, true, `${e.error_code} should read as a block`);
+    }
+  });
+
+  it("does not read an ordinary extraction failure as a block", () => {
+    // The distinction the whole branch rests on. A dead page or a selector that stopped
+    // matching is repairable; being refused is not. Reading the first as the second
+    // would refuse every repair this system exists to make.
+    for (const e of [
+      { error: "page returned no items", error_code: "dead_page" },
+      { error: "selector matched 0 elements", error_code: "extraction_failed" },
+      { error: "timeout while loading", error_code: "timeout" },
+    ]) {
+      assert.equal(blockedAtSource([e]), null, `${e.error_code} must stay repairable`);
+    }
+  });
+
+  it("still diagnoses drift when the collector reported nothing", () => {
+    const d = classify({
+      report: report({ rows: 0, passed: false, breaches: ["row count fell to 0"] }),
+      listing: cleanProbe,
+      baselineRefs: ["r1", "r2", "r3"],
+      currentRefs: [],
+      permalinks: [{ ref: "r1", status: 200 }, { ref: "r2", status: 200 }, { ref: "r3", status: 200 }],
+      extractionErrors: [],
+    });
+    assert.equal(d.cause, "drift");
+    assert.equal(d.healable, true);
   });
 });

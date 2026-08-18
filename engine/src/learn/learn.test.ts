@@ -288,6 +288,7 @@ describe("the withdrawal phrases the oracle looks for", () => {
     const store = acceptMarker(emptyMarkerStore(), CAND, NOW);
     const found = disprovedMarkers(store, ledgerWith(CAND.marker, ["A1", "A2"], ["B7"]));
     assert.deepEqual(found, [{ marker: CAND.marker, disprovedBy: "B7" }]);
+    assert.ok(found[0] !== undefined);
     const after = retract(store, found[0], "ebay", NOW);
     assert.equal(activeMarkers(after).includes(CAND.marker), false);
     assert.equal(after.retracted[0]?.disprovedBy, "B7", "the record that disproved it is recorded");
