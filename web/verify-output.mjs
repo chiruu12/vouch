@@ -169,12 +169,75 @@ function attempts(pageText, want) {
 const altered = [];
 let renderings = 0;
 
-for (const { where, text, on } of required) {
-  const want = flat(text);
+const count = (hay, needle) => hay.split(needle).length - 1;
+
+/** How many complete copies each page owes.
+ *
+ *  Hole 4: "does this page contain the string" is not enough when the page renders it
+ *  more than once. Four contradiction sentences appear on the method page twice, as a
+ *  quarantine reason and again in the worked examples. Truncating one of the two left
+ *  the other intact, and the intact one answered for the mangled one, so the check went
+ *  green with a half sentence on the page. That is the original concatenation bug at
+ *  one page's scale. The required list already names every rendering, so the count
+ *  falls out of it. */
+const owed = new Map();
+for (const { text, on } of required) {
   for (const route of on) {
-    renderings++;
-    if (!page(route).text.includes(want)) {
-      altered.push([`${where}: not verbatim on ${route}`, want]);
+    const want = flat(text);
+    const key = `${route}\u0000${want}`;
+    const prev = owed.get(key);
+    owed.set(key, { route, want, n: (prev?.n ?? 0) + 1 });
+  }
+}
+
+for (const { route, want, n } of owed.values()) {
+  renderings += n;
+  const got = count(page(route).text, want);
+  if (got < n) {
+    altered.push([
+      `${route} renders ${got} complete cop${got === 1 ? "y" : "ies"} where it owes ${n}`,
+      want,
+    ]);
+  }
+}
+
+/** The shortest opening that appears in this string and in no other.
+ *
+ *  A fixed 40 characters is not distinctive enough, in two different ways. Five pairs
+ *  of contract breaches agree for more than 40 characters and diverge only at the
+ *  limit they cite. And an evidence line opens with the same clause as the repair
+ *  prompt that quotes it, so the evidence's window turns up in the middle of the
+ *  prompt. Either way a fixed window matches where a different string is rendered and
+ *  reports that string as a truncation of this one. Growing the window until nothing
+ *  else contains it removes both. Where one string is wholly inside another the window
+ *  becomes the whole string, which makes the check below a tautology for it, and the
+ *  count above is what covers that case instead.
+ */
+function distinctiveOpening(want, others) {
+  for (let n = Math.min(WINDOW, want.length); n < want.length; n++) {
+    const opening = want.slice(0, n);
+    if (!others.some((o) => o !== want && o.includes(opening))) return opening;
+  }
+  return want;
+}
+
+/** Every place a string starts, it has to finish.
+ *
+ *  The count above catches a rendering that vanished. This catches one that is present
+ *  but cut short, at the site where it was cut, which is the failure a reader actually
+ *  sees: half a sentence that reads like a whole one. */
+const distinct = [...new Set(required.map((r) => flat(r.text)))];
+for (const want of distinct) {
+  const opening = distinctiveOpening(want, distinct);
+  for (const p of pages) {
+    if (p.route === "404.html") continue;
+    let at = p.text.indexOf(opening);
+    while (at !== -1) {
+      if (!p.text.startsWith(want, at)) {
+        altered.push([`${p.route} starts this and does not finish it`, want]);
+        break;
+      }
+      at = p.text.indexOf(opening, at + 1);
     }
   }
 }

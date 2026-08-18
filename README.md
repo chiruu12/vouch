@@ -152,6 +152,7 @@ cd ../web
 npm install
 npm run dev                               # the feed
 npm run build                             # export, then verify the exported HTML
+npm run mutations                         # prove that verifier catches what it claims
 ```
 
 `npm run build` ends by running `verify-output.mjs` against the exported HTML. It fails
@@ -159,16 +160,26 @@ the build if a string the engine wrote was altered on its way to the page, if a 
 owes a string no longer carries it, if anything is hidden behind a disclosure or CSS, or
 if a seller field reached the output.
 
-That script has been wrong three times, and each rule in it exists because a mutation got
-past the version before. It concatenated the pages, so a refusal intact on one page
-satisfied the check for the same refusal truncated on another. It then held a page to a
-string only if the page contained the string's first 40 characters, so truncating the
-head instead of the tail dropped the page out of the checked set. It stripped `<script>`
-tags but kept their contents, and a static Next export inlines every server-rendered
-string in the RSC flight payload, so a block could be deleted from the page entirely and
-still be found in the payload. Six mutations are now caught, including all three of
-those. A check that reports success without establishing the property is worse than no
-check.
+That script has been wrong four times, and every rule in it exists because a mutation
+got past the version before.
+
+1. It concatenated the pages, so a refusal intact on one page satisfied the check for
+   the same refusal truncated on another.
+2. It then held a page to a string only if the page contained that string's first 40
+   characters, so truncating the head instead of the tail dropped the page out of the
+   checked set.
+3. It stripped `<script>` tags but kept their contents, and a static Next export inlines
+   every server-rendered string in the RSC flight payload, so a section could be deleted
+   from the page and still be found in its own payload.
+4. It asked whether a page contained a string, not how many times. Four sentences render
+   twice on the method page, and truncating one left the other to answer for it.
+
+`npm run mutations` re-derives that claim. It applies ten edits that each break a stated
+guarantee, rebuilds, and requires the verifier to reject every one. The harness asserts
+its own edits landed, because an earlier version of it lost a mutation to shell quoting,
+built unmodified source, and reported the hole it had failed to create. A check that
+reports success without establishing the property is worse than no check, and that
+applies to the check on the check.
 
 The engine has no network calls of its own. Everything that touches the outside world
 goes through `CycleDeps`, injected at the entry point, which is why the classifier,

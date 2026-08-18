@@ -8,7 +8,8 @@
     "build": "npm run snapshot && next build && node verify-output.mjs",
     "verify": "node verify-output.mjs",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "mutations": "node verify-mutations.mjs"
   },
   "dependencies": {
     "next": "15.1.6",

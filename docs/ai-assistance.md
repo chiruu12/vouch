@@ -65,7 +65,7 @@ Recording these because a disclosure that only lists successes is not a disclosu
 - A seller-name scrubber handled the top-level field and missed the same field nested
   one level down. It would have reported success while publishing 14 names.
 - `web/verify-output.mjs` checks that the built pages quote engine text whole. It was
-  wrong three times, and each version passed a mutation it claimed to catch. Version one
+  wrong four times, and each version passed a mutation it claimed to catch. Version one
   concatenated every page into one string, so a refusal intact on the incident log
   satisfied the check for the same refusal truncated on the front page. Version two
   fixed that and then held a page to a string only if the page contained the string's
@@ -73,8 +73,15 @@ Recording these because a disclosure that only lists successes is not a disclosu
   of the checked set entirely. Version three stripped `<script>` tags but kept their
   contents, and a static Next export inlines every server-rendered string in the RSC
   flight payload, so a whole section could be deleted from a page and still be found in
-  its own payload. The first was caught by mutation-testing my own check. The second and
-  third were found by an AI audit I commissioned to attack it.
+  its own payload. Version four asked whether a page contained a string rather than how
+  many times, so where one sentence renders twice, truncating one left the other to
+  answer for it. The first was caught by mutation-testing my own check. The second and
+  third were found by an AI audit I commissioned to attack it. The fourth was found by
+  the mutation suite that audit prompted me to write.
+- The mutation harness itself then produced a false result. A shell one-liner lost its
+  quoting, the mutation never reached the file, the build came out clean, and the run
+  reported that the verifier had a hole. A no-op mutation is indistinguishable from an
+  escaped one unless the harness proves it edited something, which it now does.
 
 Each of these was caught by a gate, a test, or a review pass rather than by inspection,
 which is the argument for having them. The verifier is the sharpest case: it is the
