@@ -202,15 +202,47 @@ const load = (rel: string): unknown => JSON.parse(readFileSync(join(ROOT, rel), 
 
 /** Strip everything the published shape does not name. `sellerKey` is the field this
  *  exists for: it is useful inside the pipeline and must not leave it. */
+/** A link we are willing to put under a trust pill.
+ *
+ *  The permalink a reader clicks was scraped, or written by a healer, and until now
+ *  nothing checked it: the adapter took any string, the contract asked only for twenty
+ *  characters, and the page rendered it inside an anchor beneath a "verified" label.
+ *  Meanwhile the withdrawal oracle probes a URL it builds from the ref, so "we probed
+ *  the permalink" described a URL the feed does not publish.
+ *
+ *  A lookalike host passes every one of those checks. `tradewell-market.vercel.app` and
+ *  `tradewell-market.vercel.app.phish-example.invalid` differ by a suffix and are
+ *  entirely different sites, so the test is exact host equality against the source we
+ *  actually scraped, not a prefix or a contains.
+ *
+ *  A link that fails becomes null rather than failing the build. The listing is still
+ *  worth publishing, and a recall match with no link is a smaller loss than a recall
+ *  match pointing somewhere we cannot vouch for. */
+export function samePlaceWeScraped(permalink: string | null, sourceUrl: string): string | null {
+  if (permalink === null) return null;
+  try {
+    const link = new URL(permalink);
+    // Anything that is not ordinary web traffic is out before hosts are compared, so
+    // javascript: and data: cannot reach a template and rely on the framework to catch
+    // them. React happens to block javascript: hrefs; that is React protecting us,
+    // which is not the same as this project being careful.
+    if (link.protocol !== "https:" && link.protocol !== "http:") return null;
+    return link.host === new URL(sourceUrl).host ? permalink : null;
+  } catch {
+    return null;
+  }
+}
+
 function publishListing(
   l: Listing,
   provenance: PubProvenance,
   match?: Match,
   resurrected?: PubListing["resurrected"]
 ): PubListing {
+  const sourceUrl = META[provenance.sourceId]?.url ?? "";
   const out: PubListing = {
     id: l.id,
-    permalink: l.permalink,
+    permalink: samePlaceWeScraped(l.permalink, sourceUrl),
     title: l.title,
     brand: l.brand,
     price: l.price,
@@ -287,6 +319,28 @@ const META: Record<string, SourceMeta> = {
   },
 };
 
+/** What we are willing to say about a source's records right now.
+ *
+ *  One function, because the feed has already been caught saying two things at once.
+ *  The health strip derived this properly while every record under it was handed the
+ *  literal string "verified", so during a degraded cycle the strip read FAIL and the
+ *  listings beneath it read verified. That is the same bug the card's own comment
+ *  describes fixing, fixed on the card and left standing one component down.
+ *
+ *  A volume breach with recorded withdrawals behind it does not un-verify rows that were
+ *  read cleanly: the classifier established that every missing record 404s and that no
+ *  field breached, so the survivors are still vouched for. A field breach is different
+ *  and does un-verify them, because it means we misread what we did fetch. */
+export function deriveTrust(sourceId: SourceId, rows: readonly unknown[], state: SourceState | null): RecordState {
+  const meta = META[sourceId];
+  if (meta === undefined) throw new Error(`no metadata for source ${sourceId}`);
+  const report = checkContract(meta.contract, rows as Record<string, unknown>[], state?.baselineRows ?? null);
+  const volumeOnly = report.breaches.length > 0 && report.fields.every((f) => !f.breached);
+  const explainedByWithdrawal = volumeOnly && (state?.withdrawnRefs.length ?? 0) > 0;
+  if (!(report.passed || explainedByWithdrawal)) return "unverified";
+  return (state?.healHistory.some((h) => h.verified) ?? false) ? "healed" : "verified";
+}
+
 function provenanceFor(sourceId: SourceId, state: SourceState | null, trust: RecordState): PubProvenance {
   const meta = META[sourceId];
   if (meta === undefined) throw new Error(`no metadata for source ${sourceId}`);
@@ -350,9 +404,6 @@ function sourceCard(
   // card now applies the runner's reasoning: a volume breach with recorded withdrawals
   // behind it does not un-verify rows that were read cleanly. A field breach still does,
   // and the breach text is published either way so the reader sees the number regardless.
-  const volumeOnly = report.breaches.length > 0 && report.fields.every((f) => !f.breached);
-  const explainedByWithdrawal = volumeOnly && (state?.withdrawnRefs.length ?? 0) > 0;
-
   return {
     id: sourceId,
     label: meta.label,
@@ -361,7 +412,7 @@ function sourceCard(
     collectorId: meta.collectorId,
     url: meta.url,
     contractVersion: meta.contract.version,
-    trust: report.passed || explainedByWithdrawal ? "verified" : "unverified",
+    trust: deriveTrust(sourceId, rows, state),
     rows: rows.length,
     baselineRows: state?.baselineRows ?? null,
     contractPassed: report.passed,
@@ -521,11 +572,7 @@ export function buildSnapshot(now = new Date()): Snapshot {
 
   const arcadiaState = readState("arcadia");
   const arcadiaRows = (arcadiaState?.lastGoodRows ?? []) as unknown as Omit<RecallRecord, "provenance">[];
-  const arcadiaProv = provenanceFor(
-    "arcadia",
-    arcadiaState,
-    (arcadiaState?.healHistory.some((h) => h.verified) ?? false) ? "healed" : "verified"
-  );
+  const arcadiaProv = provenanceFor("arcadia", arcadiaState, deriveTrust("arcadia", arcadiaRows, arcadiaState));
 
   // --- the marketplace we supervise -------------------------------------------
   const twState = readState("tradewell");
@@ -541,7 +588,7 @@ export function buildSnapshot(now = new Date()): Snapshot {
   const twLive = ((twState?.lastGoodRows ?? []) as unknown as Listing[]).filter(
     (l) => !withdrawnRefs.has(String(l.id))
   );
-  const twProv = provenanceFor("tradewell", twState, "verified");
+  const twProv = provenanceFor("tradewell", twState, deriveTrust("tradewell", twLive, twState));
 
   // Withdrawn listings are not in lastGoodRows any more, by design. Their text comes
   // from the baseline capture, and they are republished only as a withdrawal record.

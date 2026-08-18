@@ -85,6 +85,20 @@ const MUTATIONS = [
         because: "a wrong withdrawal phrase removes live recalls from the feed, so a person reads the evidence",
       };`,
   },
+  {
+    name: "records are labelled verified regardless of trust",
+    breaks: "the feed's health strip and its records can disagree during a degraded cycle",
+    file: "src/snapshot.ts",
+    from: 'if (!(report.passed || explainedByWithdrawal)) return "unverified";',
+    to: 'if (false) return "unverified";',
+  },
+  {
+    name: "a scraped permalink is published unchecked",
+    breaks: "a lookalike host is rendered as a trusted link under a verified pill",
+    file: "src/snapshot.ts",
+    from: "return link.host === new URL(sourceUrl).host ? permalink : null;",
+    to: "return permalink;",
+  },
 ];
 
 /** How many tests fail, or null if the suite passed. The count is the useful part: a

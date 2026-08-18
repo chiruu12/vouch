@@ -7,9 +7,10 @@
 // the thing we are about to publish actually does. When runs/ is empty (a fresh
 // clone) the assertions still hold, because the shape is what is being asserted.
 
-import { test } from "node:test";
+import { test, describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { buildSnapshot, type PubListing, type PubRecall } from "./snapshot.js";
+import { buildSnapshot, deriveTrust, samePlaceWeScraped, type PubListing, type PubRecall } from "./snapshot.js";
+import type { SourceState } from "./runner.js";
 import { PUBLISH_THRESHOLD } from "./match.js";
 
 const snap = buildSnapshot(new Date("2026-08-18T09:00:00.000Z"));
@@ -89,4 +90,108 @@ test("every refusal in the incident log keeps its evidence verbatim", () => {
       assert.equal(i.healAttempted, false, `incident ${i.id} healed a "${i.cause}" diagnosis`);
     }
   }
+});
+
+// One word doing two jobs.
+//
+// The health strip derived trust from the contract while every listing under it was
+// handed the literal string "verified". During a degraded cycle the strip read FAIL and
+// the records beneath it read verified, which is the feed contradicting itself on the
+// only claim it exists to make. Both now go through deriveTrust, so these pin the cases
+// that separate them.
+describe("what the feed is willing to say about a record", () => {
+  const rows = (n: number, over: Record<string, unknown> = {}): Record<string, unknown>[] =>
+    Array.from({ length: n }, (_, i) => ({
+      id: `TW-1000${i}`,
+      permalink: `https://tradewell-market.vercel.app/item/TW-1000${i}.html`,
+      title: `A listing number ${i}`,
+      brand: "Zimtown",
+      price: 34,
+      condition: "New",
+      location: "Boise, ID",
+      listedOn: "2026-07-30",
+      ...over,
+    }));
+
+  const state = (over: Partial<SourceState> = {}): SourceState => ({
+    baselineRefs: [],
+    baselineRows: 12,
+    lastVerifiedAt: "2026-08-18T08:48:18.707Z",
+    lastGoodRows: [],
+    healHistory: [],
+    withdrawnRefs: [],
+    ...over,
+  });
+
+  it("says verified when the contract passes", () => {
+    assert.equal(deriveTrust("tradewell", rows(12), state()), "verified");
+  });
+
+  it("says unverified when a field breached, which is the case that was impossible before", () => {
+    // Kimi's reproduction: null out condition on the rows the runner would be serving
+    // stale after a degraded cycle. The strip said FAIL, every record said verified.
+    assert.equal(deriveTrust("tradewell", rows(12, { condition: null }), state()), "unverified");
+  });
+
+  it("says healed once a repair has been verified behind these rows", () => {
+    const healed = state({
+      healHistory: [
+        {
+          at: "2026-08-18T00:00:00.000Z",
+          cause: "drift",
+          prompt: "fix the selectors",
+          collectorId: "c_test",
+          durationMs: 1000,
+          verified: true,
+          promoted: true,
+        },
+      ],
+    });
+    assert.equal(deriveTrust("tradewell", rows(12), healed), "healed");
+  });
+
+  it("keeps vouching for survivors when the only breach is volume explained by withdrawals", () => {
+    // The rows we did read were read cleanly. A record 404ing does not un-verify them.
+    const withWithdrawals = state({ withdrawnRefs: ["TW-88214", "TW-44903", "TW-33887"] });
+    assert.equal(deriveTrust("tradewell", rows(10), withWithdrawals), "verified");
+  });
+
+  it("still says unverified when rows are missing and nothing accounts for them", () => {
+    assert.equal(deriveTrust("tradewell", rows(4), state()), "unverified");
+  });
+});
+
+// The link under the trust pill.
+describe("a permalink we are willing to publish", () => {
+  const SRC = "https://tradewell-market.vercel.app/";
+
+  it("keeps a link on the site we actually scraped", () => {
+    const ok = "https://tradewell-market.vercel.app/item/TW-33887.html";
+    assert.equal(samePlaceWeScraped(ok, SRC), ok);
+  });
+
+  it("rejects a lookalike host that only shares a prefix", () => {
+    // 84 characters, so it clears the contract's minLength of 20, and it reads almost
+    // exactly like the real thing at a glance. A reader clicking a "verified" recall
+    // listing would land on someone else's site entirely.
+    const evil = "https://tradewell-market.vercel.app.phish-example.invalid/item/TW-77301.html";
+    assert.equal(samePlaceWeScraped(evil, SRC), null);
+  });
+
+  it("rejects a different site outright", () => {
+    assert.equal(samePlaceWeScraped("https://example.invalid/item/TW-1.html", SRC), null);
+  });
+
+  it("rejects a scheme that is not web traffic, without relying on the framework", () => {
+    assert.equal(samePlaceWeScraped("javascript:alert(document.domain)", SRC), null);
+    assert.equal(samePlaceWeScraped("data:text/html,<h1>hi</h1>", SRC), null);
+  });
+
+  it("rejects something that is not a URL at all", () => {
+    assert.equal(samePlaceWeScraped("a string that is over twenty characters", SRC), null);
+  });
+
+  it("passes null through", () => {
+    assert.equal(samePlaceWeScraped(null, SRC), null);
+  });
 });
