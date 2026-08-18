@@ -280,3 +280,17 @@ healDurationMs 330551, which is 330.6s to one decimal. The log line was truncate
 hand where the record rounds. The README quotes 330.6s, which is the measured value.
 Corrected here rather than in place, because a measurement log that gets edited after
 the fact is not a measurement log.
+
+## Lock duration measured, and what a lock actually blocks (2026-08-18)
+The refactor lock on c_msydlwlb20dqcv6x7u was taken at 08:05Z by a cycle whose client
+process we killed at the 200s mark. Checked again at 09:06Z: still held, 409 "Another
+refactor job is still in progress". Sixty-one minutes with no job to show for it, and a
+longer data point than the twenty minutes recorded for c_msxnf5nk1ltg20ga7.
+
+The part worth recording is what the lock does not block. At the same moment the heal was
+refused with a 409, a scraper run on that collector returned all 14 rows correctly. A
+wedged collector is not a dead one. It extracts exactly as well as before and has only
+lost the ability to be repaired, which costs nothing until the site changes. Third stuck
+collector in the account, second by this route.
+
+Balance still $52.00 after everything today.

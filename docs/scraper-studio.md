@@ -27,10 +27,12 @@ about six minutes, zero error rows. An earlier query returned 169 listings in 24
 seconds, also clean. That is the case we most expected to fail, and it did not need any
 tuning.
 
-**Cost at this volume is not a factor.** Account balance did not move across two
-creates, three heals and seven runs. Only page loads bill. Throttled requests are not
-billed either, which we found out the hard way while looking at a balance that had not
-changed during a rate limit.
+**Cost at this volume is not a factor.** Account balance held at $52.00 throughout: nine
+`scraper create` calls, of which eight produced a collector and one was refused for being
+a government domain; seven heal triggers; and every extraction run including a
+193-listing eBay query. Only page loads bill. Throttled requests are not billed either,
+which we found out the hard way while looking at a balance that had not changed during a
+rate limit.
 
 **The creation pipeline is legible.** The CLI streams its stage names, so a five minute
 create is watchable rather than opaque:
@@ -70,21 +72,30 @@ against a contract establishes whether the data came back. Everything in this pr
 downstream of that finding follows from it: we never serve output we have not measured
 ourselves.
 
-### A heal can permanently wedge a collector
+### A heal can permanently wedge a collector, but only for healing
 
-Two collectors in this account are stuck, by two different routes.
+Three collectors in this account are stuck, by two different routes.
 
 The first: a second `scraper heal` against a collector whose previous heal had
 auto-approved returned HTTP 422 `Invalid message` with zero completed steps, and it has
 not accepted a heal since.
 
-The second: a heal that never produced a usable repair left the refactor lock held.
-Every subsequent heal on that collector has returned the 409 below, across four attempts
-over twenty minutes. The lock outlives the job that took it.
+The other two: a heal that never produced a usable repair left the refactor lock held.
+Every subsequent heal on those collectors returns the 409 below. On the first we gave up
+after four attempts over twenty minutes. On the second we kept checking: the lock was
+taken at 08:05Z and was still held at 09:06Z, sixty-one minutes later, with no job to
+show for it.
 
-Treat a wedged collector as a real operational state, not a transient error. We keep a
-standby collector against the same fixture with the same intent, because five free
-minutes beforehand is cheaper than discovering it mid-demo.
+The useful part is what the lock does not block. That same collector, at the same moment
+its heal was refused with a 409, ran and returned all 14 rows correctly. A wedged
+collector is not a dead one. It extracts exactly as well as it did before; it has simply
+lost the ability to be repaired, which matters only when the site changes. So the
+operational response is not to replace it, it is to know that its next failure will be
+its last.
+
+Treat this as a real state, not a transient error. We keep a standby collector against
+the same fixture with the same intent, because five free minutes beforehand is cheaper
+than discovering it mid-demo.
 
 ### Heal is exclusive per collector, and "busy" looks exactly like "failed"
 
@@ -112,6 +123,13 @@ We now detect the 409 and report it as `heal_busy`, a deferral rather than a fai
 it does not land in the incident log as an attempted repair that did not work. This is
 easy to get wrong, because the first time you see it you will be looking at a real
 breakage and will read the status field.
+
+There is a published incident for this, `tradewell-defer-a-1787041033513`. It shows the
+shape the distinction protects: a clean `pagination` diagnosis, a repair the engine was
+ready to make, and a record saying nothing was attempted and the collector is unchanged.
+Counted as a refusal it would have inflated the one number this project is judged on, in
+the flattering direction. The lock in that run was held by a cycle whose client process
+we had killed minutes earlier, which is the ordinary way this happens.
 
 ### The repair prompt has undocumented limits
 
@@ -145,11 +163,17 @@ classifier like any other result.
 
 ### The output envelope is a property of the collector, not the site
 
-One collector returns listing fields at the top level. Another, over the same site,
-nests them inside a `results[]` array. We reused an adapter across two collectors on
-that assumption and every row was rejected, so a working collector looked like a total
-extraction failure and the engine spent four minutes healing it. One adapter per
-collector, verified against a real capture.
+Three collectors, one site, three output shapes. The first returns listing fields at the
+top level and calls the identifier `item_id`. The second nests them in a `results[]`
+array, calls it `id`, and reports price as `{value, currency, symbol}` where the first
+reports a bare number. The third, created a day later from a near-identical sentence,
+calls it `listing_id` and dates it `date_listed`.
+
+We reused an adapter across the first two on the assumption that shape follows the site.
+It follows the collector. Every row was rejected, a working collector looked like a total
+extraction failure, and the engine spent four minutes healing it. One adapter per
+collector, with aliases per canonical field, and a test asserting every capture agrees on
+the facts rather than merely parsing.
 
 ### Immediate Access Mode is invisible until it bites
 

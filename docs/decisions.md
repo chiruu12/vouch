@@ -139,8 +139,13 @@ the collector.
 Three collectors over the same fixture, created from near-identical intent sentences,
 returned three different shapes. One nested every row inside a `results[]` envelope; the
 others were flat. One reported `price` as a number with no currency, another as
-`{ value, currency, symbol }`. One called the permalink `url`, another `item_url`. One
-returned `listed` as a date, another `listed_date` as a full timestamp.
+`{ value, currency, symbol }`. The permalink was `url`, then `item_url`, then
+`listing_url`. The date was `listed`, then `listed_date` as a full timestamp, then
+`date_listed`. The identifier was `id`, then `item_id`, then `listing_id`.
+
+The third arrived a day after the second, from a sentence written to match, which is the
+part worth noting: this is not drift over months of vendor changes. Two collectors built
+the same way on consecutive days do not agree on what to call a field.
 
 The first time we hit this we reused an adapter across two collectors, every row was
 rejected, a working collector looked like a total extraction failure, and the engine
@@ -148,9 +153,11 @@ spent four minutes healing it. That is the false repair this project argues agai
 produced by the project, for the most boring possible reason.
 
 So each collector gets an adapter, each adapter accepts a set of aliases per canonical
-field, and `sources/tradewell.test.ts` runs both real captures through it and asserts
-they agree on the facts rather than merely parsing. Alias tolerance is not defensive
-padding here, it is the thing that stops a rename from reading as a data loss.
+field, and `sources/tradewell.test.ts` runs all three real captures through it and
+asserts they agree on the facts, not merely that they parse. The agreement check runs
+pairwise against the first capture, so adding a fourth collector extends it by one line
+and cannot quietly go unchecked. Alias tolerance is not defensive padding here, it is the
+thing that stops a rename from reading as a data loss.
 
 ## 10. A repair that could not start is not a repair that failed
 
@@ -169,15 +176,22 @@ judgement. There is a test for it, because the distinction is invisible until it
 
 ## 11. A recorded incident is never edited
 
-Two incidents in the log were wrong after the fact. One carried evidence wording that
-said "withdrawn by the regulator" for a marketplace, written before that string was made
+Three incidents were wrong after the fact. One carried evidence wording that said
+"withdrawn by the regulator" for a marketplace, written before that string was made
 source-neutral. One predated the deferral flag, so the published log would have counted a
-queue conflict as a refusal.
+queue conflict as a refusal. One recorded a genuine deferral, but against a collector
+still finishing creation, whose field naming the adapter did not yet know: it read zero
+rows and called that drift. The deferral in it was real and the failure under it was
+scaffolding.
 
-Neither was corrected in place. The first was re-produced by re-running the whole
-scenario against the live collector, and the superseded record deleted. The second was
-deleted outright, with the reason written to `runs/timing.log` and the behaviour it
-demonstrated moved into a unit test.
+None was corrected in place. The first was re-produced by re-running the whole scenario
+against the live collector, and the superseded record deleted. The second and third were
+deleted outright, each with its reason written to `runs/timing.log`.
+
+The same rule applies one level out. A hand-written line in `runs/timing.log` recorded a
+repair as taking 330.5s where the incident file holds 330551ms, which rounds to 330.6s.
+The correction is appended, not applied to the original line. A measurement log that gets
+tidied afterwards is not a measurement log.
 
 Editing a recorded measurement to match a later understanding of it is the one thing a
 project built on "we only publish what we verified" cannot do. Re-run it or drop it and
