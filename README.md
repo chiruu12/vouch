@@ -218,6 +218,10 @@ runs/timing.log   every measurement, written when it was taken
   it surprised us, and the workarounds
 - [AI assistance](docs/ai-assistance.md): what was AI-assisted and what was not
 
+## Licence
+
+MIT. See [LICENSE](LICENSE).
+
 ## Known limits
 
 - Matching is title-based. It cannot read a lot code off a photo, so batch-level
