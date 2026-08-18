@@ -46,7 +46,15 @@ function Recall({ r, threshold }: { r: PubRecall; threshold: number }) {
         )}
       </h3>
 
-      {r.hazard === null ? null : <p className="hazard">{r.hazard}</p>}
+      {/* The fact list is a fixed schema, not a list of whatever the source happened
+          to publish. Dropping a row when a field is null put two conventions on one
+          card: brand said "not stated" while category vanished, so a reader could not
+          tell an unpublished field from one the feed never asked for. */}
+      {r.hazard === null ? (
+        <p className="absent">hazard not stated by source</p>
+      ) : (
+        <p className="hazard">{r.hazard}</p>
+      )}
 
       <dl className="facts">
         <div>
@@ -61,18 +69,14 @@ function Recall({ r, threshold }: { r: PubRecall; threshold: number }) {
           <dt>Affected units</dt>
           <dd>{r.affectedUnits ?? "not stated"}</dd>
         </div>
-        {r.category === null ? null : (
-          <div>
-            <dt>Category</dt>
-            <dd>{r.category}</dd>
-          </div>
-        )}
-        {r.action === null ? null : (
-          <div style={{ gridColumn: "1 / -1" }}>
-            <dt>What to do</dt>
-            <dd>{r.action}</dd>
-          </div>
-        )}
+        <div>
+          <dt>Category</dt>
+          <dd>{r.category ?? "not stated"}</dd>
+        </div>
+        <div style={{ gridColumn: "1 / -1" }}>
+          <dt>What to do</dt>
+          <dd>{r.action ?? "no remedy published by source"}</dd>
+        </div>
       </dl>
 
       {r.onSale.length === 0 ? null : (

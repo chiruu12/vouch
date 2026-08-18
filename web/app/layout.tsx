@@ -31,7 +31,7 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Vouch",
+  title: { default: "Vouch", template: "%s · Vouch" },
   description:
     "A product recall feed that states what it verified, what it repaired, and what it refused to publish.",
 };

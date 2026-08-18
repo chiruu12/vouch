@@ -10,6 +10,11 @@
 import { Figure } from "../../components/parts";
 import { snapshot } from "../../lib/data";
 
+export const metadata = {
+  title: "Method",
+  description: "How a recall is matched to a listing, and why most candidates are held back.",
+};
+
 export default function Page() {
   const snap = snapshot();
   const s = snap.study;

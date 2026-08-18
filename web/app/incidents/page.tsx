@@ -12,6 +12,11 @@
 import { Evidence, Figure, Machine } from "../../components/parts";
 import { outcome, seconds, snapshot, stamp, type PubIncident } from "../../lib/data";
 
+export const metadata = {
+  title: "Incident log",
+  description: "Every failure the supervisor recorded, and whether it repaired it or refused.",
+};
+
 const CAUSE_MEANING: Record<string, string> = {
   blocked:
     "the request was refused at the door. Rewriting selectors cannot clear a block, so attempting a repair would burn credits and can deepen the block.",
@@ -104,7 +109,7 @@ export default function Page() {
   const incidents = [...snap.incidents].reverse();
   // A deferral is not a refusal. See the snapshot builder for why that
   // distinction is worth the extra clause.
-  const refusals = incidents.filter((i) => i.refusal !== null && !i.healDeferred).length;
+  const declined = incidents.filter((i) => i.refusal !== null && !i.healDeferred);
   const attempted = incidents.filter((i) => i.healAttempted);
   const served = attempted.filter((i) => i.verified).length;
 
@@ -122,7 +127,7 @@ export default function Page() {
 
       <div className="figures" role="group" aria-label="Incident log at a glance">
         <Figure value={incidents.length} label="incidents recorded" />
-        <Figure value={refusals} label="repairs refused" emphasis="refusal" />
+        <Figure value={declined.length} label="times the engine declined" emphasis="refusal" />
         <Figure value={`${served}/${attempted.length}`} label="repairs attempted that survived measurement" />
         <Figure
           value={incidents.reduce((n, i) => n + i.withdrawnRefs.length, 0)}
