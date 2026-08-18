@@ -1,7 +1,9 @@
 # AI assistance
 
-Required disclosure for the WeMakeDevs "Into the Scrape-Verse" hackathon, and worth
-writing carefully regardless.
+Written for the WeMakeDevs "Into the Scrape-Verse" hackathon. The kick-off post does not
+demand a disclosure like this, so this is not us satisfying a rule. A project whose
+argument is that you should not publish what you have not verified would look ridiculous
+being vague about how it was built.
 
 ## The short answer
 
