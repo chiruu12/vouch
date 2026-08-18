@@ -164,8 +164,89 @@ export async function healScraper(
   }
 }
 
-/** Plain fetch used for the listing probe and the permalink oracle. */
-export async function probeUrl(url: string, timeoutMs = 20_000): Promise<UrlProbe> {
+/** Statuses that mean "the site refused us", not "the record is gone".
+ *
+ *  This distinction is the whole reason the oracle needs a second transport. A real
+ *  eBay item permalink answers 403 to a plain request, whatever user agent it carries.
+ *  Left there, every missing row on a marketplace with a bot wall is unresolvable, the
+ *  oracle can never establish a withdrawal, and the supervisor refuses every repair it
+ *  is offered. That fails closed, which is correct and also useless: on the sites this
+ *  project is actually for, it would never do anything at all. */
+const REFUSED_STATUSES = new Set([401, 403, 407, 429, 503]);
+
+/** Bright Data's own failure, reported in its headers rather than in the status line.
+ *  A navigation timeout comes back as 502 with `x-brd-error`, and reading that as the
+ *  target's answer would turn an infrastructure blip into a withdrawal. */
+function brdError(headers: Record<string, unknown> | undefined): string | null {
+  if (headers === undefined) return null;
+  for (const [k, v] of Object.entries(headers)) {
+    if (k.toLowerCase() === "x-brd-error") return String(v);
+  }
+  return null;
+}
+
+/** The permalink oracle over the Web Unlocker API, used only when a plain request was
+ *  refused. Returns null for "could not establish", never a guess.
+ *
+ *  Note the deliberate gap: the Unlocker reports status, headers and body, but not the
+ *  URL it landed on, so `finalUrl` stays as asked and `redirectedAway` cannot fire on
+ *  an unlocked probe. That only ever weakens withdrawal detection, so a record whose
+ *  page now redirects elsewhere reads as unresolved rather than gone, and unresolved
+ *  refuses the repair. Losing the redirect signal costs a refusal, not a phantom. */
+export function readUnlockerEnvelope(stdout: string, url: string): UrlProbe | null {
+  // The CLI prints a progress line before the envelope.
+  const start = stdout.indexOf("{");
+  if (start < 0) return null;
+  let env: { status_code?: number; headers?: Record<string, unknown>; body?: string };
+  try {
+    env = JSON.parse(stdout.slice(start)) as typeof env;
+  } catch {
+    return null;
+  }
+  if (typeof env.status_code !== "number") return null;
+  if (brdError(env.headers) !== null) return null;
+  // A 5xx from the proxy is the proxy's answer, not the site's.
+  if (env.status_code >= 500) return null;
+  const body = typeof env.body === "string" ? env.body : "";
+  return { status: env.status_code, bytes: body.length, body, finalUrl: url };
+}
+
+async function probeViaUnlocker(url: string, timeoutMs: number): Promise<UrlProbe | null> {
+  try {
+    const { stdout } = await exec(BIN, [...BASE_ARGS, "scrape", url, "--format", "json"], {
+      timeout: timeoutMs,
+      maxBuffer: 32 * 1024 * 1024,
+    });
+    return readUnlockerEnvelope(stdout, url);
+  } catch {
+    return null;
+  }
+}
+
+/** The listing probe and the permalink oracle.
+ *
+ *  Plain fetch first, because it is free and instant and the sources that answer it
+ *  honestly are most of them. Escalation to the Web Unlocker happens only when the
+ *  site refused the plain request, so an ordinary cycle costs nothing extra and a
+ *  hostile target still gets a real answer. */
+export async function probeUrl(
+  url: string,
+  timeoutMs = 20_000,
+  opts: { unlock?: boolean } = {}
+): Promise<UrlProbe> {
+  const direct = await plainProbe(url, timeoutMs);
+  if (opts.unlock === false || !REFUSED_STATUSES.has(direct.status)) return direct;
+
+  // Unlocker requests take a good deal longer than a plain fetch, so the escalation
+  // gets its own floor rather than inheriting a timeout tuned for direct requests.
+  const unlocked = await probeViaUnlocker(url, Math.max(timeoutMs, 90_000));
+
+  // Falling back to `direct` on failure keeps the refusal visible: a block we could
+  // not see past stays a block, and the classifier refuses on it exactly as before.
+  return unlocked ?? direct;
+}
+
+async function plainProbe(url: string, timeoutMs: number): Promise<UrlProbe> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
