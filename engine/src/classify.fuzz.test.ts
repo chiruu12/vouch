@@ -31,9 +31,15 @@ function rng(seed: number): () => number {
 const pick = <T,>(r: () => number, xs: readonly T[]): T => xs[Math.floor(r() * xs.length)] as T;
 
 /** Statuses a permalink can answer with, including the ones that broke this before. */
-const STATUSES = [200, 200, 200, 404, 410, 0, 500, 503, 403, 429, 408, 301, 302, 418];
-const GONE_BODIES = [null, null, null, "no longer available", "permalink redirected to /x"];
-const BLOCK_SIGS = [null, null, null, null, "checking your browser", "cf-challenge"];
+// Weighted so the generator spends its time where the guarantees live. An earlier
+// balance sent 62% of inputs down the blocked branch, which short-circuits everything
+// else, and reached `pagination` exactly once in three thousand runs. A property test
+// that never visits the interesting state passes without checking anything, which is
+// the same failure as a verifier that reports success without establishing the property.
+// `coverage` below asserts the distribution so this cannot quietly rot.
+const STATUSES = [200, 200, 200, 200, 200, 200, 404, 404, 410, 0, 500, 503, 403, 429, 408, 301, 302, 418];
+const GONE_BODIES = [null, null, null, null, null, "no longer available", "permalink redirected to /x"];
+const BLOCK_SIGS = [null, null, null, null, null, null, null, null, null, null, null, null, "checking your browser", "cf-challenge"];
 
 interface Generated {
   seed: number;
@@ -51,7 +57,10 @@ function generate(seed: number): Generated {
   const baselineRefs = Array.from({ length: total }, (_, i) => `R-${i + 1}`);
 
   // Keep a random subset, sometimes none, sometimes all.
-  const kept = baselineRefs.filter(() => r() > 0.45);
+  // Mostly keep records, so a run usually has a handful of missing refs rather than
+  // half the catalogue. That is both the realistic shape and the one where the
+  // repairable and refusable branches actually compete.
+  const kept = baselineRefs.filter(() => r() > 0.22);
   const currentRefs = kept;
   const missing = baselineRefs.filter((x) => !kept.includes(x));
 
@@ -91,13 +100,16 @@ function generate(seed: number): Generated {
   };
 
   const listing: ListingProbe = {
-    status: pick(r, [200, 200, 200, 200, 403, 429, 503]),
+    status: pick(r, [200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 403, 429, 503]),
     bodyBytes: 500,
     blockSignature: pick(r, BLOCK_SIGS),
     body: "<html></html>",
   };
 
-  const perPage = r() < 0.5 ? 1 + Math.floor(r() * 8) : undefined;
+  // Sometimes set exactly to the surviving row count, which is the shape a broken
+  // paging scheme produces and the only way the pagination branch is ever reached.
+  const perPage =
+    r() < 0.35 ? kept.length || 1 : r() < 0.6 ? 1 + Math.floor(r() * 8) : undefined;
   return {
     seed,
     report,
@@ -210,6 +222,45 @@ describe("classifier invariants over generated input", () => {
       assert.equal(d.cause, "blocked", `seed ${seed}: block not detected`);
       assert.equal(d.healable, false, `seed ${seed}: healable despite a block`);
     }
+  });
+
+  it("actually reaches the states it claims to test", () => {
+    // The property tests above are only worth their runtime if the generator visits the
+    // branches they constrain. An earlier balance sent 62% of inputs to `blocked`, which
+    // short-circuits everything, and reached `pagination` once in three thousand runs:
+    // four green properties that had checked almost nothing. This asserts the shape of
+    // the distribution, so tuning the generator cannot quietly hollow out the suite.
+    const causes = new Map<string, number>();
+    let healable = 0;
+    let unresolved = 0;
+    let withdrawn = 0;
+    for (let seed = 1; seed <= RUNS; seed++) {
+      const d = classify(generate(seed));
+      causes.set(d.cause, (causes.get(d.cause) ?? 0) + 1);
+      if (d.healable) healable++;
+      if (d.unresolvedRefs.length > 0) unresolved++;
+      if (d.withdrawnRefs.length > 0) withdrawn++;
+    }
+
+    const at = (c: string): number => causes.get(c) ?? 0;
+    const floors: [string, number][] = [
+      ["drift", 200],
+      ["blocked", 100],
+      ["gone", 20],
+      ["pagination", 10],
+      ["healthy", 20],
+    ];
+    for (const [cause, floor] of floors) {
+      assert.ok(
+        at(cause) >= floor,
+        `generator reached ${cause} only ${at(cause)} times in ${RUNS}, floor is ${floor}`
+      );
+    }
+    // The repair-authorising path is the one the headline property constrains, so it
+    // gets its own floor rather than being covered by "drift happened".
+    assert.ok(healable >= 200, `only ${healable} healable inputs in ${RUNS}`);
+    assert.ok(unresolved >= 200, `only ${unresolved} unresolved inputs in ${RUNS}`);
+    assert.ok(withdrawn >= 200, `only ${withdrawn} withdrawn inputs in ${RUNS}`);
   });
 
   it("always produces a cause and evidence for it", () => {

@@ -418,3 +418,31 @@ counts as absence and letting everything else default to presence. Presence is t
 that costs something.
 
 132 tests, of which 5 are properties over generated input.
+
+## Runner properties, and checking that the fuzzer checks anything (2026-08-18)
+Added engine/src/runner.fuzz.test.ts: 400 seeds, five cycles each, 2000 supervision
+cycles against a source that breaks, recovers, gets blocked, loses records, has them come
+back, and returns nonsense from the healer. Four invariants on the persisted state:
+last-good is never replaced by output that did not pass, a withdrawn ref only stops being
+withdrawn by being reported as resurrected, every non-healthy cycle opens an incident and
+no incident is both attempted and deferred, and no row is ever served that did not come
+from this run, the heal, or last-good.
+
+The state machine survived all four. DeepSeek and Grok had both suspected sequence bugs
+there and neither found one; nor did this.
+
+Then checked whether the classifier fuzzer was actually testing anything. It was not,
+much. Distribution over 3000 inputs was blocked 1851, drift 1096, healthy 32, gone 20,
+pagination 1, and only 121 inputs were healable. The headline property constrains the
+healable path, and it was seeing 4% of runs. Blocked short-circuits everything before it,
+so an over-weighted block probability was hollowing out the whole suite.
+
+Rebalanced: blocked 921, drift 1822, gone 60, pagination 29, healthy 168, and 650 healable
+inputs. Added a coverage test that asserts floors per cause and for the healable,
+unresolved and withdrawn paths, so tuning the generator cannot quietly gut it again.
+
+Same lesson as the output verifier, third time today: a check that reports success
+without establishing the property is worse than no check, and that applies to the checks
+on the checks.
+
+137 tests, nine of them properties over generated input.

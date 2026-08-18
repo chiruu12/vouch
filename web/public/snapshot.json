@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-18T12:49:10.636Z",
+  "generatedAt": "2026-08-18T12:53:20.795Z",
   "caveat": "Matched on product line, not on unit. Recalls are often limited to specific batches or serial ranges, and marketplace listings rarely show them, so a match here means this listing appears to be the same product as a recall, not that this particular item is affected.",
   "publishThreshold": 0.7,
   "sources": [

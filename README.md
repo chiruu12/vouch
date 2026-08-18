@@ -165,6 +165,15 @@ recalled portable fuel container. Nothing was broken, the contract passed, and b
 this existed the feed would have served it again in silence, because a supervisor that
 only watches for failures has nothing to say about a source that changes its mind.
 
+Nine of those tests are properties over generated input rather than examples:
+`classify.fuzz.test.ts` runs 3000 inputs through the classifier and
+`runner.fuzz.test.ts` drives 2000 cycles of the state machine, checking invariants like
+"a repair is never authorised while any missing record is unaccounted for" and "a
+withdrawn ref only ever stops being withdrawn by being reported as resurrected". One of
+them found a live defect within seconds of being written, which is described in
+`docs/decisions.md`. Both suites assert their own coverage, because a property test that
+never reaches the interesting branch passes without checking anything.
+
 The refusal is enforced in code rather than by convention. Flipping the `gone` branch to
 healable `drift` fails exactly seven tests and nothing else: five on the classifier's
 verdict, including the soft-404 case where the record says it is gone in the body rather
@@ -183,7 +192,7 @@ has the originals.
 cd engine
 npm install
 npm run demo                              # watch all four causes decided, no API key
-npm test                                  # 132 tests, no network
+npm test                                  # 137 tests, no network
 node --import tsx src/cycle.ts arcadia    # one supervision cycle, needs BRIGHTDATA_API_KEY
 node --import tsx src/snapshot.ts         # publish web/public/snapshot.json
 
