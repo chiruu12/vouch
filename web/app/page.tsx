@@ -10,7 +10,7 @@
 // whose argument is "we decline to publish" should decline on the front page.
 
 import { Figure, ListingRow, Machine, Provenance, Severity, Trust } from "../components/parts";
-import { dateOnly, snapshot, stamp, type PubRecall } from "../lib/data";
+import { dateOnly, outcome, snapshot, stamp, type PubRecall } from "../lib/data";
 
 const RISK_ORDER: Record<string, number> = {
   Serious: 0,
@@ -26,7 +26,7 @@ function byRisk(a: PubRecall, b: PubRecall): number {
   return (b.published ?? "").localeCompare(a.published ?? "");
 }
 
-function Recall({ r }: { r: PubRecall }) {
+function Recall({ r, threshold }: { r: PubRecall; threshold: number }) {
   return (
     <article className="card" data-risk={r.risk}>
       <div className="card-top">
@@ -89,7 +89,7 @@ function Recall({ r }: { r: PubRecall }) {
           {r.onSale.map((l) => (
             <ListingRow listing={l} key={l.id} />
           ))}
-          <Provenance p={r.onSale[0]!.provenance} />
+          <Provenance p={r.onSale[0]!.provenance} attached />
         </div>
       )}
 
@@ -104,9 +104,9 @@ function Recall({ r }: { r: PubRecall }) {
             same as never having looked.
           </p>
           {r.quarantined.map((l) => (
-            <ListingRow listing={l} key={l.id} />
+            <ListingRow listing={l} threshold={threshold} key={l.id} />
           ))}
-          <Provenance p={r.quarantined[0]!.provenance} />
+          <Provenance p={r.quarantined[0]!.provenance} attached />
         </div>
       )}
 
@@ -124,6 +124,11 @@ export default function Page() {
   // declined, it was not allowed to start. The distinction is the snapshot's
   // own, and the front page inherits it rather than recounting.
   const refusals = snap.incidents.filter((i) => i.refusal !== null && !i.healDeferred);
+  // Not all of these are refusals to repair. One is a repair that ran, reported done,
+  // and was rejected on measurement, which is a refusal to publish. Counting them under
+  // one word made the strongest entry in the log read as the weakest.
+  const declinedToStart = refusals.filter((i) => !i.healAttempted).length;
+  const rejectedResult = refusals.filter((i) => i.healAttempted).length;
 
   return (
     <>
@@ -139,12 +144,12 @@ export default function Page() {
         <p className="stamp-line">snapshot published {stamp(snap.generatedAt)}</p>
       </header>
 
-      <div className="figures" aria-label="This snapshot at a glance">
+      <div className="figures" role="group" aria-label="This snapshot at a glance">
         <Figure value={snap.totals.recalls} label="recall notices held" />
         <Figure value={snap.totals.asserted} label="asserted as the same product line, still listed" />
         <Figure value={snap.totals.quarantined} label="close match held back, reason shown" />
         <Figure value={snap.totals.withdrawn} label="removed at source, kept as history" />
-        <Figure value={snap.totals.refusals} label="repairs refused, on record" emphasis="refusal" />
+        <Figure value={snap.totals.refusals} label="times the engine declined, on record" emphasis="refusal" />
       </div>
 
       {refusals.length === 0 ? null : (
@@ -154,17 +159,22 @@ export default function Page() {
               Declined, on record
             </h2>
             <p className="section-note">
-              {refusals.length} times the engine was asked to repair data it could not honestly
-              repair. A healer that always answers will eventually invent a safety recall, so
-              the refusal is recorded and published with the evidence. The{" "}
-              <a href="/incidents">incident log</a> holds each one in full.
+              {declinedToStart} times the engine refused to attempt a repair, and{" "}
+              {rejectedResult} times it threw away a repair that finished and still failed the
+              contract. A healer that always answers will eventually invent a safety recall, so
+              each decision is recorded and published with the evidence that produced it. The{" "}
+              <a href="/incidents">incident log</a> holds every one in full.
             </p>
           </div>
           {refusals.map((i) => (
             <article className="card" key={i.id}>
               <div className="card-top">
-                <span className="verdict" data-kind="refused">
-                  repair refused
+                {/* The same definition the incident log uses. Hardcoding "repair
+                    refused" here collapsed a repair that ran and was thrown out on
+                    measurement into a repair we declined to start, which is the
+                    distinction the log exists to keep. */}
+                <span className="verdict" data-kind={outcome(i).kind}>
+                  {outcome(i).label}
                 </span>
                 <span className="cause">{i.cause}</span>
                 <span className="ref">
@@ -196,7 +206,7 @@ export default function Page() {
         </div>
         <p className="notice">{snap.caveat}</p>
         {active.map((r) => (
-          <Recall r={r} key={`${r.provenance.sourceId}-${r.ref}`} />
+          <Recall r={r} threshold={snap.publishThreshold} key={`${r.provenance.sourceId}-${r.ref}`} />
         ))}
       </section>
 
@@ -223,7 +233,7 @@ export default function Page() {
             {snap.withdrawn.map((l) => (
               <ListingRow listing={l} key={l.id} />
             ))}
-            <Provenance p={snap.withdrawn[0]!.provenance} />
+            <Provenance p={snap.withdrawn[0]!.provenance} attached />
           </div>
         </section>
       )}

@@ -52,3 +52,22 @@ export function money(price: number | null, currency: string | null): string {
   const n = price.toFixed(2);
   return currency === null ? `${n} (currency not extracted)` : `${n} ${currency}`;
 }
+
+/** What actually happened to a repair, in five kinds rather than two.
+ *
+ *  Lives here because both the feed and the incident log render it, and they had
+ *  drifted: the log distinguished a repair we refused to start from one that ran and
+ *  was thrown out on measurement, while the feed labelled all of them "repair refused".
+ *  The rejected-on-measurement case is the most interesting entry in the log, and the
+ *  front page was flattening it into the least interesting one. One definition, both
+ *  pages. */
+export function outcome(i: PubIncident): { label: string; kind: "refused" | "healed" | "waiting" } {
+  // A resurrection needs no repair and refused nothing, so neither the clay verdict nor
+  // the repaired label fits. It gets the neutral kind and says what it actually is.
+  if (i.cause === "resurrected") return { label: "reported, nothing repaired", kind: "waiting" };
+  if (i.verified && i.healAttempted) return { label: "repaired and verified", kind: "healed" };
+  if (i.healAttempted) return { label: "repair ran, result rejected", kind: "refused" };
+  if (i.healDeferred) return { label: "repair deferred, collector busy", kind: "waiting" };
+  if (i.refusal !== null) return { label: "repair refused", kind: "refused" };
+  return { label: "no repair needed", kind: "healed" };
+}

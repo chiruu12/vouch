@@ -79,7 +79,7 @@ export default function Page() {
           </p>
         </div>
 
-        <div className="figures" aria-label="Study at a glance">
+        <div className="figures" role="group" aria-label="Study at a glance">
           <Figure value={s.listings} label="real listings examined" />
           <Figure value={s.publishable} label={`asserted, ${pct(s.publishable)} of listings`} />
           <Figure value={s.quarantined} label={`quarantined, ${pct(s.quarantined)}`} emphasis="refusal" />
@@ -198,7 +198,7 @@ export default function Page() {
                     <td>
                       <span
                         className="verdict"
-                        data-kind={e.verdict === "publishable" ? "healed" : "refused"}
+                        data-kind={e.verdict === "publishable" ? "asserted" : "refused"}
                       >
                         {e.verdict === "publishable" ? "asserted" : "held"}
                       </span>

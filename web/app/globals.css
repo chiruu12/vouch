@@ -41,6 +41,8 @@
  */
 
 :root {
+  color-scheme: light;
+
   /* light palette, the full definition */
   --paper: #e9ede4;
   --card: #f7f8f2;
@@ -49,7 +51,7 @@
   --ink-2: #3e463f;
   --ink-3: #57615a;
   --rule: #c9cfc0;
-  --rule-strong: #8f998a;
+  --rule-strong: #798476;
 
   --verified: #11603a;
   --verified-bg: #dcebe0;
@@ -75,6 +77,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
     --paper: #101410;
     --card: #171d16;
     --sunken: #1f261d;
@@ -82,7 +86,7 @@
     --ink-2: #b4bdae;
     --ink-3: #8e9889;
     --rule: #2b3329;
-    --rule-strong: #57624f;
+    --rule-strong: #6b7663;
 
     --verified: #7cc7a1;
     --verified-bg: #152a1e;
@@ -97,6 +101,8 @@
 }
 
 :root[data-theme="dark"] {
+  color-scheme: dark;
+
   --paper: #101410;
   --card: #171d16;
   --sunken: #1f261d;
@@ -104,7 +110,7 @@
   --ink-2: #b4bdae;
   --ink-3: #8e9889;
   --rule: #2b3329;
-  --rule-strong: #57624f;
+  --rule-strong: #6b7663;
 
   --verified: #7cc7a1;
   --verified-bg: #152a1e;
@@ -986,6 +992,17 @@ ul.evidence li::before {
 .verdict[data-kind="healed"] {
   color: var(--healed);
   background: var(--healed-bg);
+}
+
+/* A match we assert is not a repair we made, so it does not get the healed amber.
+ * Hue on this page means one thing at a time, and amber already means "repaired,
+ * then re-measured". A reader who learned the legend on the feed would otherwise
+ * read the method page's worked examples as claims about the scraper. Outlined in
+ * ink: a decision, stated, carrying no repair claim. */
+.verdict[data-kind="asserted"] {
+  color: var(--ink);
+  background: transparent;
+  border-color: var(--rule-strong);
 }
 
 /* A queue conflict is not a verdict, so it gets the neutral slate rather than

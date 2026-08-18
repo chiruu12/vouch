@@ -29,12 +29,21 @@ export function SyntheticTag() {
   return <span className="tag">synthetic fixture</span>;
 }
 
-/** Risk band as a segmented bar. Where the source publishes no band, the device
- *  is absent and the absence is stated in words, so a missing field never reads
- *  as a measured one. */
+/** The four bands the stylesheet can actually fill. Whitelisted rather than
+ *  excluded, because the failure is silent in the other direction: the CSS fills
+ *  segments by band name, so a band it does not know renders four empty segments,
+ *  which reads as a measured zero rather than as a band we cannot draw. */
+const BANDS = ["Low", "Medium", "High", "Serious"];
+
+/** Risk band as a segmented bar. Where the source publishes no band, or publishes
+ *  one this page cannot draw, the device is absent and the absence is stated in
+ *  words, so a missing field never reads as a measured one. */
 export function Severity({ risk, absence }: { risk: string; absence?: string }) {
   if (risk === "Unknown") {
     return <span className="absent">{absence ?? "risk band not published by source"}</span>;
+  }
+  if (!BANDS.includes(risk)) {
+    return <span className="absent">source states risk &ldquo;{risk}&rdquo;, not on this scale</span>;
   }
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: "0.55rem" }}>
@@ -85,10 +94,19 @@ export function Evidence({ lines }: { lines: readonly string[] }) {
   );
 }
 
-export function Provenance({ p }: { p: PubListing["provenance"] }) {
+/** Provenance describes the scrape, not the match.
+ *
+ *  `attached` names the trust state in words instead of rendering the pill. Inside an
+ *  attached block that pill sat two lines under a clay HELD stamp, and `ListingRow`
+ *  goes out of its way to keep exactly that pill off a quarantined row. Putting it
+ *  back one element lower undid the rule from outside the component that enforced it:
+ *  a bare green VERIFIED with no noun, in a box of held listings, reads as endorsing
+ *  the match. Naming the subject costs a word, so the pill is kept only where it is
+ *  unambiguous, on the recall's own provenance line. */
+export function Provenance({ p, attached }: { p: PubListing["provenance"]; attached?: boolean }) {
   return (
     <div className="prov">
-      <Trust state={p.trust} />
+      {attached ? <span>source scrape {p.trust}</span> : <Trust state={p.trust} />}
       <span>{p.sourceLabel}</span>
       {p.synthetic ? <SyntheticTag /> : null}
       <span className="sep">{p.scraped ? "scraped" : "publisher API"}</span>
@@ -99,7 +117,7 @@ export function Provenance({ p }: { p: PubListing["provenance"] }) {
   );
 }
 
-export function ListingRow({ listing }: { listing: PubListing }) {
+export function ListingRow({ listing, threshold }: { listing: PubListing; threshold?: number }) {
   const withdrawn = listing.provenance.trust === "withdrawn";
   const m = listing.match;
   // The badge answers "what is this row's status", and inside a quarantine block
@@ -143,6 +161,14 @@ export function ListingRow({ listing }: { listing: PubListing }) {
         </div>
       )}
       {m?.contradiction != null ? <p className="clash">clash: {m.contradiction}</p> : null}
+      {/* A held row with no contradiction was showing "0.30 on product-only" and
+          nothing else. That is the basis, not the reason. The reason is that 0.30
+          is under the bar, and the bar's value appeared nowhere on this page, so a
+          reader could not derive it from anything in front of them. Stating a
+          reason the reader cannot check is the same failure as not stating one. */}
+      {m !== undefined && !m.publishable && m.contradiction == null && threshold !== undefined ? (
+        <p className="clash">held: {m.confidence.toFixed(2)} is below the {threshold} bar</p>
+      ) : null}
     </div>
   );
 }

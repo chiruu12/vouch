@@ -133,7 +133,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Masthead />
         <HealthStrip />
         <div className="shell">
-          <main className="main" id="main">
+          {/* tabIndex is what makes the skip link move focus in WebKit; without it
+              Safari scrolls to the feed and the next Tab starts from the top again. */}
+          <main className="main" id="main" tabIndex={-1}>
             {children}
           </main>
         </div>

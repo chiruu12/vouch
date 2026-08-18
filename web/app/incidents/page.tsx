@@ -10,7 +10,7 @@
 // before serving it. Leaving it out would make the log a brochure.
 
 import { Evidence, Figure, Machine } from "../../components/parts";
-import { seconds, snapshot, stamp, type PubIncident } from "../../lib/data";
+import { outcome, seconds, snapshot, stamp, type PubIncident } from "../../lib/data";
 
 const CAUSE_MEANING: Record<string, string> = {
   blocked:
@@ -22,22 +22,6 @@ const CAUSE_MEANING: Record<string, string> = {
     "a record we published as withdrawn is on sale again. Nothing broke and the contract passed, which is exactly why this used to pass in silence. It is the only entry here that is not a failure.",
   healthy: "nothing was wrong.",
 };
-
-/** Four outcomes, not two. Refusing to start a repair, being unable to start
- *  one, and throwing away a repair that finished are three different events,
- *  and collapsing them into "refused" both hid the interesting one (a repair
- *  that reported success and was rejected on measurement) and mislabelled the
- *  boring one (a queue conflict) as a judgement we made. */
-function outcome(i: PubIncident): { label: string; kind: "refused" | "healed" | "waiting" } {
-  // A resurrection needs no repair and refused nothing, so neither the clay verdict nor
-  // the repaired label fits. It gets the neutral kind and says what it actually is.
-  if (i.cause === "resurrected") return { label: "reported, nothing repaired", kind: "waiting" };
-  if (i.verified && i.healAttempted) return { label: "repaired and verified", kind: "healed" };
-  if (i.healAttempted) return { label: "repair ran, result rejected", kind: "refused" };
-  if (i.healDeferred) return { label: "repair deferred, collector busy", kind: "waiting" };
-  if (i.refusal !== null) return { label: "repair refused", kind: "refused" };
-  return { label: "no repair needed", kind: "healed" };
-}
 
 function Incident({ i }: { i: PubIncident }) {
   const refused = i.refusal !== null;
@@ -92,7 +76,14 @@ function Incident({ i }: { i: PubIncident }) {
             Repair prompt sent to the collector
             {i.healDurationMs !== null ? ` · took ${seconds(i.healDurationMs)}` : ""}
           </p>
-          <Machine label="Verbatim">{i.prompt ?? ""}</Machine>
+          {/* A repair that ran without a recorded prompt is a gap in our own record,
+              and an empty sunken mono block would render it as a device that measured
+              nothing. Absence gets said in words, the same as everywhere else. */}
+          {i.prompt === null ? (
+            <p className="absent">this repair ran before the prompt was recorded</p>
+          ) : (
+            <Machine label="Verbatim">{i.prompt}</Machine>
+          )}
         </div>
       ) : null}
 
@@ -129,7 +120,7 @@ export default function Page() {
         </p>
       </header>
 
-      <div className="figures" aria-label="Incident log at a glance">
+      <div className="figures" role="group" aria-label="Incident log at a glance">
         <Figure value={incidents.length} label="incidents recorded" />
         <Figure value={refusals} label="repairs refused" emphasis="refusal" />
         <Figure value={`${served}/${attempted.length}`} label="repairs attempted that survived measurement" />
