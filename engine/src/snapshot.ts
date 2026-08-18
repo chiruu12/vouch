@@ -402,7 +402,19 @@ function loadIncidents(): PubIncident[] {
       closedAt: raw.incident.closedAt,
       cause: raw.incident.cause,
       healable: raw.diagnosis.healable,
-      evidence: raw.diagnosis.evidence,
+      // The incident's own evidence, falling back to the diagnosis it came from.
+      //
+      // These are the same list for every failure, because the runner copies the
+      // diagnosis into the incident. They are not the same for a resurrection: nothing
+      // failed, so the diagnosis is `healthy` and carries no evidence, while the
+      // incident carries the three lines that say a withdrawn record is on sale again.
+      // Reading only the diagnosis published an empty evidence block for the one event
+      // the feed ranks above every other, which is the event a reader most needs the
+      // reasoning for.
+      evidence:
+        raw.incident.evidence !== undefined && raw.incident.evidence.length > 0
+          ? raw.incident.evidence
+          : raw.diagnosis.evidence,
       refusal: raw.incident.refusal,
       healAttempted: raw.incident.healAttempted,
       healDeferred: raw.incident.healDeferred ?? false,

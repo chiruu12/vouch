@@ -164,32 +164,7 @@ export function classify(input: ClassifyInput): Diagnosis {
     };
   }
 
-  // 2. The oracle failed. Check before any repairable verdict, because a repair is
-  //    only justified once we know the missing records are still published, and an
-  //    unreachable permalink is not that knowledge. Refusing here costs a stale cycle;
-  //    proceeding costs a fabricated record, and this project has already decided
-  //    which of those is worse.
-  if (unresolvedRefs.length > 0) {
-    evidence.push(
-      `${unresolvedRefs.length} missing record(s) could not be checked: their permalinks ` +
-        `did not answer (transport failure, timeout or 5xx): ${unresolvedRefs.slice(0, 5).join(", ")}` +
-        (unresolvedRefs.length > 5 ? ` and ${unresolvedRefs.length - 5} more` : "")
-    );
-    evidence.push(
-      "a repair asserts the missing records are still published, and that could not be " +
-        "established, so none was attempted"
-    );
-    return {
-      cause: "drift",
-      withdrawnRefs,
-      lostRefs,
-      unresolvedRefs,
-      healable: false,
-      evidence,
-    };
-  }
-
-  // 3. Withdrawals, recorded whether or not anything else is wrong.
+  // 2. Withdrawals, recorded whether or not anything else is wrong.
   if (withdrawnRefs.length > 0) {
     // Say which signal actually fired. Claiming "404 or 410" when a body phrase or a
     // redirect established the withdrawal would put a number in the incident log that
@@ -211,6 +186,50 @@ export function classify(input: ClassifyInput): Diagnosis {
     // delisting an item.
     evidence.push("removed at source, not lost by us: retained as last-good, never healed");
   }
+
+  // 3. The oracle failed on something. Checked after the withdrawals above are on the
+  //    record, and before any repairable verdict below.
+  //
+  //    The order used to be the other way round, which lost information: a cycle with
+  //    one confirmed 404 and one unreachable permalink returned here immediately, so the
+  //    withdrawal was never written into the evidence and the incident log showed
+  //    `drift` with no mention that a record had been taken down. The state still
+  //    carried it, which is worse rather than better: the feed knew and did not say.
+  //
+  //    The cause below is `drift` because the four causes describe why a field went
+  //    null and the honest answer here is that we could not find out. It is not `gone`,
+  //    which means every loss is explained by a withdrawal, and it is not repairable.
+  //    A reader of the log sees both evidence lines and can tell the two apart.
+  if (unresolvedRefs.length > 0) {
+    const statuses = [
+      ...new Set(
+        unresolvedRefs.map((r) => {
+          const p = probeByRef.get(r);
+          if (p === undefined) return "never probed";
+          if (p.status === 0) return "no response";
+          return `HTTP ${p.status}`;
+        })
+      ),
+    ];
+    evidence.push(
+      `${unresolvedRefs.length} missing record(s) could not be checked (${statuses.join("; ")}): ` +
+        `${unresolvedRefs.slice(0, 5).join(", ")}` +
+        (unresolvedRefs.length > 5 ? ` and ${unresolvedRefs.length - 5} more` : "")
+    );
+    evidence.push(
+      "a repair asserts the missing records are still published, and that could not be " +
+        "established, so none was attempted"
+    );
+    return {
+      cause: "drift",
+      withdrawnRefs,
+      lostRefs,
+      unresolvedRefs,
+      healable: false,
+      evidence,
+    };
+  }
+
 
   // 3. Every loss is explained by withdrawal and nothing else is structurally wrong.
   //    This is the case a naive healer gets wrong: it sees the row count fall, calls

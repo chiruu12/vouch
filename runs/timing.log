@@ -560,3 +560,38 @@ that command is for.
 
 Every excerpt in example-output.md is now compared leaf by leaf against the snapshot and
 the incident files by engine/src/example-output.test.ts. 159 tests.
+
+## Regression review of the day's work (2026-08-18)
+grok-4.6-xhigh, with a shell, over the day's commits. It found a regression I introduced
+that morning and two published figures that were wrong.
+
+REGRESSION, now fixed: the unresolvedRefs guard was placed before the withdrawal
+evidence, not only before the repairable branches. So a cycle with one confirmed 404 and
+one unreachable permalink returned immediately, and the withdrawal never reached the
+evidence: the incident log showed `drift` with no mention that a record had been taken
+down, while the state carried the withdrawal anyway. The feed knew and did not say, which
+is worse than not knowing. The guard now runs after the withdrawal is on the record and
+both facts appear in the log. Three tests, which assert the cause and the evidence rather
+than only `healable === false`; that gap is exactly how the bug hid behind the tests I
+added with it.
+
+Also fixed: unresolved evidence said "transport failure, timeout or 5xx" for every ref
+including a 403, putting a cause in the log the probe never observed. It now names the
+status it saw.
+
+PUBLISHED FIGURES THAT WERE WRONG:
+  - The resurrection incident had an empty evidence block on the feed, on the one event
+    the feed ranks above every other. snapshot.ts read diagnosis.evidence, which is empty
+    for a resurrection because nothing failed and the diagnosis is `healthy`. The three
+    lines were in the incident file the whole time. Now reads the incident's own evidence
+    and falls back to the diagnosis.
+  - npm run demo replayed the resurrection as 14 rows against a baseline of 11. The live
+    run was 12 against 11. It also printed the drift repair as 92.0s where the incident
+    holds 246455ms. A demo that claims to replay recorded runs has to use their numbers.
+
+What it confirmed solid: 10/10 mutations, the seven-tests claim re-derived by flipping the
+branch itself, pagination and rejected-drift still healing, the unresolved guard not
+firing when every permalink is 200, front-page figures matching the snapshot, the notice
+strip figures, and the returned recall ranking first.
+
+162 tests.

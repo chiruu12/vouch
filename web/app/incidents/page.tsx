@@ -25,7 +25,8 @@ const CAUSE_MEANING: Record<string, string> = {
   blocked:
     "the request was refused at the door. Rewriting selectors cannot clear a block, so attempting a repair would burn credits and can deepen the block.",
   gone: "the records were removed at source and their permalinks no longer resolve. A repair here fabricates replacements for records somebody deliberately took down.",
-  drift: "the data is still published in a different shape. This class of failure is repairable, so a repair was attempted.",
+  drift:
+    "the data is still published in a different shape. This class is repairable, so a repair was attempted, unless the entry below says otherwise: a cycle that could not check every missing record also lands here, and refuses.",
   pagination: "the listing is intact and the paging scheme moved. Repairable.",
   resurrected:
     "a record we published as withdrawn is on sale again. Nothing broke and the contract passed, which is exactly why this used to pass in silence.",

@@ -223,7 +223,7 @@ cd engine
 npm install
 npm run demo                              # watch all four causes decided, no API key
 npm run evolve -- --dry                   # what the supervisor would teach itself
-npm test                                  # 159 tests, no network
+npm test                                  # 162 tests, no network
 node --import tsx src/cycle.ts arcadia    # one supervision cycle, needs BRIGHTDATA_API_KEY
 node --import tsx src/snapshot.ts         # publish web/public/snapshot.json
 

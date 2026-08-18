@@ -188,7 +188,7 @@ const SCENARIOS: Scenario[] = [
       probe: { status: 200, body: PAGE },
       rows: [],
       liveRefs: ALL_REFS,
-      heal: { ok: true, status: "done", durationMs: 92_000, rowsAfter: [] },
+      heal: { ok: true, status: "done", durationMs: 246_455, rowsAfter: [] },
     },
   },
   {
@@ -197,8 +197,11 @@ const SCENARIOS: Scenario[] = [
       "A recalled product published as withdrawn is on sale again. Nothing is broken and the contract passes.",
     naive: "serve it as an ordinary listing and say nothing, because nothing failed",
     rec: {
+      // The live run saw 12 rows against a baseline of 11: three products had been
+      // delisted and one came back. Replaying 14 against 11 would have been a tidier
+      // story and a different event from the one runs/timing.log records.
       probe: { status: 200, body: PAGE },
-      rows: CATALOGUE,
+      rows: [...SURVIVORS, CATALOGUE.find((r) => refOf(r) === "TW-33887")!],
       liveRefs: ALL_REFS,
       state: { ...baseline(), baselineRefs: SURVIVORS.map(refOf), baselineRows: SURVIVORS.length,
                lastGoodRows: SURVIVORS, withdrawnRefs: ["TW-33887"] },

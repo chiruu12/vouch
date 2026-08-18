@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-18T13:40:04.051Z",
+  "generatedAt": "2026-08-18T13:43:55.991Z",
   "caveat": "Matched on product line, not on unit. Recalls are often limited to specific batches or serial ranges, and marketplace listings rarely show them, so a match here means this listing appears to be the same product as a recall, not that this particular item is affected.",
   "publishThreshold": 0.7,
   "sources": [
@@ -922,7 +922,11 @@
       "closedAt": "2026-08-18T08:18:43.729Z",
       "cause": "resurrected",
       "healable": false,
-      "evidence": [],
+      "evidence": [
+        "1 record(s) previously published as withdrawn are present in the listing again: TW-33887",
+        "contract tradewell@1 passed over 12 rows, so this is the source's own change rather than a reading error on our part",
+        "no longer marked withdrawn; the withdrawal and the return are both on the record"
+      ],
       "refusal": null,
       "healAttempted": false,
       "healDeferred": false,

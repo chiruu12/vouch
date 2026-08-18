@@ -645,3 +645,63 @@ describe("contradictory probes for the same record", () => {
     assert.equal(diagnosis.healable, false);
   });
 });
+
+describe("a withdrawal alongside an unreachable probe", () => {
+  // Every test added for the unresolved guard checked `healable === false` and none
+  // checked the cause or the evidence, so an ordering bug hid behind them: the guard
+  // returned before the withdrawal was written into the evidence, and the incident log
+  // showed drift with no mention that a record had been taken down. The state carried
+  // the withdrawal, which makes it worse rather than better: the feed knew and did not
+  // say. These assert what the log actually contains.
+  const mixed = (): Diagnosis =>
+    classify(
+      input({
+        report: report({ rows: 10, baselineRows: 12, rowDropRate: 2 / 12, passed: false }),
+        listing: listing({ status: 200 }),
+        baselineRefs: refs(12),
+        currentRefs: refs(10),
+        permalinks: [
+          { ref: "ARC-0011", status: 404 },
+          { ref: "ARC-0012", status: 0 },
+        ],
+      })
+    );
+
+  it("records the withdrawal as well as the failure to check", () => {
+    const d = mixed();
+    assert.deepEqual(d.withdrawnRefs, ["ARC-0011"]);
+    assert.deepEqual(d.unresolvedRefs, ["ARC-0012"]);
+    assert.ok(
+      d.evidence.some((e) => e.includes("no longer serve the record") && e.includes("ARC-0011")),
+      "the withdrawal must be in the evidence, not only in the state"
+    );
+    assert.ok(
+      d.evidence.some((e) => e.includes("could not be checked") && e.includes("ARC-0012")),
+      "and so must the record we could not check"
+    );
+  });
+
+  it("refuses the repair and says so as drift, not as gone", () => {
+    const d = mixed();
+    assert.equal(d.healable, false);
+    // `gone` means every loss is explained by a withdrawal, and here one is not.
+    assert.equal(d.cause, "drift");
+  });
+
+  it("names the status it actually saw rather than guessing at the reason", () => {
+    // The first wording said "transport failure, timeout or 5xx" for every unresolved
+    // ref, including a 403, which put a cause in the log that the probe never observed.
+    const d = classify(
+      input({
+        report: report({ rows: 11, baselineRows: 12, rowDropRate: 1 / 12, passed: false }),
+        listing: listing({ status: 200 }),
+        baselineRefs: refs(12),
+        currentRefs: refs(11),
+        permalinks: [{ ref: "ARC-0012", status: 403 }],
+      })
+    );
+    const line = d.evidence.find((e) => e.includes("could not be checked")) ?? "";
+    assert.match(line, /HTTP 403/);
+    assert.doesNotMatch(line, /transport failure/);
+  });
+});
