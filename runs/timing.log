@@ -294,3 +294,51 @@ lost the ability to be repaired, which costs nothing until the site changes. Thi
 collector in the account, second by this route.
 
 Balance still $52.00 after everything today.
+
+## Adversarial model panel, and two holes in the withdrawal oracle (2026-08-18)
+Four read-only reviewers on the same commit, different lenses: qwen3p8-max (judge as a
+hostile hackathon judge), deepseek-v4-pro (staff-engineer code review), kimi-k3 (validate
+the idea and its prior art), grok-4.6-xhigh (competitive strategy). Fireworks via
+opencode for the first three, cursor for grok. All four returned prose where the run
+demanded JSON, so marshal recorded them failed; the analysis was intact.
+
+The finding that mattered, reached independently by two of them:
+
+  The withdrawal oracle was status-only (404/410) while block detection was body-aware
+  from the start. So the weaker detector sat on the case this project exists to defend.
+
+  a) A 200 response with a "no longer available" body is a withdrawal that the oracle
+     read as a loss. Loss authorises a repair. The repair then set baselineRefs from
+     the post-heal run, dropping the record with no withdrawn mark and no incident: a
+     deliberately removed record replaced by fabricated data, silently.
+  b) probeUrl maps transport failure to status 0 so a flaky network is not read as a
+     withdrawal. Right instinct, but the ref then fell to lost, and lost heals. The
+     safety property failed open whenever the instrument was unavailable.
+
+Fixed: GONE_MARKERS checked on a 200 (narrow list; a false positive marks a live record
+withdrawn), and a third category `unresolvedRefs` for probes that did not answer. Any
+unresolved ref refuses the repair before a cause is assigned. Five new tests, including
+the mixed case: two refs confirmed live, one unreachable, no repair.
+
+Also fixed from the same panel:
+  - heal_call_failed / heal_trigger_failed were recorded as healAttempted, so a repair
+    that never reached the collector was logged as one that ran and was rejected. Same
+    misreading as heal_busy, one door along. Now a deferral, with a test.
+  - sourceCard re-derived source trust from a fresh contract run and could disagree with
+    the runner, letting the feed label every record verified while its own health strip
+    called the source unverified. Latent, not live. The card now applies the runner's
+    reasoning: a volume breach with recorded withdrawals behind it does not un-verify
+    rows that were read cleanly; a field breach still does.
+
+Claims the panel checked and found wrong:
+  - "built over six days" against a git history spanning 2026-08-17 17:50 to
+    2026-08-18 16:13, about 22 hours. Corrected in docs/ai-assistance.md.
+  - scraper create "128s to 306s" against create-ebay at 362s in this file. Corrected.
+  - "193 real eBay listings" where the capture holds 190 distinct listing_urls across
+    193 rows. Corrected to say rows, with the distinct count stated.
+
+Claims the panel checked and found correct: 17/168/8 study figures, MTTR 347.6s and heal
+330.6s against the incident file, the 21.4% cliff, the test count, the ten mutations, and
+the six-tests-fail claim for the gone branch.
+
+116 tests.

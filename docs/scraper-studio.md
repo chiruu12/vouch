@@ -18,13 +18,14 @@ selectors, no browser session, no login. Timings for a 12-record, 2-page listing
 
 | Operation | Time |
 | --- | --- |
-| `scraper create` | 128s to 306s |
+| `scraper create` | 128s to 362s |
 | `scraper heal` | 90s and up |
 | `scraper run --sync` | 5s to 6s |
 
-**It handles a real hostile target.** eBay search results, 193 listings from one query,
-about six minutes, zero error rows. An earlier query returned 169 listings in 244
-seconds, also clean. That is the case we most expected to fail, and it did not need any
+**It handles a real hostile target.** eBay search results, 193 rows from one query in
+about six minutes, zero error rows. Three of those rows repeat a listing URL, so the
+capture is 190 distinct listings; the study counts rows, which is why it says 193. An
+earlier query returned 169 rows in 244 seconds, also clean. That is the case we most expected to fail, and it did not need any
 tuning.
 
 **Cost at this volume is not a factor.** Account balance held at $52.00 throughout: nine

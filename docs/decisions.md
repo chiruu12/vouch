@@ -221,3 +221,34 @@ ink instead of clay: the heaviest marks on the page, making no claim about who d
 anything. Both dates come from the incident log rather than from a flag set at render
 time, so what the feed says about the record can be checked against the record of why it
 says it.
+
+## 14. An oracle that does not answer is not a licence to repair
+
+The withdrawal oracle was status-only: a permalink counted as withdrawn if it returned
+404 or 410, and anything else made the record merely lost. Lost is the verdict that
+authorises a repair.
+
+Two inputs defeated that, and an adversarial review panel found both independently.
+
+A site can answer HTTP 200 with a "no longer available" page. Marketplaces do this
+routinely for ended listings. Such a record was filed as lost, healed, and then dropped
+from the baseline by the post-repair run, so a deliberately removed record was replaced
+with fabricated data and left no incident behind. That is precisely the failure this
+project exists to prevent, reached through a door it was not watching.
+
+A transport failure returns status 0 by design, so a flaky network is not mistaken for a
+withdrawal. Correct as far as it went, but the record then fell through to lost, and
+lost heals. The safety property failed open exactly when the instrument was broken.
+
+The asymmetry is the lesson. Block detection was body-aware from the first version, with
+a list of interstitial phrases checked on a 200. Withdrawal detection was status-only.
+The weaker detector was on the case the project is actually about, and it stayed there
+because the fixtures return clean 404s and nothing in the test suite asked.
+
+So the oracle now reads bodies, with a deliberately narrow list of phrases, since a false
+positive here marks a live record withdrawn. And a probe that did not answer produces a
+third category: not withdrawn, not lost, unresolved. Any unresolved ref stops a repair
+before a cause is even assigned, because a repair asserts the missing records are still
+published and that is the assertion we just failed to establish. Five tests hold the
+line, including the mixed case where two refs are confirmed live and one is unreachable,
+which is the one a careless implementation gets wrong.

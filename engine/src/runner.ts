@@ -244,6 +244,18 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
     incident.refusal =
       "records were withdrawn at source and their permalinks no longer resolve; " +
       "healing would fabricate replacements for records that were deliberately removed";
+
+    // The survivors are vouched for even though `report.passed` is false, and that is
+    // deliberate rather than an oversight. On a withdrawal the contract fails on volume:
+    // the row count dropped because records were taken down. The classifier has already
+    // established there is no field-level breach, so every remaining row was read
+    // cleanly. Refusing to vouch for a correctly extracted row because a different row
+    // no longer exists would be the wrong lesson from the right rule.
+    //
+    // What this does mean is that a naive re-run of the same contract elsewhere will
+    // disagree with this verdict. `sourceCard` in snapshot.ts used to do exactly that,
+    // and the feed labelled every record verified while its own health strip called the
+    // source unverified. The fix belongs there, not here.
     incident.verified = true;
     incident.serving = true;
     incident.mttrMs = 0;
@@ -319,6 +331,26 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
     incident.healDeferred = true;
     incident.refusal =
       "a repair is already running on this collector, so this one could not start; " +
+      "nothing was attempted and the collector is unchanged";
+    return {
+      report,
+      diagnosis,
+      resurrectedRefs,
+      incident,
+      serving: { rows: state.lastGoodRows, state: "unverified" },
+      nextState: { ...state, withdrawnRefs: knownWithdrawn },
+    };
+  }
+
+  // A call that never reached the collector is not a repair either. `heal_busy` was the
+  // first version of this distinction and it was drawn too narrowly: any other transport
+  // or CLI failure still fell through and was recorded as a repair that ran and produced
+  // nothing, which is the same misreading one door along. The collector is untouched in
+  // both cases, and the incident log exists to keep exactly this column honest.
+  if (healed.status === "heal_call_failed" || healed.status === "heal_trigger_failed") {
+    incident.healDeferred = true;
+    incident.refusal =
+      `the repair could not be sent to the collector (${healed.status}); ` +
       "nothing was attempted and the collector is unchanged";
     return {
       report,

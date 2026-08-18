@@ -179,12 +179,45 @@ export async function probeUrl(url: string, timeoutMs = 20_000): Promise<UrlProb
   }
 }
 
-/** Permalink liveness for a batch of refs. This is the withdrawal oracle. */
+/** Phrases that mean "this record is gone" on a page that answered 200 anyway.
+ *
+ *  The mirror of BLOCK_MARKERS, and it exists for the same reason: the dangerous
+ *  response is the one that does not announce itself in the status line. A site that
+ *  serves a removed listing as a 200 "no longer available" page defeats a status-only
+ *  oracle, and a status-only oracle then reports the record as merely lost, which is
+ *  the one verdict that authorises a repair. Kept narrow on purpose: these phrases are
+ *  unambiguous, and a false positive here marks a live record withdrawn. */
+const GONE_MARKERS = [
+  "no longer available",
+  "this listing has ended",
+  "listing ended",
+  "item is no longer available",
+  "no longer for sale",
+  "has been removed",
+  "page not found",
+  "notice not found",
+  "recall not found",
+  "404 not found",
+];
+
+function detectGone(body: string): string | null {
+  const hay = body.toLowerCase();
+  for (const m of GONE_MARKERS) {
+    if (hay.includes(m)) return m;
+  }
+  return null;
+}
+
+/** Permalink liveness for a batch of refs. This is the withdrawal oracle.
+ *
+ *  Returns the status and, on a 200, whether the body says the record is gone anyway.
+ *  A transport failure surfaces as status 0, which the classifier treats as "could not
+ *  establish" rather than as either presence or absence. */
 export async function probePermalinks(
   entries: readonly { ref: string; url: string }[],
   concurrency = 4
-): Promise<{ ref: string; status: number }[]> {
-  const out: { ref: string; status: number }[] = [];
+): Promise<{ ref: string; status: number; goneSignature: string | null }[]> {
+  const out: { ref: string; status: number; goneSignature: string | null }[] = [];
   const queue = [...entries];
 
   async function worker(): Promise<void> {
@@ -192,7 +225,11 @@ export async function probePermalinks(
       const next = queue.shift();
       if (next === undefined) return;
       const probe = await probeUrl(next.url);
-      out.push({ ref: next.ref, status: probe.status });
+      out.push({
+        ref: next.ref,
+        status: probe.status,
+        goneSignature: probe.status === 200 ? detectGone(probe.body) : null,
+      });
     }
   }
 

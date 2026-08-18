@@ -57,6 +57,7 @@ function diagnosis(
     cause?: Diagnosis["cause"];
     withdrawnRefs?: string[];
     lostRefs?: string[];
+    unresolvedRefs?: string[];
     healable?: boolean;
     evidence?: string[];
   } = {}
@@ -66,6 +67,7 @@ function diagnosis(
     cause,
     withdrawnRefs: overrides.withdrawnRefs ?? [],
     lostRefs: overrides.lostRefs ?? [],
+    unresolvedRefs: overrides.unresolvedRefs ?? [],
     healable: overrides.healable ?? (cause === "drift" || cause === "pagination"),
     evidence: overrides.evidence ?? ["field hazard null rate 100.0%"],
   };

@@ -36,6 +36,11 @@ export interface ListingProbe {
 export interface PermalinkProbe {
   ref: string;
   status: number;
+  /** A phrase in the body that says the record is gone, on a response that did not
+   *  say so in its status. Set by the probe, checked here, for the same reason
+   *  `blockSignature` exists: the dangerous case is the one that does not announce
+   *  itself in the status line. */
+  goneSignature?: string | null;
 }
 
 export interface ClassifyInput {
@@ -59,6 +64,10 @@ export interface Diagnosis {
   /** Refs that vanished while their permalink still resolves. These are genuine
    *  extraction losses and are the reason to heal. */
   lostRefs: string[];
+  /** Refs whose permalink could not be reached at all, so nothing can be concluded
+   *  about them. Non-empty means no repair may run: repairing asserts the records are
+   *  still published, and that is exactly what we failed to establish. */
+  unresolvedRefs: string[];
   /** Should the engine call `bdata scraper heal`? */
   healable: boolean;
   /** Ordered statements, quoted verbatim into the heal prompt and the timeline. */
@@ -77,12 +86,35 @@ export function classify(input: ClassifyInput): Diagnosis {
   const current = new Set(currentRefs);
   const missing = baselineRefs.filter((r) => !current.has(r));
 
-  const probeByRef = new Map(permalinks.map((p) => [p.ref, p.status]));
+  const probeByRef = new Map(permalinks.map((p) => [p.ref, p]));
+
+  // A withdrawal is a 404, a 410, or a 200 whose body says the record is gone.
+  //
+  // For a long time this was status-only while block detection was body-aware, which
+  // put the weaker detector on the case the project exists to defend. Plenty of sites
+  // answer 200 with a "no longer available" page for a removed record, and such a ref
+  // fell through to `lost`, then to `drift`, then got healed: a record deliberately
+  // taken down, replaced with fabricated data, silently, with no incident. That is the
+  // exact failure this file was written to prevent, reached through a different door.
   const withdrawnRefs = missing.filter((r) => {
-    const s = probeByRef.get(r);
-    return s !== undefined && WITHDRAWN_STATUSES.has(s);
+    const p = probeByRef.get(r);
+    if (p === undefined) return false;
+    return WITHDRAWN_STATUSES.has(p.status) || (p.status === 200 && (p.goneSignature ?? null) !== null);
   });
-  const lostRefs = missing.filter((r) => !withdrawnRefs.includes(r));
+
+  // The oracle did not answer. A transport failure, a timeout, or a 5xx tells us
+  // nothing about whether the record still exists, and "nothing" is not evidence of
+  // presence. These refs are neither withdrawn nor lost, and while any of them are
+  // outstanding no repair may run: repairing requires establishing that the missing
+  // records are still published, and we just failed to establish it.
+  const unresolvedRefs = missing.filter((r) => {
+    const p = probeByRef.get(r);
+    return p === undefined || p.status === 0 || p.status >= 500;
+  });
+
+  const lostRefs = missing.filter(
+    (r) => !withdrawnRefs.includes(r) && !unresolvedRefs.includes(r)
+  );
 
   // 1. Refused at the door. Check first: nothing below is meaningful if we never
   //    got the page, and healing a block wastes credits and makes it worse.
@@ -92,10 +124,42 @@ export function classify(input: ClassifyInput): Diagnosis {
         (listing.blockSignature ? ` with block signature "${listing.blockSignature}"` : "")
     );
     evidence.push("healing cannot clear a block; backing off instead");
-    return { cause: "blocked", withdrawnRefs: [], lostRefs: [], healable: false, evidence };
+    return {
+      cause: "blocked",
+      withdrawnRefs: [],
+      lostRefs: [],
+      unresolvedRefs: [],
+      healable: false,
+      evidence,
+    };
   }
 
-  // 2. Withdrawals, recorded whether or not anything else is wrong.
+  // 2. The oracle failed. Check before any repairable verdict, because a repair is
+  //    only justified once we know the missing records are still published, and an
+  //    unreachable permalink is not that knowledge. Refusing here costs a stale cycle;
+  //    proceeding costs a fabricated record, and this project has already decided
+  //    which of those is worse.
+  if (unresolvedRefs.length > 0) {
+    evidence.push(
+      `${unresolvedRefs.length} missing record(s) could not be checked: their permalinks ` +
+        `did not answer (transport failure, timeout or 5xx): ${unresolvedRefs.slice(0, 5).join(", ")}` +
+        (unresolvedRefs.length > 5 ? ` and ${unresolvedRefs.length - 5} more` : "")
+    );
+    evidence.push(
+      "a repair asserts the missing records are still published, and that could not be " +
+        "established, so none was attempted"
+    );
+    return {
+      cause: "drift",
+      withdrawnRefs,
+      lostRefs,
+      unresolvedRefs,
+      healable: false,
+      evidence,
+    };
+  }
+
+  // 3. Withdrawals, recorded whether or not anything else is wrong.
   if (withdrawnRefs.length > 0) {
     evidence.push(
       `${withdrawnRefs.length} notice(s) absent from the listing AND their permalinks return ` +
@@ -130,17 +194,17 @@ export function classify(input: ClassifyInput): Diagnosis {
         : `all ${withdrawnRefs.length} missing record(s) accounted for by withdrawal; ` +
             `remaining ${report.rows} rows satisfy contract ${report.contractVersion}`
     );
-    return { cause: "gone", withdrawnRefs, lostRefs: [], healable: false, evidence };
+    return { cause: "gone", withdrawnRefs, lostRefs: [], unresolvedRefs: [], healable: false, evidence };
   }
 
   if (lostRefs.length === 0 && withdrawnRefs.length === 0 && report.passed) {
-    return { cause: "healthy", withdrawnRefs, lostRefs: [], healable: false, evidence };
+    return { cause: "healthy", withdrawnRefs, lostRefs: [], unresolvedRefs: [], healable: false, evidence };
   }
 
   // 4. Pagination: the rows we did get land suspiciously close to a single page,
   //    and the notices we lost are all still individually published.
   const perPage = input.rowsPerPage;
-  const everyLostStillLive = lostRefs.length > 0 && lostRefs.every((r) => probeByRef.get(r) === 200);
+  const everyLostStillLive = lostRefs.length > 0 && lostRefs.every((r) => probeByRef.get(r)?.status === 200);
   if (
     perPage !== undefined &&
     report.rows > 0 &&
@@ -158,7 +222,7 @@ export function classify(input: ClassifyInput): Diagnosis {
       `all ${lostRefs.length} missing notice(s) still return HTTP 200 at their permalinks, ` +
         `so they are published but unreached`
     );
-    return { cause: "pagination", withdrawnRefs, lostRefs, healable: true, evidence };
+    return { cause: "pagination", withdrawnRefs, lostRefs, unresolvedRefs: [], healable: true, evidence };
   }
 
   // 5. Drift. The data is still there in a different shape.
@@ -186,5 +250,5 @@ export function classify(input: ClassifyInput): Diagnosis {
     evidence.push(`listing fetched cleanly (HTTP 200, ${listing.bodyBytes} bytes) but yielded no rows`);
   }
 
-  return { cause: "drift", withdrawnRefs, lostRefs, healable: true, evidence };
+  return { cause: "drift", withdrawnRefs, lostRefs, unresolvedRefs: [], healable: true, evidence };
 }

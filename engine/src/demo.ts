@@ -332,7 +332,7 @@ async function main(): Promise<void> {
   );
   console.log(c(DIM, "  The refusals are the product. So is the repair that was thrown away."));
   console.log(
-    c(DIM, "  Flip the `gone` branch in src/classify.ts to healable and six tests fail.")
+    c(DIM, "  Flip the `gone` branch in src/classify.ts to healable and seven tests fail.")
   );
   console.log("");
 }

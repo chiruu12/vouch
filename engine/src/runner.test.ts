@@ -264,3 +264,32 @@ test("withdrawals are recorded even when the contract passes", async () => {
   assert.deepEqual(r.nextState.withdrawnRefs, ["r6"]);
   assert.equal(calls.heal, 0);
 });
+
+test("a repair that never reached the collector is not logged as a repair that ran", async () => {
+  // Same distinction as heal_busy, one door along. The collector is untouched either
+  // way, so calling this "repair ran, result rejected" would put a judgement we never
+  // made into the one column the incident log exists to keep honest.
+  // Counted here rather than through the helper, because overriding `heal` replaces
+  // the helper's own counter along with it.
+  let healCalls = 0;
+  const { deps: d } = deps({
+    runScraper: async () => ({ rows: ROWS.slice(0, 2), errors: [] }),
+    probePermalinks: async (entries) => entries.map((e) => ({ ref: e.ref, status: 200 })),
+    heal: async () => {
+      healCalls++;
+      return { ok: false, durationMs: 120, status: "heal_call_failed" };
+    },
+  });
+  const r = await runCycle(args(seeded(ROWS)), d);
+
+  assert.equal(healCalls, 1, "the call is made");
+  assert.equal(r.incident?.healAttempted, false, "but nothing reached the collector");
+  assert.equal(r.incident?.healDeferred, true);
+  assert.match(r.incident?.refusal ?? "", /could not be sent/);
+  assert.equal(r.serving.state, "unverified");
+  assert.equal(
+    r.nextState.healHistory.length,
+    0,
+    "a call that never landed must not enter the heal history"
+  );
+});

@@ -54,6 +54,13 @@ ambiguous. The same record's own URL returning 404 is not. That single probe is 
 separates `gone` from `drift`, and it is the reason the engine can refuse to repair
 without guessing.
 
+The oracle reads bodies as well as statuses, because a site that answers 200 with a "no
+longer available" page would otherwise look identical to a record we simply failed to
+read. And when the probe does not answer at all, that is a third state rather than a
+default: no repair runs while any missing record is unchecked, since repairing asserts
+those records are still published and an unreachable probe is exactly the failure to
+establish it. Both holes were found by an adversarial review, not by us.
+
 **Nothing is served on the vendor's word.** Our first repair returned `status: "done"`
 having completed a stage literally named `request_fulfillment_validator`, and the
 collector then extracted zero rows. Every repair is followed by a fresh run measured
@@ -73,8 +80,9 @@ is a weaker claim, and that is the only claim the feed makes.
   product agree. A 4-litre fridge is not covered by a recall of the 10 and 15 litre
   models, however well the words line up.
 
-Measured on a real capture: **17 publishable matches out of 193 real eBay listings**,
-168 quarantined, 8 with no match at all. The rate is low on purpose. A false positive
+Measured on a real capture: **17 publishable matches out of 193 real eBay rows**, 168
+quarantined, 8 with no match at all. The capture holds 190 distinct listing URLs; the
+counts are per row. The rate is low on purpose. A false positive
 here is an accusation and a false negative is only a miss.
 
 ## What is real and what is synthetic
@@ -84,7 +92,7 @@ Stated plainly because the distinction matters when reading the numbers.
 | Source | Real? | How it is fetched |
 | --- | --- | --- |
 | US CPSC recalls | Real | The CPSC publishes a free JSON API. Not scraped, and the feed says so |
-| eBay listings | Real | Bright Data Scraper Studio. 193 listings from one recall-derived query, about 6 minutes, 0 error rows |
+| eBay listings | Real | Bright Data Scraper Studio. 193 rows (190 distinct listings) from one recall-derived query, about 6 minutes, 0 error rows |
 | Arcadia Product Safety | Synthetic fixture | Scraper Studio, against a site we built and are allowed to break |
 | Tradewell Market | Synthetic fixture | Scraper Studio, same |
 
@@ -143,10 +151,11 @@ this existed the feed would have served it again in silence, because a superviso
 only watches for failures has nothing to say about a source that changes its mind.
 
 The refusal is enforced in code rather than by convention. Flipping the `gone` branch to
-healable `drift` fails exactly six tests and nothing else: four on the classifier's
-verdict, and two on what the cycle then does, which is the half that actually matters.
-One of those two asserts that `deps.heal` is never called, not that its result is
-discarded.
+healable `drift` fails exactly seven tests and nothing else: five on the classifier's
+verdict, including the soft-404 case where the record says it is gone in the body rather
+than the status, and two on what the cycle then does, which is the half that actually
+matters. One of those two asserts that `deps.heal` is never called, not that its result
+is discarded.
 
 ## Running it
 
@@ -159,7 +168,7 @@ has the originals.
 cd engine
 npm install
 npm run demo                              # watch all four causes decided, no API key
-npm test                                  # 110 tests, no network
+npm test                                  # 116 tests, no network
 node --import tsx src/cycle.ts arcadia    # one supervision cycle, needs BRIGHTDATA_API_KEY
 node --import tsx src/snapshot.ts         # publish web/public/snapshot.json
 

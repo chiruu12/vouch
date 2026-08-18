@@ -382,3 +382,133 @@ describe("classify", () => {
     assertNotHealable(diagnosis, contractReport, "gone");
   });
 });
+
+// The oracle's own failure modes.
+//
+// Both of these were found by an adversarial review panel, independently, and both
+// defeated the guarantee this file exists to enforce. Block detection was body-aware
+// from the start while withdrawal detection was status-only, which put the weaker
+// detector on the case the project is actually about.
+describe("the withdrawal oracle when it is not a clean 404", () => {
+  it("treats a 200 whose body says the record is gone as a withdrawal, not a loss", () => {
+    // Plenty of sites answer 200 with a "no longer available" page. Status-only
+    // detection filed such a ref under `lost`, which routes to drift, which heals:
+    // a record deliberately taken down, replaced with invented data, no incident.
+    const missing = ["ARC-0011", "ARC-0012"];
+    const contractReport = report({
+      rows: 10,
+      baselineRows: 12,
+      rowDropRate: 2 / 12,
+      passed: false,
+      breaches: ["row count fell from 12 to 10"],
+    });
+    const diagnosis = classify(
+      input({
+        report: contractReport,
+        listing: listing({ status: 200 }),
+        baselineRefs: refs(12),
+        currentRefs: refs(10),
+        permalinks: missing.map((ref) => ({
+          ref,
+          status: 200,
+          goneSignature: "this listing is no longer available",
+        })),
+      })
+    );
+
+    assert.equal(diagnosis.cause, "gone");
+    assert.equal(diagnosis.healable, false, "a soft 404 must never be healed");
+    assert.deepEqual(diagnosis.withdrawnRefs, missing);
+    assert.deepEqual(diagnosis.lostRefs, []);
+    assertNotHealable(diagnosis, contractReport, "gone");
+  });
+
+  it("refuses to repair when the oracle did not answer at all", () => {
+    // A transport failure is not evidence of presence. Repairing asserts the missing
+    // records are still published, and that is precisely what we failed to establish.
+    const missing = ["ARC-0011", "ARC-0012"];
+    const contractReport = report({
+      rows: 10,
+      baselineRows: 12,
+      rowDropRate: 2 / 12,
+      passed: false,
+      breaches: ["row count fell from 12 to 10"],
+    });
+    const diagnosis = classify(
+      input({
+        report: contractReport,
+        listing: listing({ status: 200 }),
+        baselineRefs: refs(12),
+        currentRefs: refs(10),
+        permalinks: missing.map((ref) => ({ ref, status: 0 })),
+      })
+    );
+
+    assert.equal(diagnosis.healable, false, "an unreachable oracle must not authorise a repair");
+    assert.deepEqual(diagnosis.unresolvedRefs, missing);
+    assert.deepEqual(diagnosis.withdrawnRefs, []);
+    assert.deepEqual(diagnosis.lostRefs, []);
+  });
+
+  it("refuses to repair when the oracle returns 5xx", () => {
+    const missing = ["ARC-0012"];
+    const diagnosis = classify(
+      input({
+        report: report({ rows: 11, baselineRows: 12, rowDropRate: 1 / 12, passed: false }),
+        listing: listing({ status: 200 }),
+        baselineRefs: refs(12),
+        currentRefs: refs(11),
+        permalinks: missing.map((ref) => ({ ref, status: 503 })),
+      })
+    );
+
+    assert.equal(diagnosis.healable, false);
+    assert.deepEqual(diagnosis.unresolvedRefs, missing);
+  });
+
+  it("refuses to repair when one ref of several could not be checked", () => {
+    // The mixed case is the one that matters: two refs clearly still live, one
+    // unreachable. A repair would be justified by the two and would fabricate the third.
+    const diagnosis = classify(
+      input({
+        report: report({ rows: 9, baselineRows: 12, rowDropRate: 3 / 12, passed: false }),
+        listing: listing({ status: 200 }),
+        baselineRefs: refs(12),
+        currentRefs: refs(9),
+        permalinks: [
+          { ref: "ARC-0010", status: 200 },
+          { ref: "ARC-0011", status: 200 },
+          { ref: "ARC-0012", status: 0 },
+        ],
+      })
+    );
+
+    assert.equal(diagnosis.healable, false, "one unreachable ref is enough to stop a repair");
+    assert.deepEqual(diagnosis.unresolvedRefs, ["ARC-0012"]);
+  });
+
+  it("still heals when every missing ref is confirmed live", () => {
+    // The guard must not fire on the healthy repairable case, or it would refuse
+    // everything and the refusal would stop meaning anything.
+    const missing = ["ARC-0011", "ARC-0012"];
+    const diagnosis = classify(
+      input({
+        report: report({
+          rows: 10,
+          baselineRows: 12,
+          rowDropRate: 2 / 12,
+          passed: false,
+          breaches: ["field hazard null rate 100.0% exceeds limit 0.0% over 10 rows"],
+          fields: [field({ field: "hazard", nullRate: 1, breached: true })],
+        }),
+        listing: listing({ status: 200 }),
+        baselineRefs: refs(12),
+        currentRefs: refs(10),
+        permalinks: missing.map((ref) => ({ ref, status: 200 })),
+      })
+    );
+
+    assert.equal(diagnosis.healable, true);
+    assert.deepEqual(diagnosis.unresolvedRefs, []);
+  });
+});

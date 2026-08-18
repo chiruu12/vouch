@@ -320,6 +320,21 @@ function sourceCard(sourceId: SourceId, state: SourceState | null, rows: readonl
   const meta = META[sourceId];
   if (meta === undefined) throw new Error(`no metadata for source ${sourceId}`);
   const report = checkContract(meta.contract, rows, state?.baselineRows ?? null);
+
+  // A withdrawal lowers a source's volume legitimately, and the contract cannot tell
+  // that from a scraper losing rows: both look like the count going down. The runner
+  // can, because the classifier established that every missing record 404s and that no
+  // field breached, and on that basis it vouches for the survivors.
+  //
+  // This card used to re-derive trust from a fresh contract run and reach the opposite
+  // answer, so the feed could label every record verified while its own health strip
+  // called the source unverified. Two true statements, one word doing both jobs. The
+  // card now applies the runner's reasoning: a volume breach with recorded withdrawals
+  // behind it does not un-verify rows that were read cleanly. A field breach still does,
+  // and the breach text is published either way so the reader sees the number regardless.
+  const volumeOnly = report.breaches.length > 0 && report.fields.every((f) => !f.breached);
+  const explainedByWithdrawal = volumeOnly && (state?.withdrawnRefs.length ?? 0) > 0;
+
   return {
     id: sourceId,
     label: meta.label,
@@ -328,7 +343,7 @@ function sourceCard(sourceId: SourceId, state: SourceState | null, rows: readonl
     collectorId: meta.collectorId,
     url: meta.url,
     contractVersion: meta.contract.version,
-    trust: report.passed ? "verified" : "unverified",
+    trust: report.passed || explainedByWithdrawal ? "verified" : "unverified",
     rows: rows.length,
     baselineRows: state?.baselineRows ?? null,
     contractPassed: report.passed,
