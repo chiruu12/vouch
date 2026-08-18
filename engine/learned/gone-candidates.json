@@ -1,0 +1,1025 @@
+{
+  "version": 1,
+  "sources": {
+    "ebay": {
+      "skip to main content": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "expand sell menu": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "start selling in a snap": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "turn your pre-loved items into extra cash": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "seller protections and secure payments": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "easy shipping and local pickup": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "list an item": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "download the app": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "expand watch list": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "expand my ebay": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "issue resolution center": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "to view notifications": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "shop by category": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "we looked everywhere": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": []
+      },
+      "looks like this page is missing": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": []
+      },
+      "go to homepage": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": []
+      },
+      "product safety tips": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "all rights reserved": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "consumer health data": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "payments terms of use": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "ca privacy notice": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "your privacy choices": {
+        "goneRefs": [
+          "100000000001",
+          "100000000002"
+        ],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "shop live events": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "discover exclusive drops and deals": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "image not available": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "have one to sell": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "sell one like this": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "sell something else": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "seller's other items": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "or best offer": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423"
+        ]
+      },
+      "more information - about this item condition": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "buy it now": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "sign in to check out": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "check out as guest": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "add to cart": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "adding to your cart": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423"
+        ]
+      },
+      "add to watchlist": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "looks like we're having trouble connecting to our server": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "refresh your browser window to try again": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "people are checking this out": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423"
+        ]
+      },
+      "usps ground advantage": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423"
+        ]
+      },
+      "seller does not accept returns": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "special financing available": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "shop with confidence": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "ebay money back guarantee": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "get the item you ordered or your money back": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "ebay money back guarantee - opens new window or tab": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "about this item": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "seller assumes all responsibility for this listing": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "ebay item number": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "about the condition": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "see all condition definitions": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "opens in a new window or tab": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "item description from the seller": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "about this seller": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "ebay automated feedback": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423"
+        ]
+      },
+      "order delivered on time with no issues": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423"
+        ]
+      },
+      "see all feedback": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "back to home page": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "return to top": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "heated foot warmers": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423"
+        ]
+      },
+      "compact makeup mirrors": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423"
+        ]
+      },
+      "chanel compact makeup mirrors": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423"
+        ]
+      },
+      "yves saint laurent ysl beauty makeup trousse bag small": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423"
+        ]
+      },
+      "cooluli mini fridge": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "mini fridge cooluli": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "cool mini fridge": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "mini ac cooler": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "cute mini fridge": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "thermal electric cooler": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423"
+        ]
+      },
+      "hot and cold mini fridge": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423"
+        ]
+      },
+      "small electric cooler": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "personal chiller mini fridge": {
+        "goneRefs": [],
+        "liveRefs": [
+          "306847319423",
+          "257675602030"
+        ]
+      },
+      "save up to": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "when you buy more": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "additional service available": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "split your payment with no surprises": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "the rest will be automatically processed every two weeks": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "how it works": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "select klarna as your payment method in checkout": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "you can manage payments in the klarna app or website": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "tax and shipping": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "calculated at checkout": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "estimated subtotal of payments": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "a higher initial payment may be required for some consumers": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "see payment terms": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "see terms and conditions for klarna - opens in a new window or tab": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "last updated on": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "view all revisions": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "see the seller's listing for full details": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "does not apply": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "number of doors": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "defrost system type": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "power plug type": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "number of sections": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "door shelf count": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "item dimensions d x w x h": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "annual energy consumption": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "refrigerator net capacity": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "depth with door open maximum": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "fresh food capacity": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "door material type": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "global trade identification number": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "item type name": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "manufacturer part number": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "number of shelves": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "country of origin": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "detailed seller ratings": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "reasonable shipping cost": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "popular categories from this store": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "received ahead of schedule and in excellent condition": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "very secure packaging": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "great value for the cost": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "seller kept me advised": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "the journal is exactly as pictured": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "highly recommended seller": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "messaged seller and they got back to me promptly and was very apologetic": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "seller responded promptly to question prior to purchase": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "great service all the way": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "item as described fast shipping good communication great seller": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "dont know about accuracy but for the price your not going to beat this deal": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "theyre actually pretty darn cool": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "nice small package with decent sized display": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "shipping was super quick": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "definitely recommend this seller": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "i had excellent service with seller": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "i did receive item in good shape after delay of one day": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "awesome value for the amount": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "package was thoughtfully packed with care": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "i'll be back to purchase more in the future": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "super fast shipping": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "the title is a bit misleading": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "i thought i was getting four packs of mesh instead i got one pack with four mesh": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "it is very confusing": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "cooluli portable fridge mini fridges": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "cooluli mini fridges": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "cooluli compact fridge mini fridges": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "portable fridge mini fridges": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "freestanding portable fridge mini fridges": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "gourmia portable fridge mini fridges": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "uber appliance portable fridge mini fridges": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "black compact fridge mini fridges": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "frigidaire black compact fridge mini fridges": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "danby black compact fridge mini fridges": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "shop top sellers and highly rated products in mini fridges": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "ft compact refrigerator - black": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "portable mini fridge": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "electric cooler portable": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "portable cooler and warmer": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      },
+      "outdoor mini fridge": {
+        "goneRefs": [],
+        "liveRefs": [
+          "257675602030"
+        ]
+      }
+    }
+  }
+}

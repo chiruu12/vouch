@@ -30,6 +30,7 @@
 
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { visibleText } from "./html.js";
 
 const exec = promisify(execFile);
 
@@ -272,7 +273,7 @@ async function plainProbe(url: string, timeoutMs: number): Promise<UrlProbe> {
  *  oracle, and a status-only oracle then reports the record as merely lost, which is
  *  the one verdict that authorises a repair. Kept narrow on purpose: these phrases are
  *  unambiguous, and a false positive here marks a live record withdrawn. */
-const GONE_MARKERS = [
+export const GONE_MARKERS = [
   "no longer available",
   "this listing has ended",
   "listing ended",
@@ -304,7 +305,14 @@ export function redirectedAway(requested: string, landed: string): string | null
 }
 
 export function detectGone(body: string): string | null {
-  const hay = body.toLowerCase();
+  // Visible text only, and this is not a refinement. Matching these phrases against raw
+  // HTML reads a site's embedded JSON string tables as if they were the page speaking: a
+  // live eBay listing ships "remove_success_message":"The item has been removed" inside a
+  // script tag, which contains this oracle's own marker. Every live listing on the site
+  // matched, and a match here marks a live safety recall withdrawn and takes it off the
+  // feed. The bug was unreachable only while a plain fetch was being refused with a 403,
+  // and probing through the Unlocker made it reachable on the first real page.
+  const hay = visibleText(body).toLowerCase();
   for (const m of GONE_MARKERS) {
     if (hay.includes(m)) return m;
   }
@@ -316,9 +324,31 @@ export function detectGone(body: string): string | null {
  *  Returns the status and, on a 200, whether the body says the record is gone anyway.
  *  A transport failure surfaces as status 0, which the classifier treats as "could not
  *  establish" rather than as either presence or absence. */
+/** Told about each page as it is read, so something else can learn from it.
+ *
+ *  A callback rather than a direct call into the learner: this module's job is to ask a
+ *  URL a question, and it should not also decide what is remembered or where. The
+ *  observer sees the body because that is the only moment it exists; nothing here keeps
+ *  it, and the learner that receives it extracts phrases and discards the page. */
+export type PageObserver = (page: {
+  ref: string;
+  body: string;
+  verdict: "gone" | "live" | "unresolved";
+}) => void;
+
+/** Which of the three a probe established. Deliberately not a boolean: "we could not
+ *  tell" is a third answer and collapsing it into either of the others is how a block
+ *  becomes a withdrawal or a withdrawal becomes noise in the live set. */
+function verdictOf(status: number, goneSignature: string | null): "gone" | "live" | "unresolved" {
+  if (status === 404 || status === 410) return "gone";
+  if (status === 200) return goneSignature === null ? "live" : "gone";
+  return "unresolved";
+}
+
 export async function probePermalinks(
   entries: readonly { ref: string; url: string }[],
-  concurrency = 4
+  concurrency = 4,
+  observe?: PageObserver
 ): Promise<{ ref: string; status: number; goneSignature: string | null }[]> {
   const out: { ref: string; status: number; goneSignature: string | null }[] = [];
   const queue = [...entries];
@@ -328,14 +358,12 @@ export async function probePermalinks(
       const next = queue.shift();
       if (next === undefined) return;
       const probe = await probeUrl(next.url);
-      out.push({
-        ref: next.ref,
-        status: probe.status,
-        goneSignature:
-          probe.status === 200
-            ? (detectGone(probe.body) ?? redirectedAway(next.url, probe.finalUrl))
-            : null,
-      });
+      const goneSignature =
+        probe.status === 200
+          ? (detectGone(probe.body) ?? redirectedAway(next.url, probe.finalUrl))
+          : null;
+      out.push({ ref: next.ref, status: probe.status, goneSignature });
+      observe?.({ ref: next.ref, body: probe.body, verdict: verdictOf(probe.status, goneSignature) });
     }
   }
 

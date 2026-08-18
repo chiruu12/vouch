@@ -9,7 +9,9 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { inferAliases, applyAlias, type Change } from "./evolve.js";
+import { inferAliases, applyAlias } from "./evolve.js";
+import type { AliasChange } from "./learn/change.js";
+import { mayApplyUnattended } from "./learn/policy.js";
 import type { AliasStore } from "./aliases.js";
 
 const CAPTURE_C = JSON.parse(
@@ -58,7 +60,7 @@ describe("what the evolver will learn", () => {
     const found = inferAliases(cap(rows), KNOWN_REFS);
     const idAlias = found.find((c) => c.canonical === "id" && c.raw === "novel_id");
     assert.ok(idAlias !== undefined, "should infer novel_id as the identifier");
-    assert.equal(idAlias.reversible, true);
+    assert.equal(mayApplyUnattended(idAlias).unattended, true);
     assert.match(idAlias.evidence, /matched refs already in the baseline/);
   });
 
@@ -141,11 +143,10 @@ describe("what the evolver refuses to learn", () => {
 });
 
 describe("applying a learned alias", () => {
-  const change: Change = {
+  const change: AliasChange = {
     kind: "alias",
     what: "tradewell: read novel_id as id",
     evidence: "test",
-    reversible: true,
     source: "tradewell",
     canonical: "id",
     raw: "novel_id",
@@ -229,7 +230,7 @@ describe("the case this was built for", () => {
     );
 
     assert.ok(
-      found.every((c) => c.reversible),
+      found.every((c) => mayApplyUnattended(c).unattended),
       "all three fill a field that was null, so all three are safe to apply unattended"
     );
 

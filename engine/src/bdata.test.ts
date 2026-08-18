@@ -96,3 +96,23 @@ describe("reading a Web Unlocker envelope", () => {
     assert.equal(readUnlockerEnvelope(out, url)?.finalUrl, url);
   });
 });
+
+describe("the gone oracle reads the page, not the page's vocabulary", () => {
+  it("ignores a marker that only appears inside a script payload", () => {
+    // Verbatim from a LIVE eBay listing. The site ships its UI string table inline, and
+    // it contains a message for a button the reader never pressed. Matching raw HTML
+    // read this as the listing announcing its own removal, so every live listing on the
+    // site would have been published as withdrawn and taken off the feed. The oracle's
+    // false positives are the expensive direction, and this was all of them at once.
+    const live =
+      `<html><body><h1>Cooluli Mini Fridge</h1><p>Buy It Now</p>` +
+      `<script>var i18n={"remove_success_message":"The item has been removed",` +
+      `"general_error":"An error has occurred"};</script></body></html>`;
+    assert.equal(detectGone(live), null);
+  });
+
+  it("still reads a marker the page actually shows the reader", () => {
+    const ended = `<html><body><h1>Cooluli Mini Fridge</h1><p>This listing has been removed.</p></body></html>`;
+    assert.equal(detectGone(ended), "has been removed");
+  });
+});

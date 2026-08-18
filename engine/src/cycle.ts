@@ -16,7 +16,8 @@
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { healScraper, probePermalinks, probeUrl, runScraper } from "./bdata.js";
+import { healScraper, probePermalinks, probeUrl, runScraper, type PageObserver } from "./bdata.js";
+import { pageCollector } from "./learn/ledger-store.js";
 import { ARCADIA_CONTRACT, type SourceContract } from "./contract.js";
 import type { ListingProbe } from "./classify.js";
 import type { MarkupObservation } from "./prompt.js";
@@ -136,7 +137,7 @@ function observeMarkup(body: string, contract: SourceContract): MarkupObservatio
   };
 }
 
-function makeDeps(normalise: (raw: unknown) => Row[]): CycleDeps {
+function makeDeps(normalise: (raw: unknown) => Row[], observe?: PageObserver): CycleDeps {
   return {
   async probeListing(url: string): Promise<ListingProbe> {
     const probe = await probeUrl(url);
@@ -172,7 +173,7 @@ function makeDeps(normalise: (raw: unknown) => Row[]): CycleDeps {
       errors: dropped > 0 ? [...result.errors, { error: `${dropped} row(s) failed to normalise` }] : result.errors,
     };
   },
-  probePermalinks: (entries) => probePermalinks(entries),
+  probePermalinks: (entries) => probePermalinks(entries, 4, observe),
   async heal(collectorId, prompt, url) {
     const r = await healScraper(collectorId, prompt, url);
     return { ok: r.ok, durationMs: r.durationMs, status: r.status };
@@ -241,6 +242,11 @@ async function main(): Promise<void> {
   console.log("");
 
   const started = Date.now();
+  // Every permalink this cycle probes is a labelled example of what a gone page and a
+  // live page look like on this source. Collected here, learned from later by
+  // `npm run evolve`, and never applied without a person reading the evidence.
+  const pages = pageCollector(sourceId);
+
   const result = await runCycle(
     {
       sourceId,
@@ -253,8 +259,12 @@ async function main(): Promise<void> {
       ...(wiring.rowsPerPage !== undefined ? { rowsPerPage: wiring.rowsPerPage } : {}),
       ...(wiring.extraPaths !== undefined ? { extraPaths: wiring.extraPaths } : {}),
     },
-    makeDeps(wiring.normalise)
+    makeDeps(wiring.normalise, pages.observe)
   );
+
+  // Written once the cycle is done rather than per page, so a run that dies part way
+  // through does not leave half a probe's worth of counts behind.
+  pages.flush();
 
   const { report, diagnosis, incident, serving } = result;
 

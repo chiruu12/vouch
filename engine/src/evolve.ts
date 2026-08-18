@@ -32,29 +32,27 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { aliasStore, knownRawFields, canonicalFields, pick, type AliasStore } from "./aliases.js";
+import { GONE_MARKERS } from "./bdata.js";
+import type { AliasChange, Change as AnyChange } from "./learn/change.js";
+import { changeKey } from "./learn/change.js";
+import { partition, mayApplyUnattended } from "./learn/policy.js";
+import { LEARNERS } from "./learn/registry.js";
+import type { Capture as LearnerCapture, Evidence } from "./learn/learner.js";
+import { emptyLedger, type PhraseLedger } from "./learn/gone-markers.js";
+import type { HealRecord } from "./learn/heal-strategy.js";
 
 const ROOT = new URL("../..", import.meta.url).pathname;
 const STORE_PATH = new URL("../learned/aliases.json", import.meta.url).pathname;
 const PROPOSALS_PATH = new URL("../learned/proposals.json", import.meta.url).pathname;
 
 // --- what a change looks like ------------------------------------------------
+//
+// The shape moved to learn/change.ts, where each kind carries what it needs and the
+// compiler enforces it. Whether a change may be applied without a person watching is
+// not a property a learner declares about itself any more; it is one rule in
+// learn/policy.ts, applied to every kind including kinds added later.
 
-export type Kind = "alias" | "gone-marker" | "heal-prompt";
-
-export interface Change {
-  kind: Kind;
-  /** Human-readable one-liner. */
-  what: string;
-  /** Why the evidence supports it, in numbers. */
-  evidence: string;
-  /** Can this be undone by deleting one line, and can it only fill a null? */
-  reversible: boolean;
-  source: string | null;
-  canonical?: string;
-  raw?: string;
-  marker?: string;
-  collectorId?: string | null;
-}
+export type { Change, Kind } from "./learn/change.js";
 
 // --- shape tests -------------------------------------------------------------
 
@@ -165,9 +163,9 @@ export function inferAliases(
   cap: Capture,
   knownRefs: readonly string[],
   store: AliasStore = aliasStore()
-): Change[] {
+): AliasChange[] {
   const known = knownRawFields(cap.source, store);
-  const out: Change[] = [];
+  const out: AliasChange[] = [];
   if (cap.rows.length === 0) return out;
 
   const rawNames = new Set<string>();
@@ -213,7 +211,6 @@ export function inferAliases(
           `${cap.label}: ${canonical} resolved to null on all ${cap.rows.length} rows, ` +
           `while "${raw}" was present on every row and ${fits}/${present.length} values ` +
           `fit the expected shape${extra}`,
-        reversible: true,
         source: cap.source,
         canonical,
         raw,
@@ -223,61 +220,12 @@ export function inferAliases(
   return out;
 }
 
-// --- gone-marker candidates --------------------------------------------------
-
-/** A phrase that might mean "this record is gone", drawn from a page that turned out to
- *  be gone. Never auto-applied: a false marker takes a live recall off the feed, which
- *  is the failure mode the oracle's narrowness exists to avoid. */
-export function proposeGoneMarkers(incidents: { cause: string; evidence: string[] }[]): Change[] {
-  const out: Change[] = [];
-  for (const i of incidents) {
-    for (const line of i.evidence) {
-      const m = /could not be checked[^:]*: ([^)]+)$/.exec(line);
-      if (m === null) continue;
-      out.push({
-        kind: "gone-marker",
-        what: `review the unresolved refs in an incident for a repeatable gone-phrase`,
-        evidence: `unresolved refs recorded: ${m[1]?.slice(0, 80) ?? ""}`,
-        reversible: false,
-        source: null,
-      });
-    }
-  }
-  return out;
-}
-
-// --- heal prompt observations ------------------------------------------------
-
-export function proposeHealPrompts(
-  heals: { cause: string; prompt: string | null; verified: boolean }[]
-): Change[] {
-  const byCause = new Map<string, { ok: number; bad: number }>();
-  for (const h of heals) {
-    const e = byCause.get(h.cause) ?? { ok: 0, bad: 0 };
-    if (h.verified) e.ok++;
-    else e.bad++;
-    byCause.set(h.cause, e);
-  }
-  const out: Change[] = [];
-  for (const [cause, { ok, bad }] of byCause) {
-    if (ok + bad < 2) continue; // one data point is an anecdote
-    out.push({
-      kind: "heal-prompt",
-      what: `revisit the ${cause} repair prompt`,
-      evidence: `${ok} of ${ok + bad} repairs for ${cause} survived measurement`,
-      reversible: false,
-      source: null,
-    });
-  }
-  return out;
-}
-
 // --- applying ----------------------------------------------------------------
 
-export function applyAlias(store: AliasStore, c: Change, now: string): AliasStore {
-  if (c.kind !== "alias" || c.source === null || c.canonical === undefined || c.raw === undefined) {
-    throw new Error("not an alias change");
-  }
+export function applyAlias(store: AliasStore, c: AliasChange, now: string): AliasStore {
+  // The runtime guard that used to stand here checked that this was an alias change
+  // carrying a canonical field and a raw name. The type says so now, so a change that
+  // does not is not constructible and the check had nothing left to catch.
   const next: AliasStore = JSON.parse(JSON.stringify(store)) as AliasStore;
   const forSource = (next.sources[c.source] ??= {});
   const list = (forSource[c.canonical] ??= []);
@@ -340,6 +288,32 @@ function knownRefsFor(source: string): string[] {
   return s.baselineRefs ?? [];
 }
 
+
+/** Phrase counts written by the oracle. Absent on a fresh clone, which is not an error:
+ *  it means nothing has been probed yet and there is nothing to learn from. */
+function loadLedger(): PhraseLedger {
+  const p = join(ROOT, "engine", "learned", "gone-candidates.json");
+  if (!existsSync(p)) return emptyLedger();
+  return JSON.parse(readFileSync(p, "utf8")) as PhraseLedger;
+}
+
+function gatherEvidence(): Evidence {
+  const incidents = loadIncidents();
+  const captures: LearnerCapture[] = loadCaptures();
+  const heals: HealRecord[] = incidents.map((i) => ({
+    cause: i.cause,
+    prompt: i.prompt,
+    verified: i.verified,
+  }));
+  return {
+    captures,
+    heals,
+    ledger: loadLedger(),
+    knownMarkers: GONE_MARKERS,
+    knownRefsFor,
+  };
+}
+
 // --- cli ---------------------------------------------------------------------
 
 function main(): void {
@@ -349,38 +323,37 @@ function main(): void {
   const accept = acceptAt === -1 ? null : Number(argv[acceptAt + 1]);
   const now = new Date().toISOString();
 
-  const incidents = loadIncidents();
-  const captures = loadCaptures();
+  const evidence = gatherEvidence();
 
-  const changes: Change[] = [];
-  for (const cap of captures) changes.push(...inferAliases(cap, knownRefsFor(cap.source)));
-  changes.push(...proposeGoneMarkers(incidents));
-  changes.push(
-    ...proposeHealPrompts(incidents.filter((i) => i.prompt !== null).map((i) => ({ cause: i.cause, prompt: i.prompt, verified: i.verified })))
-  );
+  // Every learner sees the same evidence and none of them decides what happens next.
+  // Adding one is an entry in the registry; nothing here needs to know it exists.
+  const found: AnyChange[] = [];
+  for (const learner of LEARNERS) {
+    for (const c of learner.propose(evidence)) found.push(c);
+  }
 
-  // Dedupe aliases that several captures agree on; the evidence of the first wins.
   const seen = new Set<string>();
-  const unique = changes.filter((c) => {
-    const k = `${c.kind}|${c.source}|${c.canonical}|${c.raw}|${c.what}`;
+  const unique = found.filter((c) => {
+    const k = changeKey(c);
     if (seen.has(k)) return false;
     seen.add(k);
     return true;
   });
 
-  const auto = unique.filter((c) => c.reversible);
-  const proposals = unique.filter((c) => !c.reversible);
+  const { auto, proposed } = partition(unique);
 
   console.log("");
-  console.log(`  evidence: ${captures.length} capture(s), ${incidents.length} incident(s)`);
+  console.log(
+    `  evidence: ${evidence.captures.length} capture(s), ${evidence.heals.length} incident(s), ` +
+      `${Object.keys(evidence.ledger.sources).length} source(s) with observed page phrases`
+  );
+  for (const l of LEARNERS) console.log(`    ${l.id.padEnd(15)} ${l.learns}`);
   console.log("");
 
-  let store = aliasStore();
-  let applied = 0;
   if (accept !== null) {
-    const c = proposals[accept - 1];
+    const c = proposed[accept - 1];
     if (c === undefined) {
-      console.error(`  no proposal ${accept}. There are ${proposals.length}.`);
+      console.error(`  no proposal ${accept}. There are ${proposed.length}.`);
       process.exit(2);
     }
     console.log(`  accepting proposal ${accept} is a manual edit: ${c.what}`);
@@ -389,14 +362,20 @@ function main(): void {
     return;
   }
 
+  let store = aliasStore();
+  let applied = 0;
   for (const c of auto) {
+    // `auto` can only contain kinds the policy cleared, and the only such kind is an
+    // alias. The check is here so that a future learner whose kind is cleared by mistake
+    // fails loudly rather than falling through to a store write that does nothing.
+    if (c.kind !== "alias") throw new Error(`policy cleared ${c.kind} for unattended apply, but nothing applies it`);
     const before = JSON.stringify(store);
     store = applyAlias(store, c, now);
     if (JSON.stringify(store) !== before) {
       applied++;
       console.log(`  APPLIED   ${c.what}`);
       console.log(`            ${c.evidence}`);
-      console.log(`            reversible: delete this name from learned/aliases.json`);
+      console.log(`            ${mayApplyUnattended(c).because}`);
       console.log("");
     }
   }
@@ -405,25 +384,22 @@ function main(): void {
     writeFileSync(STORE_PATH, JSON.stringify(store, null, 2) + "\n");
   }
 
-  for (const [n, c] of proposals.entries()) {
+  for (const [n, c] of proposed.entries()) {
     console.log(`  PROPOSED  ${n + 1}. ${c.what}`);
     console.log(`            ${c.evidence}`);
-    console.log(`            not applied: this could weaken a gate or change an existing reading`);
+    console.log(`            not applied: ${mayApplyUnattended(c).because}`);
     console.log("");
   }
 
   if (!dry) {
-    writeFileSync(
-      PROPOSALS_PATH,
-      JSON.stringify({ at: now, proposals }, null, 2) + "\n"
-    );
+    writeFileSync(PROPOSALS_PATH, JSON.stringify({ at: now, proposals: proposed }, null, 2) + "\n");
   }
 
   console.log(
-    `  ${applied} applied, ${proposals.length} proposed${dry ? "  (dry run, nothing written)" : ""}`
+    `  ${applied} applied, ${proposed.length} proposed${dry ? "  (dry run, nothing written)" : ""}`
   );
-  if (applied === 0 && proposals.length === 0) {
-    console.log("  Nothing to learn. The adapters already read every field in every capture.");
+  if (applied === 0 && proposed.length === 0) {
+    console.log("  Nothing to learn from the evidence on hand.");
   }
   console.log("");
 }
