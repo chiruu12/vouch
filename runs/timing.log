@@ -446,3 +446,45 @@ without establishing the property is worse than no check, and that applies to th
 on the checks.
 
 137 tests, nine of them properties over generated input.
+
+## The panel found the real one (2026-08-18)
+deepseek-v4-pro, with a shell this time, found a path that republishes a withdrawn record
+and proved it with a failing test rather than an argument. Reproduced on master before
+touching anything.
+
+  baseline r1..r6, extraction returns r1..r4
+  r5 permalink 200 (genuine loss), r6 permalink 404 (withdrawn)
+  classify -> drift, healable, withdrawnRefs [r6], lostRefs [r5]
+  heal runs, returns all six rows, contract passes
+  r6 served as "healed", written to lastGoodRows and back into baselineRefs
+
+The post-repair check only re-ran the contract, and the contract measures shape. It knows
+nothing about the withdrawal established seconds earlier in the same cycle. This is the
+failure the project exists to prevent, reached through the repair path rather than the
+classifier.
+
+Fixed in two places. The repair result is now rejected if it contains any ref confirmed
+withdrawn this cycle. And the last-good fallback is filtered by known withdrawals, because
+last-good predates what we learned and serving it unfiltered republishes the same record
+under an "unverified" label. Confirmed withdrawals also now leave the baseline on the
+refusal paths, so the next cycle does not rediscover them.
+
+Also from the same run: duplicate probes for one ref resolved last-wins, because
+`new Map(pairs)` keeps the last entry. A ref probed [404, 200] became lost and authorised
+a repair. Contradictory readings now resolve to the refusing answer. Three tests.
+
+Its second finding, that the oracle allowlist missed 401/407/451/301/302, was already
+closed by the allowlist rewrite an hour earlier; it reviewed the commit before that.
+
+What it could not break, stated because it matters as much: every contract boundary
+(zero rows, baseline zero, NaN price, absent fields, exact minRows, exact drop limit),
+the pure gone and blocked refusals, the documented oracle refusals, and the rule that a
+refused run never advances the baseline or last-good. The demo replay prints only
+verdicts the engine actually reaches.
+
+The part worth keeping: my own property test had explicitly permitted this, with a
+comment reasoning that a withdrawn record could not come back because it was gone from
+the source. The healer is the one component whose failure mode is inventing data, and I
+assumed it would not.
+
+142 tests, ten of them properties over generated input.

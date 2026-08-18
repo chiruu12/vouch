@@ -86,7 +86,26 @@ export function classify(input: ClassifyInput): Diagnosis {
   const current = new Set(currentRefs);
   const missing = baselineRefs.filter((r) => !current.has(r));
 
-  const probeByRef = new Map(permalinks.map((p) => [p.ref, p]));
+  // Duplicate probes for one ref resolve to the safest answer, not the last one.
+  //
+  // `new Map(pairs)` keeps the last entry, so a ref probed [404, 200] resolved to 200,
+  // became `lost`, and authorised a repair on a record that had already answered 404.
+  // A withdrawal signal is the one that counts: it is the answer that refuses, and
+  // between two contradictory readings of the same record the refusing one is the only
+  // safe choice.
+  const probeByRef = new Map<string, PermalinkProbe>();
+  for (const p of permalinks) {
+    const seen = probeByRef.get(p.ref);
+    if (seen === undefined) {
+      probeByRef.set(p.ref, p);
+      continue;
+    }
+    const says = (x: PermalinkProbe): boolean =>
+      WITHDRAWN_STATUSES.has(x.status) || (x.goneSignature ?? null) !== null;
+    const live = (x: PermalinkProbe): boolean => x.status === 200 && (x.goneSignature ?? null) === null;
+    // withdrawal beats anything; a clean 200 loses to anything that is not a clean 200.
+    if (says(p) || (live(seen) && !live(p))) probeByRef.set(p.ref, p);
+  }
 
   // A withdrawal is a 404, a 410, or a 200 whose body says the record is gone.
   //

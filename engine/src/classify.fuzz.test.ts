@@ -132,10 +132,15 @@ describe("classifier invariants over generated input", () => {
     //
     // Confirmed still published: a clean 200. These are what the repair is for.
     //
-    // Confirmed withdrawn: recorded, preserved as last-good, and never sent to the
-    // healer. A withdrawal alongside a genuine extraction loss does not block the
-    // repair, because the repair addresses the loss and the withdrawal is already
-    // marked. What must never happen is repairing while a record's fate is unknown.
+    // Confirmed withdrawn: recorded and never sent to the healer as something to find.
+    // A withdrawal alongside a genuine extraction loss does not block the repair here,
+    // because the repair addresses the loss.
+    //
+    // That is only safe because of a guarantee enforced elsewhere, and this comment
+    // used to claim it was safe on its own, which was wrong and hid a real defect. The
+    // classifier permitting the repair is not the end of it: the repair can hand back
+    // the withdrawn record, and `runner.fuzz.test.ts` is what holds the line that such
+    // output is rejected rather than served.
     for (let seed = 1; seed <= RUNS; seed++) {
       const g = generate(seed);
       const d = classify(g);

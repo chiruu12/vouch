@@ -227,6 +227,53 @@ describe("state invariants across a sequence of cycles", async () => {
     }
   });
 
+  it("never serves a record confirmed withdrawn in the same cycle", async () => {
+    // This property is here because its absence was a real defect, and because the
+    // comment I wrote in classify.fuzz.test.ts explicitly reasoned it away: a
+    // withdrawal alongside a genuine loss does not block the repair, I said, because
+    // the repair addresses the loss and the withdrawn record cannot come back.
+    //
+    // It can. The healer's entire failure mode is producing rows it was asked for, and
+    // the post-repair check only re-ran the contract, which knows nothing about
+    // withdrawals. A record that 404s at its own URL was re-extracted, passed the
+    // contract, and was served as `healed`.
+    for (let seed = 1; seed <= SEEDS; seed++) {
+      const r = rng(seed);
+      let state: SourceState = emptyState();
+      const clock = { t: Date.parse("2026-08-18T00:00:00.000Z") };
+
+      for (let c = 0; c < CYCLES; c++) {
+        const s = step(r);
+        const result = await runCycle(
+          {
+            sourceId: "tradewell",
+            collectorId: "c_fuzz",
+            url: "https://f.test/",
+            contract: CONTRACT,
+            state,
+            permalinkFor: (ref) => `https://f.test/${ref}`,
+            refOf,
+            rowsPerPage: 4,
+          },
+          deps(s, clock, (ref) => (s.live.includes(ref) ? 200 : 404))
+        );
+        state = result.nextState;
+
+        const served = new Set(result.serving.rows.map(refOf));
+        for (const ref of result.diagnosis.withdrawnRefs) {
+          assert.ok(
+            !served.has(ref),
+            `seed ${seed} cycle ${c}: served ${ref} after confirming it withdrawn`
+          );
+          assert.ok(
+            !state.baselineRefs.includes(ref),
+            `seed ${seed} cycle ${c}: ${ref} stayed in the baseline after being withdrawn`
+          );
+        }
+      }
+    }
+  });
+
   it("never serves rows it did not have", async () => {
     for (let seed = 1; seed <= SEEDS; seed++) {
       const r = rng(seed);

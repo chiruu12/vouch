@@ -166,6 +166,27 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
     (r) => !resurrected.has(r)
   );
 
+  // What we may still serve from the last run we vouched for.
+  //
+  // Last-good is a snapshot of a moment before we learned what we now know. If a record
+  // has since been confirmed withdrawn, it is in there, and falling back to last-good
+  // would republish it under an "unverified" label. Stale is acceptable and is the whole
+  // point of keeping a last-good at all; stale-and-known-wrong is not. Withdrawals are
+  // the one fact that survives a failed cycle, so they are applied to the fallback.
+  const servableLastGood = state.lastGoodRows.filter(
+    (r) => !knownWithdrawn.includes(args.refOf(r))
+  );
+
+  // A record confirmed withdrawn this cycle stops being expected, whatever else went
+  // wrong. Leaving it in the baseline means the next cycle sees it missing all over
+  // again and re-diagnoses a withdrawal we already recorded, and on a refused cycle it
+  // also leaves the baseline asserting that a record we know is gone should be there.
+  // The `gone` branch already does this by rebuilding from the surviving refs; these
+  // are the paths that carry the old state forward.
+  const baselineAfterWithdrawals = state.baselineRefs.filter(
+    (r) => !diagnosis.withdrawnRefs.includes(r)
+  );
+
   const nextStateOnGoodRun = {
     baselineRefs: currentRefs,
     baselineRows: rows.length,
@@ -290,8 +311,8 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
       diagnosis,
       resurrectedRefs,
       incident,
-      serving: { rows: state.lastGoodRows, state: "unverified" },
-      nextState: { ...state, withdrawnRefs: knownWithdrawn },
+      serving: { rows: servableLastGood, state: "unverified" },
+      nextState: { ...state, baselineRefs: baselineAfterWithdrawals, withdrawnRefs: knownWithdrawn },
     };
   }
 
@@ -314,8 +335,8 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
       diagnosis,
       resurrectedRefs,
       incident,
-      serving: { rows: state.lastGoodRows, state: "unverified" },
-      nextState: { ...state, withdrawnRefs: knownWithdrawn },
+      serving: { rows: servableLastGood, state: "unverified" },
+      nextState: { ...state, baselineRefs: baselineAfterWithdrawals, withdrawnRefs: knownWithdrawn },
     };
   }
 
@@ -337,8 +358,8 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
       diagnosis,
       resurrectedRefs,
       incident,
-      serving: { rows: state.lastGoodRows, state: "unverified" },
-      nextState: { ...state, withdrawnRefs: knownWithdrawn },
+      serving: { rows: servableLastGood, state: "unverified" },
+      nextState: { ...state, baselineRefs: baselineAfterWithdrawals, withdrawnRefs: knownWithdrawn },
     };
   }
 
@@ -361,8 +382,8 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
       diagnosis,
       resurrectedRefs,
       incident,
-      serving: { rows: state.lastGoodRows, state: "unverified" },
-      nextState: { ...state, withdrawnRefs: knownWithdrawn },
+      serving: { rows: servableLastGood, state: "unverified" },
+      nextState: { ...state, baselineRefs: baselineAfterWithdrawals, withdrawnRefs: knownWithdrawn },
     };
   }
 
@@ -382,6 +403,36 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
     collectorId,
     durationMs: healed.durationMs,
   };
+
+  // The contract measures shape. It knows nothing about the withdrawals this cycle
+  // established, so a repair that hands back a record we just confirmed was taken down
+  // satisfies it and gets served as `healed`. That is the phantom this whole project
+  // exists to prevent, arriving through the repair path rather than the classifier.
+  //
+  // It is not hypothetical: an LLM healer asked to recover missing rows will produce
+  // rows, and a record that 404s at its own URL is exactly the kind of thing it will
+  // reconstruct from a stale cache or an adjacent listing. Verifying a repair means
+  // checking it against everything we know, not only against the contract.
+  const phantoms = afterRefs.filter((r) => diagnosis.withdrawnRefs.includes(r));
+  if (phantoms.length > 0) {
+    incident.refusal =
+      `the repair returned ${phantoms.length} record(s) confirmed withdrawn earlier in ` +
+      `this cycle (${phantoms.slice(0, 5).join(", ")}); their permalinks do not resolve, ` +
+      `so the repair fabricated them and the result was discarded`;
+    return {
+      report: afterReport,
+      diagnosis,
+      resurrectedRefs,
+      incident,
+      serving: { rows: servableLastGood, state: "unverified" },
+      nextState: {
+        ...state,
+        baselineRefs: baselineAfterWithdrawals,
+        healHistory: [...state.healHistory, { ...healEvent, verified: false, promoted: false }],
+        withdrawnRefs: knownWithdrawn,
+      },
+    };
+  }
 
   if (afterReport.passed) {
     incident.closedAt = afterReport.at;
@@ -416,9 +467,10 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
     diagnosis,
     resurrectedRefs,
     incident,
-    serving: { rows: state.lastGoodRows, state: "unverified" },
+    serving: { rows: servableLastGood, state: "unverified" },
     nextState: {
       ...state,
+      baselineRefs: baselineAfterWithdrawals,
       healHistory: [...state.healHistory, healEvent],
       withdrawnRefs: knownWithdrawn,
     },

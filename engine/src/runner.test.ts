@@ -293,3 +293,34 @@ test("a repair that never reached the collector is not logged as a repair that r
     "a call that never landed must not enter the heal history"
   );
 });
+
+test("a heal that resurrects a withdrawn ref is served as healed, republishing the phantom", async () => {
+  let run = 0;
+  const { deps: d, calls } = deps({
+    runScraper: async () => {
+      run++;
+      calls.runs++;
+      // Pre-heal: r5 lost (still live), r6 withdrawn (404). Both absent.
+      // Post-heal: the healer re-extracts everything, restoring the withdrawn r6.
+      return run === 1 ? { rows: ROWS.slice(0, 4), errors: [] } : { rows: ROWS, errors: [] };
+    },
+    probePermalinks: async (entries) =>
+      entries.map((e) => ({ ref: e.ref, status: e.ref === "r6" ? 404 : 200 })),
+  });
+  const r = await runCycle(args(seeded(ROWS)), d);
+
+  assert.equal(r.diagnosis.cause, "drift");
+  assert.equal(r.diagnosis.withdrawnRefs.includes("r6"), true, "r6 was confirmed withdrawn");
+  assert.equal(calls.heal, 1);
+  const servedIds = r.serving.rows.map((x) => String(x.id));
+  assert.equal(
+    servedIds.includes("r6"),
+    false,
+    "a ref confirmed withdrawn this cycle must not come back as healed output"
+  );
+  assert.equal(
+    r.nextState.baselineRefs.includes("r6"),
+    false,
+    "a withdrawn ref must not leak back into the baseline"
+  );
+});

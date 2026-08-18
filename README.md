@@ -165,7 +165,7 @@ recalled portable fuel container. Nothing was broken, the contract passed, and b
 this existed the feed would have served it again in silence, because a supervisor that
 only watches for failures has nothing to say about a source that changes its mind.
 
-Nine of those tests are properties over generated input rather than examples:
+Ten of those tests are properties over generated input rather than examples:
 `classify.fuzz.test.ts` runs 3000 inputs through the classifier and
 `runner.fuzz.test.ts` drives 2000 cycles of the state machine, checking invariants like
 "a repair is never authorised while any missing record is unaccounted for" and "a
@@ -192,7 +192,7 @@ has the originals.
 cd engine
 npm install
 npm run demo                              # watch all four causes decided, no API key
-npm test                                  # 137 tests, no network
+npm test                                  # 142 tests, no network
 node --import tsx src/cycle.ts arcadia    # one supervision cycle, needs BRIGHTDATA_API_KEY
 node --import tsx src/snapshot.ts         # publish web/public/snapshot.json
 

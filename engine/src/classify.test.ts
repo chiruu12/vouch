@@ -588,3 +588,60 @@ describe("oracle statuses that are neither alive nor withdrawn", () => {
     assert.equal(diagnosis.healable, true);
   });
 });
+
+describe("contradictory probes for the same record", () => {
+  it("takes the withdrawal, not the last reading", () => {
+    // Building the lookup with `new Map(pairs)` kept the last entry, so a ref probed
+    // 404 and then 200 resolved to 200, became lost, and authorised a repair on a
+    // record that had already told us it was gone.
+    const diagnosis = classify(
+      input({
+        report: report({ rows: 11, baselineRows: 12, rowDropRate: 1 / 12, passed: false }),
+        listing: listing({ status: 200 }),
+        baselineRefs: refs(12),
+        currentRefs: refs(11),
+        permalinks: [
+          { ref: "ARC-0012", status: 404 },
+          { ref: "ARC-0012", status: 200 },
+        ],
+      })
+    );
+    assert.deepEqual(diagnosis.withdrawnRefs, ["ARC-0012"]);
+    assert.equal(diagnosis.healable, false);
+  });
+
+  it("takes the withdrawal whichever order it arrives in", () => {
+    const diagnosis = classify(
+      input({
+        report: report({ rows: 11, baselineRows: 12, rowDropRate: 1 / 12, passed: false }),
+        listing: listing({ status: 200 }),
+        baselineRefs: refs(12),
+        currentRefs: refs(11),
+        permalinks: [
+          { ref: "ARC-0012", status: 200 },
+          { ref: "ARC-0012", status: 404 },
+        ],
+      })
+    );
+    assert.deepEqual(diagnosis.withdrawnRefs, ["ARC-0012"]);
+  });
+
+  it("prefers an unresolved reading over a clean 200", () => {
+    // Two contradictory readings where neither says gone: one says the record is fine
+    // and one says nothing at all. Nothing at all is the answer that refuses.
+    const diagnosis = classify(
+      input({
+        report: report({ rows: 11, baselineRows: 12, rowDropRate: 1 / 12, passed: false }),
+        listing: listing({ status: 200 }),
+        baselineRefs: refs(12),
+        currentRefs: refs(11),
+        permalinks: [
+          { ref: "ARC-0012", status: 200 },
+          { ref: "ARC-0012", status: 0 },
+        ],
+      })
+    );
+    assert.deepEqual(diagnosis.unresolvedRefs, ["ARC-0012"]);
+    assert.equal(diagnosis.healable, false);
+  });
+});

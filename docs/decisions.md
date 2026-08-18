@@ -292,3 +292,33 @@ That is worth stating as a general rule rather than a bug report. Three of the f
 in this oracle were the same mistake: deciding what counts as absence, and letting
 everything else default to presence. Presence is the claim that costs something, so
 presence is what has to be proven.
+
+## 15. Verifying a repair means checking it against everything we know
+
+The rule was that no repair is served until a fresh run has been measured against the
+contract. That was not enough, and an adversarial review found the gap by writing the
+test rather than arguing for it.
+
+A cycle can hold both a withdrawal and a genuine extraction loss. One record 404s at its
+own URL; another is missing while its permalink still resolves. The classifier calls that
+`drift` and allows the repair, because the repair is for the record we actually lost. The
+repair then returns both, the contract passes because the contract measures shape, and the
+withdrawn record is served as `healed` and written back into the baseline.
+
+That is the phantom the whole project exists to prevent, arriving through the repair path
+instead of the classifier. It is not a hypothetical: an LLM healer asked to recover
+missing rows produces rows, and a record that 404s is exactly the kind of thing it
+reconstructs from a stale cache or an adjacent listing.
+
+Two things were wrong and both are fixed. The post-repair check now rejects output
+containing any record confirmed withdrawn in that cycle. And the last-good fallback, which
+several refusal paths serve, is filtered by what we now know: last-good is a snapshot of a
+moment before we learned the record was gone, and serving it unfiltered republishes the
+same phantom under an "unverified" label. Stale is the point of keeping a last-good.
+Stale and known wrong is not.
+
+The uncomfortable part is where the defect came from. A property test I had written the
+same afternoon explicitly permitted this case, with a comment reasoning that a withdrawn
+record could not come back because it was gone from the source. The healer is the one
+component in the system whose failure mode is inventing data, and I had assumed it would
+not. The property now asserts the opposite, and the comment says so.
