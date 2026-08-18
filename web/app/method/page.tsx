@@ -314,16 +314,16 @@ export default function Page() {
               certainty is out of reach by construction, not by effort.
             </li>
             <li>
-              A record that is withdrawn at source and later reappears is reported as an
-              incident and stops being marked withdrawn, but nothing escalates it above an
-              ordinary record in the feed. A marketplace relisting a recalled product should
-              probably be the loudest thing on this site, and right now it is a log entry.
+              A record that is withdrawn at source and later reappears sorts above every
+              other recall and carries both dates, but nobody is told. There is no
+              subscription and no alert, so the feed reports a relisting only to a reader
+              who happens to open it.
             </li>
             <li>
-              Two collectors in the account are permanently stuck, one on a repair prompt
-              that was too aggressive and one holding a repair lock that outlived its job. A
-              repair can damage a working scraper, and nothing here prevents that beyond
-              refusing to serve the result.
+              Three collectors in the account are permanently stuck: one on a repair prompt
+              that was too aggressive, and two holding a repair lock that outlived the job
+              that took it. A repair can damage a working scraper, and nothing here prevents
+              that beyond refusing to serve the result.
             </li>
             <li>
               Bright Data cannot run a repaired collector as a draft from the CLI, so the

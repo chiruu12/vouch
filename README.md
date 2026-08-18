@@ -45,7 +45,8 @@ narrow and worth stating exactly, because "reversible" alone is not enough:
   date, a number.
 - **Proposed, never applied.** Anything that could weaken a gate or change an existing
   reading. New withdrawal phrases, because a wrong one takes a live recall off the feed.
-  Repair prompts, because a bad one has permanently wedged a collector here twice.
+  Repair prompts, because a bad one has permanently wedged a collector here, and two more
+were wedged by repairs that failed to trigger and never released their lock.
 - **Never, at any confidence.** Anything touching seller identity, in either direction.
 
 The first dry run of the evolver offered to read a shipping cost as a currency and our

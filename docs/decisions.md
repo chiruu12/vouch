@@ -344,7 +344,8 @@ are already in the baseline, a URL that parses, a date, a number.
 
 Everything else is a proposal with its evidence. New withdrawal phrases, because a wrong
 one takes a live recall off the feed. Repair prompts, because a bad prompt has wedged a
-collector permanently here twice. And seller identity is off the table in both
+collector permanently here once, and two more collectors were wedged by repairs that
+failed to trigger and kept their lock. And seller identity is off the table in both
 directions at any confidence, because the evolver must not become a second door into the
 one guarantee this project makes about people rather than data.
 
