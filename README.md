@@ -150,9 +150,15 @@ discarded.
 
 ## Running it
 
+Start with `npm run demo`. It replays the four causes through the real classifier and
+contract with the network dependencies pre-recorded, so the decision is watchable without
+a Bright Data account. Every scenario there was produced live first; `runs/timing.log`
+has the originals.
+
 ```bash
 cd engine
 npm install
+npm run demo                              # watch all four causes decided, no API key
 npm test                                  # 110 tests, no network
 node --import tsx src/cycle.ts arcadia    # one supervision cycle, needs BRIGHTDATA_API_KEY
 node --import tsx src/snapshot.ts         # publish web/public/snapshot.json
