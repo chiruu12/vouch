@@ -230,8 +230,11 @@ the runs happen. The runs happened.
 
 New collector c_msydlwlb20dqcv6x7u ("tradewell-defer"), created so a heal that
 wedges it costs nothing. It produced a THIRD field naming over the same fixture:
-listing_id, date_listed, listing_url, against collector A's id/listed/url and
-collector B's item_id/listed_date/item_url. Adapter extended, capture committed
+listing_id, date_listed, listing_url, against collector A's item_id/listed/url and
+collector B's item_id/listed_date/item_url. (Corrected 2026-08-18: an audit found this
+line and two documents describing the three shapes wrongly. The captures in
+engine/samples/ are authoritative: A nests rows in results[] with item_id, B is flat with
+item_id, C is flat with listing_id.) Adapter extended, capture committed
 scrubbed, and the cross-collector agreement test now runs pairwise so a fourth
 collector cannot be added without being checked. 110 tests.
 
@@ -520,3 +523,40 @@ already knew, so permalink was never null. The fill-a-null guard caught a redund
 a person made.
 
 157 tests.
+
+## Full audit, ~105 claims, five wrong (2026-08-18)
+qwen3p8-max with a shell, told to assume every number unverified. It ran the suite, the
+demo with the network unset, the web build, the mutation suite, and re-derived the
+seven-tests claim by flipping the gone branch itself.
+
+CONFIRMED: all eight measured-behaviour timings, the 17/168/8 study figures re-derived
+from the capture, MTTR 347.6s and heal 330.6s against the incident file, the 21.4% cliff,
+the test count, 10/10 mutations from a clean tree, the eBay capture's 189/193 listing_url
+with four rows carrying only product_page_url and 193 distinct coalesced permalinks, the
+collector counts, the ~24h git span, snapshot regeneration differing only by timestamp,
+and no secrets, seller names or absolute paths anywhere.
+
+WRONG, all five now fixed:
+  1. docs/example-output.md quoted matchedTokens with four entries where the record has
+     six, no ellipsis, in a document whose first line says nothing in it is illustrative.
+  2. Same document reordered withdrawnRefs. Writing the check that should have existed
+     found a third instance, in the evidence array.
+  3. docs/scraper-studio.md described the three collector shapes backwards. The captures
+     are authoritative and now appear as a table: A nests in results[] with item_id, B is
+     flat with item_id, C is flat with listing_id.
+  4. decisions.md §9 and this log both said the identifier went id -> item_id ->
+     listing_id. It went item_id -> item_id -> listing_id: it changed once, not twice.
+  5. "seven heal triggers" undercounted. This log records twelve heal calls across eight
+     repair episodes once the retries against the locked collectors are included.
+
+Also acted on: `scraper run --sync 5s to 6s` had no standalone backing (3s recorded), now
+stated as both numbers; web/tsconfig.tsbuildinfo was committed build output, untracked.
+
+Noted and not changed: the Vercel account slug appears inside recorded repair prompts and
+therefore in the published snapshot. Editing a recorded incident is the one thing this
+project does not do, so it stays. engine/ ships a pnpm lockfile while the README says
+npm; running the documented cycle.ts rewrites committed state, which is true and is what
+that command is for.
+
+Every excerpt in example-output.md is now compared leaf by leaf against the snapshot and
+the incident files by engine/src/example-output.test.ts. 159 tests.

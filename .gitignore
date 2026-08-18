@@ -36,3 +36,4 @@ fleet.config.yaml
 fixtures/vouch-fixture/
 fixtures/tradewell-deploy/
 fixtures/shop/dist/
+web/tsconfig.tsbuildinfo

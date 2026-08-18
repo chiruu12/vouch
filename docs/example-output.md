@@ -3,6 +3,18 @@
 Every excerpt on this page is copied from `web/public/snapshot.json`, which is the file
 the feed renders and is committed in this repository. Nothing here is illustrative.
 
+An audit caught two places where that was not true, and writing the check that should
+have existed found a third: a `matchedTokens` array shortened from six entries to four
+with no ellipsis, and two ref arrays reordered. All three are corrected, and every
+excerpt here is now compared leaf by leaf against the snapshot and the incident files by
+`engine/src/example-output.test.ts`. A document asserting it is verbatim is the last
+thing anybody rereads, so it should not be the one thing taken on trust.
+
+Note that the evidence wording quoted below is the wording that incident was recorded
+with. The classifier says it differently now, because it learned to establish a
+withdrawal from a page body and a redirect as well as a status code. A recorded incident
+is never edited to match a later understanding of it.
+
 The snapshot is produced by `engine/src/snapshot.ts`, which decides what the feed is
 allowed to publish. Regenerate it with `cd engine && node --import tsx src/snapshot.ts`.
 
@@ -47,7 +59,7 @@ container, matched to a marketplace listing for the same product line.
       "match": {
         "confidence": 0.72,
         "basis": "brand+product",
-        "matchedTokens": ["zimtown", "portable", "gas", "can"],
+        "matchedTokens": ["zimtown", "portable", "gas", "can", "zimtownportable", "portablegas"],
         "contradiction": null,
         "publishable": true
       }
@@ -114,7 +126,7 @@ could repair, and declined to.
   "cause": "gone",
   "openedAt": "2026-08-17T19:49:05.922Z",
   "evidence": [
-    "3 notice(s) absent from the listing AND their permalinks return 404 or 410: TW-33887, TW-44903, TW-88214",
+    "3 notice(s) absent from the listing AND their permalinks return 404 or 410: TW-88214, TW-44903, TW-33887",
     "removed at source, not lost by us: retained as last-good, never healed",
     "all 3 missing record(s) accounted for by withdrawal; remaining 11 rows satisfy contract tradewell@1"
   ],
@@ -123,7 +135,7 @@ could repair, and declined to.
   "healDeferred": false,
   "prompt": null,
   "verified": true,
-  "withdrawnRefs": ["TW-88214", "TW-33887", "TW-44903"]
+  "withdrawnRefs": ["TW-88214", "TW-44903", "TW-33887"]
 }
 ```
 

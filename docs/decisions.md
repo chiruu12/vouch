@@ -139,9 +139,11 @@ the collector.
 Three collectors over the same fixture, created from near-identical intent sentences,
 returned three different shapes. One nested every row inside a `results[]` envelope; the
 others were flat. One reported `price` as a number with no currency, another as
-`{ value, currency, symbol }`. The permalink was `url`, then `item_url`, then
-`listing_url`. The date was `listed`, then `listed_date` as a full timestamp, then
-`date_listed`. The identifier was `id`, then `item_id`, then `listing_id`.
+`{ value, currency, symbol }`. The date was `listed`, then `listed_date` as a
+full timestamp, then `date_listed`. The identifier was `item_id` for the first two and
+`listing_id` for the third. The permalink was `url`, then `item_url`, then `listing_url`,
+though the third also kept a name the adapter already knew, which is why the evolver
+declines to learn it.
 
 The third arrived a day after the second, from a sentence written to match, which is the
 part worth noting: this is not drift over months of vendor changes. Two collectors built

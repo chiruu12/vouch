@@ -21,7 +21,7 @@ selectors, no browser session, no login. Timings for a 12-record, 2-page listing
 | --- | --- |
 | `scraper create` | 128s to 362s |
 | `scraper heal` | 90s and up |
-| `scraper run --sync` | 5s to 6s |
+| `scraper run --sync` | 3s standalone; 5s to 6s measured inside a full cycle |
 
 **It handles a real hostile target.** eBay search results, 193 rows from one query in
 about six minutes, zero error rows. Every row is a distinct listing once
@@ -31,8 +31,9 @@ tuning.
 
 **Cost at this volume is not a factor.** Account balance held at $52.00 throughout: nine
 `scraper create` calls, of which eight produced a collector and one was refused for being
-a government domain; seven heal triggers; and every extraction run including a
-193-listing eBay query. Only page loads bill. Throttled requests are not billed either,
+a government domain; twelve heal calls across eight repair episodes,
+counting the retries against the two collectors that had locked; and every extraction run
+including a 193-listing eBay query. Only page loads bill. Throttled requests are not billed either,
 which we found out the hard way while looking at a balance that had not changed during a
 rate limit.
 
@@ -165,11 +166,18 @@ classifier like any other result.
 
 ### The output envelope is a property of the collector, not the site
 
-Three collectors, one site, three output shapes. The first returns listing fields at the
-top level and calls the identifier `item_id`. The second nests them in a `results[]`
-array, calls it `id`, and reports price as `{value, currency, symbol}` where the first
-reports a bare number. The third, created a day later from a near-identical sentence,
-calls it `listing_id` and dates it `date_listed`.
+Three collectors, one site, three output shapes. Taken from the captures committed in
+`engine/samples/`, since an audit caught this paragraph describing them backwards:
+
+| | envelope | identifier | date field | price |
+| --- | --- | --- | --- | --- |
+| A `c_msxhnjyofl...` | rows nested in `results[]` | `item_id` | `listed` | bare number |
+| B `c_msxnf5nk1l...` | flat rows | `item_id` | `listed_date` | `{value, currency, symbol}` |
+| C `c_msydlwlb20...` | flat rows | `listing_id` | `date_listed` | bare number |
+
+The identifier changed once across the three, the date field changed twice, and the
+envelope changed once. Collector C was created a day after B from a near-identical
+sentence.
 
 We reused an adapter across the first two on the assumption that shape follows the site.
 It follows the collector. Every row was rejected, a working collector looked like a total
