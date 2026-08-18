@@ -4,6 +4,8 @@ A product recall feed that refuses to publish a record it cannot vouch for.
 
 Built for the WeMakeDevs "Into the Scrape-Verse" hackathon, August 2026.
 
+**Live feed: https://vouch-black.vercel.app**
+
 Recalled products keep selling on resale marketplaces long after large retailers pull
 them, because a recall notice never reaches the secondhand market. Finding them means
 scraping, and scrapers break. The interesting question is not how to repair a broken
@@ -160,6 +162,9 @@ npm install
 npm run dev                               # the feed
 npm run build                             # export, then verify the exported HTML
 npm run mutations                         # prove that verifier catches what it claims
+
+# web/public/vercel.json ships with the export, so `vercel deploy` on web/out/
+# serves /incidents and /method rather than 404ing on them.
 ```
 
 `npm run build` ends by running `verify-output.mjs` against the exported HTML. It fails
