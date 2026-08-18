@@ -1,0 +1,108 @@
+{
+  "incident": {
+    "sourceId": "tradewell",
+    "openedAt": "2026-08-18T08:18:35.436Z",
+    "closedAt": "2026-08-18T08:18:43.729Z",
+    "cause": "resurrected",
+    "evidence": [
+      "1 record(s) previously published as withdrawn are present in the listing again: TW-33887",
+      "contract tradewell@1 passed over 12 rows, so this is the source's own change rather than a reading error on our part",
+      "no longer marked withdrawn; the withdrawal and the return are both on the record"
+    ],
+    "prompt": null,
+    "healAttempted": false,
+    "healDeferred": false,
+    "healDurationMs": null,
+    "verified": true,
+    "serving": true,
+    "mttrMs": 0,
+    "withdrawnRefs": [],
+    "resurrectedRefs": [
+      "TW-33887"
+    ],
+    "refusal": null
+  },
+  "report": {
+    "sourceId": "tradewell",
+    "contractVersion": "tradewell@1",
+    "at": "2026-08-18T08:18:43.729Z",
+    "rows": 12,
+    "baselineRows": 11,
+    "rowDropRate": -0.09090909090909091,
+    "passed": true,
+    "breaches": [],
+    "fields": [
+      {
+        "field": "id",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "permalink",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "title",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "brand",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "price",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "condition",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "location",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "listedOn",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      }
+    ]
+  },
+  "diagnosis": {
+    "cause": "healthy",
+    "withdrawnRefs": [],
+    "lostRefs": [],
+    "healable": false,
+    "evidence": []
+  }
+}

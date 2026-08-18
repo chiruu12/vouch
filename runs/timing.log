@@ -222,3 +222,54 @@ README corrected: the measured-behaviour table claimed every row came from a
 live run, but the deferral and the resurrection have no recorded incident. Both
 conditions were seen live and both are handled in tests only. Moved out of the
 table and stated as such.
+
+## Deferral and resurrection produced live (2026-08-18)
+Both were in the README's measured-behaviour table while only tests exercised them.
+The table is headed "every figure came from a live run", so either the rows go or
+the runs happen. The runs happened.
+
+New collector c_msydlwlb20dqcv6x7u ("tradewell-defer"), created so a heal that
+wedges it costs nothing. It produced a THIRD field naming over the same fixture:
+listing_id, date_listed, listing_url, against collector A's id/listed/url and
+collector B's item_id/listed_date/item_url. Adapter extended, capture committed
+scrubbed, and the cross-collector agreement test now runs pairwise so a fourth
+collector cannot be added without being checked. 110 tests.
+
+DEFERRAL, live:
+  cycle -> 7 rows against a baseline of 14, one page of 7
+           all 7 missing permalinks return HTTP 200
+           diagnosis pagination (healable)
+           heal -> HTTP 409, another refactor job in progress
+           recorded healDeferred, healAttempted false, refusal text says nothing
+             was attempted and the collector is unchanged
+           SERVING last-good 14 rows as unverified, 9.1s
+  The lock was held by an earlier cycle whose client process I killed at the
+  200s mark. The job outlived it. That is the ordinary way this happens and it is
+  a better demonstration than a race staged on purpose would have been.
+
+  One incident was deleted before this: an earlier defer-a run recorded a genuine
+  409 while the collector was still finishing creation and the adapter did not yet
+  know its field naming, so it read 0 rows and called it drift. The deferral in it
+  was real, the failure under it was scaffolding. Deleted rather than published,
+  and recorded here rather than left unsaid. Second incident deleted in this
+  project, same reason both times: written by code or against a collector that was
+  not yet what the published log claims.
+
+RESURRECTION, live:
+  Built a new fixture variant, "relisted": one of the three delisted products back
+  on sale, the other two still 404. A marketplace relists individual items, so
+  bringing all three back at once would have tested something that does not happen.
+  The one that returns is TW-33887, a recalled portable fuel container, because
+  that is the case that makes the event worth reporting.
+  deploy relisted -> cycle: 12 rows against a baseline of 11, contract PASSED,
+           healthy, no repair, no refusal
+           BACK ON SALE TW-33887
+           dropped from withdrawnRefs, incident cause "resurrected"
+           SERVING 12 rows verified, 8.3s
+  Feed now shows the full lifecycle on one source: three withdrawn, one back on
+  sale and matched to its recall at 0.72, two still withdrawn with permalinks 404.
+
+Fixed while checking the render: the incident log showed "time to resolution 0.0s"
+on the resurrection. The cycle records 0ms because nothing failed, and printing
+that as a resolution time turns the absence of a repair into a repair that took no
+time. Clause dropped for that cause rather than zeroed.

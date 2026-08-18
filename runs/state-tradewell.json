@@ -1,43 +1,44 @@
 {
   "baselineRefs": [
-    "TW-91028",
-    "TW-66420",
+    "TW-77301",
+    "TW-91011",
     "TW-55118",
     "TW-91035",
-    "TW-77301",
+    "TW-91028",
     "TW-91004",
-    "TW-91011",
+    "TW-66420",
     "TW-91066",
-    "TW-22765",
+    "TW-33887",
     "TW-91042",
-    "TW-91059"
+    "TW-91059",
+    "TW-22765"
   ],
-  "baselineRows": 11,
-  "lastVerifiedAt": "2026-08-17T19:49:10.357Z",
+  "baselineRows": 12,
+  "lastVerifiedAt": "2026-08-18T08:18:43.729Z",
   "lastGoodRows": [
     {
-      "id": "TW-91028",
-      "permalink": "https://tradewell-market.vercel.app/item/TW-91028.html",
-      "title": "Pellmore dreadnought acoustic, natural finish",
-      "brand": "Pellmore",
-      "price": 185,
+      "id": "TW-77301",
+      "permalink": "https://tradewell-market.vercel.app/item/TW-77301.html",
+      "title": "Cooluli Infinity 10L mini fridge, black",
+      "brand": "Cooluli",
+      "price": 64.5,
       "currency": null,
-      "condition": "Pre-owned",
-      "location": "Nashville, TN",
-      "listedOn": "2026-08-05",
-      "sellerKey": "sk_65b48d7d7113"
+      "condition": "Used, good",
+      "location": "Austin, TX",
+      "listedOn": "2026-08-08",
+      "sellerKey": "sk_6479c6fba48e"
     },
     {
-      "id": "TW-66420",
-      "permalink": "https://tradewell-market.vercel.app/item/TW-66420.html",
-      "title": "MGC 5x5 magnetic speed cubes, stickerless",
-      "brand": "CuberShop",
-      "price": 18.99,
+      "id": "TW-91011",
+      "permalink": "https://tradewell-market.vercel.app/item/TW-91011.html",
+      "title": "Harbor & Oak 10-inch cast iron skillet",
+      "brand": "Harbor & Oak",
+      "price": 22,
       "currency": null,
       "condition": "New",
-      "location": "Columbus, OH",
-      "listedOn": "2026-08-06",
-      "sellerKey": "sk_2813612faf66"
+      "location": "Asheville, NC",
+      "listedOn": "2026-08-07",
+      "sellerKey": "sk_ba931f5eb80b"
     },
     {
       "id": "TW-55118",
@@ -64,16 +65,16 @@
       "sellerKey": "sk_02632bcff02d"
     },
     {
-      "id": "TW-77301",
-      "permalink": "https://tradewell-market.vercel.app/item/TW-77301.html",
-      "title": "Cooluli Infinity 10L mini fridge, black",
-      "brand": "Cooluli",
-      "price": 64.5,
+      "id": "TW-91028",
+      "permalink": "https://tradewell-market.vercel.app/item/TW-91028.html",
+      "title": "Pellmore dreadnought acoustic, natural finish",
+      "brand": "Pellmore",
+      "price": 185,
       "currency": null,
-      "condition": "Used, good",
-      "location": "Austin, TX",
-      "listedOn": "2026-08-08",
-      "sellerKey": "sk_6479c6fba48e"
+      "condition": "Pre-owned",
+      "location": "Nashville, TN",
+      "listedOn": "2026-08-05",
+      "sellerKey": "sk_65b48d7d7113"
     },
     {
       "id": "TW-91004",
@@ -88,16 +89,16 @@
       "sellerKey": "sk_a7f5a6e63796"
     },
     {
-      "id": "TW-91011",
-      "permalink": "https://tradewell-market.vercel.app/item/TW-91011.html",
-      "title": "Harbor & Oak 10-inch cast iron skillet",
-      "brand": "Harbor & Oak",
-      "price": 22,
+      "id": "TW-66420",
+      "permalink": "https://tradewell-market.vercel.app/item/TW-66420.html",
+      "title": "MGC 5x5 magnetic speed cubes, stickerless",
+      "brand": "CuberShop",
+      "price": 18.99,
       "currency": null,
       "condition": "New",
-      "location": "Asheville, NC",
-      "listedOn": "2026-08-07",
-      "sellerKey": "sk_ba931f5eb80b"
+      "location": "Columbus, OH",
+      "listedOn": "2026-08-06",
+      "sellerKey": "sk_2813612faf66"
     },
     {
       "id": "TW-91066",
@@ -112,16 +113,16 @@
       "sellerKey": "sk_a196cc73bcc6"
     },
     {
-      "id": "TW-22765",
-      "permalink": "https://tradewell-market.vercel.app/item/TW-22765.html",
-      "title": "15 litre Cooluli Classic mini-fridge, white",
-      "brand": "Cooluli",
-      "price": 71,
+      "id": "TW-33887",
+      "permalink": "https://tradewell-market.vercel.app/item/TW-33887.html",
+      "title": "Zimtown 5 gal portable gas can, red, with spout",
+      "brand": "Zimtown",
+      "price": 34,
       "currency": null,
-      "condition": "Pre-owned",
-      "location": "Brooklyn, NY",
-      "listedOn": "2026-07-26",
-      "sellerKey": "sk_56e34aee6fb5"
+      "condition": "New",
+      "location": "Boise, ID",
+      "listedOn": "2026-07-30",
+      "sellerKey": "sk_98c778b58e8b"
     },
     {
       "id": "TW-91042",
@@ -146,12 +147,23 @@
       "location": "Richmond, VA",
       "listedOn": "2026-07-28",
       "sellerKey": "sk_143707f71f9c"
+    },
+    {
+      "id": "TW-22765",
+      "permalink": "https://tradewell-market.vercel.app/item/TW-22765.html",
+      "title": "15 litre Cooluli Classic mini-fridge, white",
+      "brand": "Cooluli",
+      "price": 71,
+      "currency": null,
+      "condition": "Pre-owned",
+      "location": "Brooklyn, NY",
+      "listedOn": "2026-07-26",
+      "sellerKey": "sk_56e34aee6fb5"
     }
   ],
   "healHistory": [],
   "withdrawnRefs": [
     "TW-88214",
-    "TW-33887",
     "TW-44903"
   ]
 }

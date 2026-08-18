@@ -5,9 +5,13 @@
 // The evidence is the classifier's own sentences, unedited, so a reader can
 // disagree with the verdict on the same information the engine had.
 //
-// Incidents caused by our own mistakes are included. One of the four below is
-// a heal we should never have started, caught by the gate that checks a repair
-// before serving it. Leaving it out would make the log a brochure.
+// Incidents caused by our own mistakes are included. One entry below is a heal
+// we should never have started, caught by the gate that checks a repair before
+// serving it. Leaving it out would make the log a brochure.
+//
+// Two entries are not failures at all: a repair that could not start because the
+// collector was busy, and a withdrawn record that came back on sale. Both would
+// have passed in silence under a supervisor that only watches for breakage.
 
 import { Evidence, Figure, Machine } from "../../components/parts";
 import { outcome, seconds, snapshot, stamp, type PubIncident } from "../../lib/data";
@@ -24,7 +28,7 @@ const CAUSE_MEANING: Record<string, string> = {
   drift: "the data is still published in a different shape. This class of failure is repairable, so a repair was attempted.",
   pagination: "the listing is intact and the paging scheme moved. Repairable.",
   resurrected:
-    "a record we published as withdrawn is on sale again. Nothing broke and the contract passed, which is exactly why this used to pass in silence. It is the only entry here that is not a failure.",
+    "a record we published as withdrawn is on sale again. Nothing broke and the contract passed, which is exactly why this used to pass in silence.",
   healthy: "nothing was wrong.",
 };
 
@@ -55,7 +59,15 @@ function Incident({ i }: { i: PubIncident }) {
         <div className="source-meta">
           {i.rows} rows extracted · {i.breaches.length} contract breach
           {i.breaches.length === 1 ? "" : "es"}
-          {i.mttrMs !== null ? ` · time to resolution ${seconds(i.mttrMs)}` : " · unresolved"}
+          {/* A resurrection resolves nothing, so it has no resolution time. The cycle
+              records 0ms because it completed without incident, and rendering that as
+              "time to resolution 0.0s" turns the absence of a repair into a repair
+              that took no time. The clause is dropped rather than zeroed. */}
+          {i.cause === "resurrected"
+            ? ""
+            : i.mttrMs !== null
+              ? ` · time to resolution ${seconds(i.mttrMs)}`
+              : " · unresolved"}
           {i.withdrawnRefs.length > 0 ? ` · withdrawn: ${i.withdrawnRefs.join(", ")}` : ""}
           {i.resurrectedRefs.length > 0 ? ` · back on sale: ${i.resurrectedRefs.join(", ")}` : ""}
         </div>
@@ -129,9 +141,16 @@ export default function Page() {
         <Figure value={incidents.length} label="incidents recorded" />
         <Figure value={declined.length} label="times the engine declined" emphasis="refusal" />
         <Figure value={`${served}/${attempted.length}`} label="repairs attempted that survived measurement" />
+        {/* Net, not cumulative. Three records were removed at source and one came
+            back, so a running total of 3 would disagree with the two the feed shows
+            as withdrawn, and a reader checking one against the other would be right
+            to distrust both. Each incident still lists its own refs in full. */}
         <Figure
-          value={incidents.reduce((n, i) => n + i.withdrawnRefs.length, 0)}
-          label="records removed at source, kept as history"
+          value={incidents.reduce(
+            (n, i) => n + i.withdrawnRefs.length - i.resurrectedRefs.length,
+            0
+          )}
+          label="records still withdrawn at source"
         />
       </div>
 

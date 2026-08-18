@@ -111,31 +111,27 @@ timings are in [`runs/timing.log`](runs/timing.log).
 | Anti-bot interstitial at HTTP 200 | Diagnosed `blocked` from the body signature, refused to repair, served last-good as unverified. 38.7s |
 | Page redesign that broke paging | Returned 7 rows against a baseline of 14, and all 7 missing records still returned 200 at their own URLs. Diagnosed `pagination`, repaired in 330.6s, re-measured, contract passed, served as `healed`. **MTTR 347.6s** |
 | Repair that reported success and returned nothing | Contract still failed after the repair, result rejected, last-good served as unverified |
+| Repair that could not start | Diagnosed `pagination` and was ready to repair, but a repair was already running on that collector and the API returned HTTP 409. Recorded as deferred, not as a repair that failed. Nothing was attempted and the collector was left unchanged. Served last-good 14 rows as unverified. 9.1s |
+| A withdrawn record back on sale | The marketplace relisted one of three delisted products and its permalink resolved again. 12 rows against a baseline of 11, contract passed, nothing broken. Reported as a `resurrected` incident, dropped from the withdrawn list, served 12 rows verified. 8.3s |
 
 An earlier full detect, classify, repair and verify cycle on the Arcadia collector
-completed in 166s, measured before the account cap. All four causes have now been
+completed in 166s, measured before the account cap. All four failure causes have been
 produced against live collectors, and the repairable two are the only two that were
-repaired.
+repaired. The two events that are not failures, a deferral and a resurrection, were
+produced live as well.
 
-### Two cases seen live, handled only in tests
+The deferral is worth a note because the vendor's own reporting is what makes it
+dangerous. A 409 comes back through the CLI as a trigger failure with zero steps
+completed, which is indistinguishable from a repair that ran and failed. Counting it as a
+refusal would inflate the number this project is judged on, in the flattering direction.
+The lock in the run above was held by a cycle whose client process had been killed
+minutes earlier, which is the ordinary way this happens: the job outlives whatever
+started it.
 
-Both conditions below happened during development and neither produced a published
-incident, so they are stated separately rather than in the table above.
-
-A repair returns HTTP 409 while another repair is running on the same collector, and the
-CLI reports that as a trigger failure with zero steps completed, which reads as a repair
-that failed. It is not: nothing was attempted. That 409 was hit repeatedly against
-`c_msxnf5nk1ltg20ga7`. The code that tells the two apart and records a deferral was
-written afterwards, and the one incident file that had recorded the case was written
-before the flag existed, so it counted a queue conflict as a refusal we made. It was
-deleted rather than backfilled, because editing a recorded incident is the one thing this
-project cannot do. The deferral path is covered by `runner.test.ts`.
-
-Restoring the baseline fixture brought three withdrawn refs back on sale and the cycle
-said nothing, because the contract passed and the classifier had no failure to report. In
-a recall feed a relisted recalled product is the most actionable event there is, so
-silence was the wrong default. Reporting it as a `resurrected` incident is also covered by
-tests only. No live cycle has yet written one.
+The resurrection matters more than its size suggests. The record that came back is a
+recalled portable fuel container. Nothing was broken, the contract passed, and before
+this existed the feed would have served it again in silence, because a supervisor that
+only watches for failures has nothing to say about a source that changes its mind.
 
 The refusal is enforced in code rather than by convention. Flipping the `gone` branch to
 healable `drift` fails exactly six tests and nothing else: four on the classifier's
@@ -148,7 +144,7 @@ discarded.
 ```bash
 cd engine
 npm install
-npm test                                  # 105 tests, no network
+npm test                                  # 110 tests, no network
 node --import tsx src/cycle.ts arcadia    # one supervision cycle, needs BRIGHTDATA_API_KEY
 node --import tsx src/snapshot.ts         # publish web/public/snapshot.json
 
@@ -208,13 +204,13 @@ runs/timing.log   every measurement, written when it was taken
 
 - Matching is title-based. It cannot read a lot code off a photo, so batch-level
   certainty is out of reach by construction.
-- Two collectors in the account are permanently stuck, one on a repair prompt that was
-  too aggressive and one holding a repair lock that outlived the job that took it. A
+- Three collectors in the account are stuck: one on a repair prompt that was too
+  aggressive, and two holding a repair lock that outlived the job that took it. A
   repair can damage a working scraper, and nothing here prevents that beyond refusing to
   serve the result.
 - `bdata scraper run --version dev` is unreachable from the CLI, so a repair cannot be
   inspected before it reaches production. The gate sits at serving time instead.
-- A resurrection is reported but not yet acted on beyond reporting. If a marketplace
-  relists a recalled product it is flagged as an incident and stops being marked
-  withdrawn, but nothing escalates it above an ordinary record in the feed.
+- A resurrection is reported but not acted on beyond reporting. A relisted recalled
+  product is flagged as an incident and stops being marked withdrawn, but it then sits in
+  the feed as an ordinary listing. It should outrank one.
 - Coverage is two recall sources and one marketplace.

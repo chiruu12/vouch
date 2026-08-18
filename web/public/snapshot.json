@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-18T07:35:13.571Z",
+  "generatedAt": "2026-08-18T08:22:34.240Z",
   "caveat": "Matched on product line, not on unit. Recalls are often limited to specific batches or serial ranges, and marketplace listings rarely show them, so a match here means this listing appears to be the same product as a recall, not that this particular item is affected.",
   "publishThreshold": 0.7,
   "sources": [
@@ -46,14 +46,13 @@
       "url": "https://tradewell-market.vercel.app/",
       "contractVersion": "tradewell@1",
       "trust": "verified",
-      "rows": 11,
-      "baselineRows": 11,
+      "rows": 12,
+      "baselineRows": 12,
       "contractPassed": true,
       "breaches": [],
-      "lastVerifiedAt": "2026-08-17T19:49:10.357Z",
+      "lastVerifiedAt": "2026-08-18T08:18:43.729Z",
       "withdrawnRefs": [
         "TW-88214",
-        "TW-33887",
         "TW-44903"
       ],
       "heals": 0
@@ -125,8 +124,8 @@
             "synthetic": true,
             "contractVersion": "tradewell@1",
             "trust": "verified",
-            "fetchedAt": "2026-08-17T19:49:10.357Z",
-            "lastVerifiedAt": "2026-08-17T19:49:10.357Z",
+            "fetchedAt": "2026-08-18T08:18:43.729Z",
+            "lastVerifiedAt": "2026-08-18T08:18:43.729Z",
             "heals": 0
           },
           "match": {
@@ -158,8 +157,8 @@
             "synthetic": true,
             "contractVersion": "tradewell@1",
             "trust": "verified",
-            "fetchedAt": "2026-08-17T19:49:10.357Z",
-            "lastVerifiedAt": "2026-08-17T19:49:10.357Z",
+            "fetchedAt": "2026-08-18T08:18:43.729Z",
+            "lastVerifiedAt": "2026-08-18T08:18:43.729Z",
             "heals": 0
           },
           "match": {
@@ -217,8 +216,8 @@
             "synthetic": true,
             "contractVersion": "tradewell@1",
             "trust": "verified",
-            "fetchedAt": "2026-08-17T19:49:10.357Z",
-            "lastVerifiedAt": "2026-08-17T19:49:10.357Z",
+            "fetchedAt": "2026-08-18T08:18:43.729Z",
+            "lastVerifiedAt": "2026-08-18T08:18:43.729Z",
             "heals": 0
           },
           "match": {
@@ -280,8 +279,8 @@
             "synthetic": true,
             "contractVersion": "tradewell@1",
             "trust": "verified",
-            "fetchedAt": "2026-08-17T19:49:10.357Z",
-            "lastVerifiedAt": "2026-08-17T19:49:10.357Z",
+            "fetchedAt": "2026-08-18T08:18:43.729Z",
+            "lastVerifiedAt": "2026-08-18T08:18:43.729Z",
             "heals": 0
           },
           "match": {
@@ -344,7 +343,44 @@
         "lastVerifiedAt": "2026-08-17T13:13:32.000Z",
         "heals": 0
       },
-      "onSale": [],
+      "onSale": [
+        {
+          "id": "TW-33887",
+          "permalink": "https://tradewell-market.vercel.app/item/TW-33887.html",
+          "title": "Zimtown 5 gal portable gas can, red, with spout",
+          "brand": "Zimtown",
+          "price": 34,
+          "currency": null,
+          "condition": "New",
+          "location": "Boise, ID",
+          "listedOn": "2026-07-30",
+          "provenance": {
+            "sourceId": "tradewell",
+            "sourceLabel": "Tradewell Market (synthetic)",
+            "scraped": true,
+            "synthetic": true,
+            "contractVersion": "tradewell@1",
+            "trust": "verified",
+            "fetchedAt": "2026-08-18T08:18:43.729Z",
+            "lastVerifiedAt": "2026-08-18T08:18:43.729Z",
+            "heals": 0
+          },
+          "match": {
+            "confidence": 0.72,
+            "basis": "brand+product",
+            "matchedTokens": [
+              "zimtown",
+              "portable",
+              "gas",
+              "can",
+              "zimtownportable",
+              "portablegas"
+            ],
+            "contradiction": null,
+            "publishable": true
+          }
+        }
+      ],
       "quarantined": []
     },
     {
@@ -666,8 +702,8 @@
         "synthetic": true,
         "contractVersion": "tradewell@1",
         "trust": "withdrawn",
-        "fetchedAt": "2026-08-17T19:49:10.357Z",
-        "lastVerifiedAt": "2026-08-17T19:49:10.357Z",
+        "fetchedAt": "2026-08-18T08:18:43.729Z",
+        "lastVerifiedAt": "2026-08-18T08:18:43.729Z",
         "heals": 0
       },
       "match": {
@@ -700,8 +736,8 @@
         "synthetic": true,
         "contractVersion": "tradewell@1",
         "trust": "withdrawn",
-        "fetchedAt": "2026-08-17T19:49:10.357Z",
-        "lastVerifiedAt": "2026-08-17T19:49:10.357Z",
+        "fetchedAt": "2026-08-18T08:18:43.729Z",
+        "lastVerifiedAt": "2026-08-18T08:18:43.729Z",
         "heals": 0
       },
       "match": {
@@ -711,42 +747,6 @@
           "drawer",
           "dresser",
           "dumo"
-        ],
-        "contradiction": null,
-        "publishable": true
-      }
-    },
-    {
-      "id": "TW-33887",
-      "permalink": "https://tradewell-market.vercel.app/item/TW-33887.html",
-      "title": "Zimtown 5 gal portable gas can, red, with spout",
-      "brand": "Zimtown",
-      "price": 34,
-      "currency": null,
-      "condition": "New",
-      "location": "Boise, ID",
-      "listedOn": "2026-07-30",
-      "provenance": {
-        "sourceId": "tradewell",
-        "sourceLabel": "Tradewell Market (synthetic)",
-        "scraped": true,
-        "synthetic": true,
-        "contractVersion": "tradewell@1",
-        "trust": "withdrawn",
-        "fetchedAt": "2026-08-17T19:49:10.357Z",
-        "lastVerifiedAt": "2026-08-17T19:49:10.357Z",
-        "heals": 0
-      },
-      "match": {
-        "confidence": 0.72,
-        "basis": "brand+product",
-        "matchedTokens": [
-          "zimtown",
-          "portable",
-          "gas",
-          "can",
-          "zimtownportable",
-          "portablegas"
         ],
         "contradiction": null,
         "publishable": true
@@ -881,6 +881,56 @@
       "withdrawnRefs": [],
       "resurrectedRefs": [],
       "rows": 14,
+      "breaches": []
+    },
+    {
+      "id": "tradewell-defer-a-1787041033513",
+      "sourceId": "tradewell",
+      "sourceLabel": "Tradewell Market (synthetic)",
+      "openedAt": "2026-08-18T08:17:04.372Z",
+      "closedAt": null,
+      "cause": "pagination",
+      "healable": true,
+      "evidence": [
+        "returned 7 rows against a baseline of 14, which is one page of 7",
+        "all 7 missing notice(s) still return HTTP 200 at their permalinks, so they are published but unreached"
+      ],
+      "refusal": "a repair is already running on this collector, so this one could not start; nothing was attempted and the collector is unchanged",
+      "healAttempted": false,
+      "healDeferred": true,
+      "healDurationMs": 2217,
+      "prompt": "Extraction returned 7 rows against a baseline of 14, and every field it did read satisfied contract tradewell@1. Rows are missing, not fields. The listing at https://tradewell-market-p5kff05i7-chirus-projects-a2862453.vercel.app/ still returns HTTP 200 with 8631 bytes, so it is not blocked. Permalinks for the previously extracted notices still return HTTP 200, so nothing was withdrawn. The previously working selector .permalink now matches 0 elements. Attribute hooks present in the live document: data-testid, data-listing-ref, data-explicit-opt-in, data-deployment-id. Visible field labels are now: Brand, Item condition, Seller, Location, Shipping, Listed. Re-extract every notice across https://tradewell-market-p5kff05i7-chirus-projects-a2862453.vercel.app/ and /page-2.html.",
+      "verified": false,
+      "mttrMs": null,
+      "withdrawnRefs": [],
+      "resurrectedRefs": [],
+      "rows": 7,
+      "breaches": [
+        "returned 7 rows, contract requires at least 10",
+        "row count fell from 14 to 7, a 50.0% drop, limit 20.0%"
+      ]
+    },
+    {
+      "id": "tradewell-1787041123730",
+      "sourceId": "tradewell",
+      "sourceLabel": "Tradewell Market (synthetic)",
+      "openedAt": "2026-08-18T08:18:35.436Z",
+      "closedAt": "2026-08-18T08:18:43.729Z",
+      "cause": "resurrected",
+      "healable": false,
+      "evidence": [],
+      "refusal": null,
+      "healAttempted": false,
+      "healDeferred": false,
+      "healDurationMs": null,
+      "prompt": null,
+      "verified": true,
+      "mttrMs": 0,
+      "withdrawnRefs": [],
+      "resurrectedRefs": [
+        "TW-33887"
+      ],
+      "rows": 12,
       "breaches": []
     }
   ],
@@ -1068,10 +1118,10 @@
   },
   "totals": {
     "recalls": 18,
-    "listingsWatched": 11,
-    "asserted": 3,
+    "listingsWatched": 12,
+    "asserted": 4,
     "quarantined": 1,
-    "withdrawn": 3,
+    "withdrawn": 2,
     "refusals": 3
   }
 }
