@@ -1,0 +1,87 @@
+{
+  "$comment": "Field names the engine has learned, one entry per canonical field. Written by `npm run evolve`, read by the source adapters. Data rather than code because it is the part of this system that changes without anyone deciding it should: three collectors built from near-identical sentences over one fixture produced three names for the same field, and each time it cost a hand-patched adapter. The order is the resolution order.",
+  "version": 1,
+  "sources": {
+    "tradewell": {
+      "id": ["item_id", "id", "listing_id", "sku"],
+      "permalink": ["url", "permalink", "item_url", "listing_url", "product_page_url"],
+      "title": ["title"],
+      "brand": ["brand"],
+      "price": ["price"],
+      "currency": ["currency"],
+      "condition": ["condition"],
+      "location": ["location"],
+      "listedOn": ["listed", "listed_on", "listed_date", "date_listed"],
+      "seller": ["seller", "seller_name"]
+    },
+    "arcadia": {
+      "ref": ["ref", "notice_ref", "reference"],
+      "permalink": ["url", "permalink", "notice_url"],
+      "title": ["title"],
+      "brand": ["brand"],
+      "hazard": ["hazard", "risk_description"],
+      "risk": ["risk", "risk_level"],
+      "category": ["category"],
+      "affectedUnits": ["affected_units", "batch_codes", "affectedUnits"],
+      "published": ["published", "published_on", "date_published"],
+      "action": ["action", "remedy", "what_to_do"]
+    }
+  },
+  "log": [
+    {
+      "at": "2026-08-17T20:02:00.000Z",
+      "source": "tradewell",
+      "canonical": "permalink",
+      "raw": "item_url",
+      "collectorId": "c_msxnf5nk1ltg20ga7",
+      "evidence": "collector B returned item_url where collector A returned url; 14/14 values parsed as URLs containing the row's own ref",
+      "applied": true,
+      "reversible": true,
+      "by": "hand, before the evolver existed"
+    },
+    {
+      "at": "2026-08-17T20:02:00.000Z",
+      "source": "tradewell",
+      "canonical": "listedOn",
+      "raw": "listed_date",
+      "collectorId": "c_msxnf5nk1ltg20ga7",
+      "evidence": "collector B returned listed_date as a full timestamp where collector A returned listed as a date",
+      "applied": true,
+      "reversible": true,
+      "by": "hand, before the evolver existed"
+    },
+    {
+      "at": "2026-08-18T08:10:00.000Z",
+      "source": "tradewell",
+      "canonical": "id",
+      "raw": "listing_id",
+      "collectorId": "c_msydlwlb20dqcv6x7u",
+      "evidence": "collector C returned listing_id; 14/14 values matched the TW-nnnnn ref pattern and every one was already in the baseline",
+      "applied": true,
+      "reversible": true,
+      "by": "hand, before the evolver existed"
+    },
+    {
+      "at": "2026-08-18T08:10:00.000Z",
+      "source": "tradewell",
+      "canonical": "listedOn",
+      "raw": "date_listed",
+      "collectorId": "c_msydlwlb20dqcv6x7u",
+      "evidence": "collector C returned date_listed as a full timestamp",
+      "applied": true,
+      "reversible": true,
+      "by": "hand, before the evolver existed"
+    },
+    {
+      "at": "2026-08-18T08:10:00.000Z",
+      "source": "tradewell",
+      "canonical": "permalink",
+      "raw": "listing_url",
+      "collectorId": "c_msydlwlb20dqcv6x7u",
+      "evidence": "collector C returned listing_url alongside product_page_url",
+      "applied": true,
+      "reversible": true,
+      "by": "hand, before the evolver existed"
+    }
+  ]
+}

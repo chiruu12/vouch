@@ -8,7 +8,8 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
-    "demo": "node --import tsx src/demo.ts"
+    "demo": "node --import tsx src/demo.ts",
+    "evolve": "node --import tsx src/evolve.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

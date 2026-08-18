@@ -20,6 +20,7 @@
 
 import { createHash } from "node:crypto";
 import type { SourceContract } from "../contract.js";
+import { pick } from "../aliases.js";
 import type { Listing } from "../match.js";
 
 function blankToNull(v: unknown): string | null {
@@ -78,45 +79,34 @@ function toIsoDate(raw: unknown): string | null {
 function normaliseOne(row: Record<string, unknown>): Listing | null {
   if (row.error !== undefined) return null;
 
-  const permalink =
-    blankToNull(row.url) ??
-    blankToNull(row.permalink) ??
-    blankToNull(row.item_url) ??
-    blankToNull(row.listing_url) ??
-    blankToNull(row.product_page_url);
-  // Three collectors over one site have now produced three names for the same field.
-  // The aliases are not defensive coding: each one is a shape a real collector emitted,
-  // and the list grows when a new collector proves it needs to.
-  const id =
-    blankToNull(row.item_id) ??
-    blankToNull(row.id) ??
-    blankToNull(row.listing_id) ??
-    blankToNull(row.sku);
-  const title = blankToNull(row.title);
+  // Every raw field name lives in learned/aliases.json, not here. Three collectors over
+  // one site produced three names for the same field, and the fourth will produce a
+  // fourth; the evolver adds it to the store and this code does not change.
+  const at = (canonical: string): unknown => pick("tradewell", canonical, row);
+
+  const permalink = blankToNull(at("permalink"));
+  const id = blankToNull(at("id"));
+  const title = blankToNull(at("title"));
   if (id === null || title === null) return null;
 
-  const { price, currency } = toPrice(row.price);
+  const { price, currency } = toPrice(at("price"));
 
-  const seller = blankToNull(row.seller) ?? blankToNull(row.seller_name);
+  const seller = blankToNull(at("seller"));
 
   const listing: Listing = {
     id,
     permalink,
     title,
-    brand: blankToNull(row.brand),
+    brand: blankToNull(at("brand")),
     price,
     // Whatever the collector actually read. The original collector extracts no currency
     // at all, because the page shows a bare "$" glyph, and inferring "USD" from a symbol
     // would be putting in data we did not read. A collector that does report one is
     // taken at its word.
-    currency: currency ?? blankToNull(row.currency),
-    condition: blankToNull(row.condition),
-    location: blankToNull(row.location),
-    listedOn:
-      toIsoDate(row.listed) ??
-      toIsoDate(row.listed_on) ??
-      toIsoDate(row.listed_date) ??
-      toIsoDate(row.date_listed),
+    currency: currency ?? blankToNull(at("currency")),
+    condition: blankToNull(at("condition")),
+    location: blankToNull(at("location")),
+    listedOn: toIsoDate(at("listedOn")),
   };
   if (seller !== null) listing.sellerKey = hashSeller(seller);
   return listing;

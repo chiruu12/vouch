@@ -26,6 +26,36 @@ the collector then extracted nothing. **Nothing is served on the vendor's word.*
 repair is followed by a fresh run measured against the same contract, and the output is
 published only if that run passes.
 
+## Self-healing repairs the scraper. Self-evolution repairs the supervisor
+
+Scraper Studio heals the collector. Something has to maintain the layer that decides
+whether to call the healer at all, and on this project that layer drifted faster than the
+sites did: three collectors built from near-identical sentences over one fixture returned
+three different names for the same field, two days apart, and each time a person patched
+an adapter.
+
+So the field names are data now, in `engine/learned/aliases.json`, and `npm run evolve`
+derives new ones from the captures. The rule that makes it safe to run unattended is
+narrow and worth stating exactly, because "reversible" alone is not enough:
+
+- **Applied automatically.** A name that fills a canonical field currently null in every
+  row. It is appended, never inserted, so it cannot change a value the engine already
+  reads, and it is undone by deleting one line. Only fields with a distinctive shape
+  qualify: an identifier whose values are already in the baseline, a URL that parses, a
+  date, a number.
+- **Proposed, never applied.** Anything that could weaken a gate or change an existing
+  reading. New withdrawal phrases, because a wrong one takes a live recall off the feed.
+  Repair prompts, because a bad one has permanently wedged a collector here twice.
+- **Never, at any confidence.** Anything touching seller identity, in either direction.
+
+The first dry run of the evolver offered to read a shipping cost as a currency and our
+own seller hash as a seller name. Both were reversible; both were nonsense. Reversibility
+bounds what a wrong change can cost, it does not make the change right, and the tests in
+`evolve.test.ts` are mostly refusals for that reason.
+
+Nothing here can touch `contract.ts`. A system that quietly retunes its own thresholds
+until nothing fails would be the exact inversion of this project.
+
 ## The two failures a repair must never touch
 
 Repairing is the easy half and it is well covered by prior art. The hard half is knowing
@@ -192,7 +222,8 @@ has the originals.
 cd engine
 npm install
 npm run demo                              # watch all four causes decided, no API key
-npm test                                  # 142 tests, no network
+npm run evolve -- --dry                   # what the supervisor would teach itself
+npm test                                  # 157 tests, no network
 node --import tsx src/cycle.ts arcadia    # one supervision cycle, needs BRIGHTDATA_API_KEY
 node --import tsx src/snapshot.ts         # publish web/public/snapshot.json
 

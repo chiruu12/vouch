@@ -1,0 +1,12 @@
+{
+  "at": "2026-08-18T13:14:53.797Z",
+  "proposals": [
+    {
+      "kind": "heal-prompt",
+      "what": "revisit the pagination repair prompt",
+      "evidence": "1 of 2 repairs for pagination survived measurement",
+      "reversible": false,
+      "source": null
+    }
+  ]
+}

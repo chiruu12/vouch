@@ -25,7 +25,7 @@ central argument, and every call about what the system is allowed to claim are m
 - **The fixture markup.** `fixtures/*/build.mjs` generates the synthetic sites and
   their variants. The generators were written with assistance; the product data in
   `fixtures/*/data.json` was chosen by hand so the fixtures mirror real recalled products.
-- **Tests.** The 142 tests were written with assistance. Several caught real bugs, and
+- **Tests.** The 157 tests were written with assistance. Several caught real bugs, and
   where they did the fix is described in the file the bug lived in.
 - **The visual design.** The feed was redesigned by Kimi K3 running headless in an
   isolated git worktree, briefed on the constraints and given no access to the branch it

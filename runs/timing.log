@@ -488,3 +488,35 @@ the source. The healer is the one component whose failure mode is inventing data
 assumed it would not.
 
 142 tests, ten of them properties over generated input.
+
+## Self-evolution (2026-08-18)
+Field names moved out of the adapters and into learned/aliases.json, and `npm run evolve`
+now derives new ones from the committed captures. The adapters ask the store; the store
+is data; the store is committed, so a clone behaves identically and every change is a
+readable diff.
+
+Auto-apply rule, deliberately narrow: a name that fills a canonical field null on every
+row, appended rather than inserted so it cannot change a value already being read, and
+only for fields with a distinctive shape (an identifier whose values are already in the
+baseline, a URL that parses, a date, a number). Everything else is a proposal carrying
+its evidence. Seller identity is excluded in both directions at any confidence.
+
+Three bugs in the first dry run, all caught before anything was written:
+  - offered to read `shipping` as `currency`, because a text shape test matches any
+    non-empty string
+  - offered to read `sellerKey`, our own hash, as `seller`
+  - read the identifier TW-33887 as a price, because the number test stripped non-digits
+    before parsing, so anything containing digits parsed
+
+All three were reversible. That is the lesson: reversibility bounds what a wrong change
+costs, it does not make it right, and auto-apply needs both. Inference is now limited to
+fields where a wrong match is implausible rather than merely undoable.
+
+The test that justifies the whole thing: run against the store as it stood before
+collector C existed, the evolver derives listing_id -> id and date_listed -> listedOn,
+and DECLINES listing_url -> permalink. I patched that third one in by hand at the time.
+It was never needed, because collector C also returns product_page_url which the store
+already knew, so permalink was never null. The fill-a-null guard caught a redundant edit
+a person made.
+
+157 tests.

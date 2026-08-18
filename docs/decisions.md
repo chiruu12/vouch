@@ -322,3 +322,45 @@ same afternoon explicitly permitted this case, with a comment reasoning that a w
 record could not come back because it was gone from the source. The healer is the one
 component in the system whose failure mode is inventing data, and I had assumed it would
 not. The property now asserts the opposite, and the comment says so.
+
+## 16. Self-evolution is allowed to fill a null and nothing else
+
+Scraper Studio heals the collector. Nothing was maintaining the layer above it, and that
+layer drifted faster than the sites did: three collectors built from near-identical
+sentences over one fixture returned three different names for the same field in two days,
+and each time a person edited an adapter.
+
+Field names are therefore data, in `learned/aliases.json`, and `npm run evolve` derives
+new ones from the committed captures. The question that decides whether such a thing is
+an asset or a liability is what it is allowed to change without being asked.
+
+The line is not "reversible". It is "can only fill a null, and could not plausibly be
+wrong". An alias for a canonical field that is null on every row is appended, never
+inserted, so it cannot alter a value the engine already reads, and it is undone by
+deleting one line. Only distinctively-shaped fields qualify: an identifier whose values
+are already in the baseline, a URL that parses, a date, a number.
+
+Everything else is a proposal with its evidence. New withdrawal phrases, because a wrong
+one takes a live recall off the feed. Repair prompts, because a bad prompt has wedged a
+collector permanently here twice. And seller identity is off the table in both
+directions at any confidence, because the evolver must not become a second door into the
+one guarantee this project makes about people rather than data.
+
+Three things went wrong while building it, all in the first dry run, and they are the
+reason the rule reads the way it does. It offered to read a shipping cost as a currency,
+because a text field matches any non-empty string. It offered to read our own seller hash
+as a seller name. And it read the identifier `TW-33887` as a price, because the number
+test stripped non-digits before parsing. Every one of those was reversible. Reversibility
+bounds what a wrong change costs; it does not make the change right, and an evolver needs
+both.
+
+The evolver cannot reach `contract.ts` at all. A system that quietly retunes its own
+thresholds until nothing fails would be the exact inversion of this project, and the
+cheapest way to guarantee it never happens is to give it no access.
+
+One last thing it taught us, which is the argument for having built it. Run against the
+store as it stood before the third collector existed, it derives the two aliases that
+were actually needed and declines the third. I had patched that third one in by hand and
+never noticed it was unnecessary: the collector also returned a field the adapter already
+understood, so nothing was ever null. The guard that only fills nulls caught a redundant
+edit that a person made.
