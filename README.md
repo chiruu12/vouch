@@ -111,13 +111,31 @@ timings are in [`runs/timing.log`](runs/timing.log).
 | Anti-bot interstitial at HTTP 200 | Diagnosed `blocked` from the body signature, refused to repair, served last-good as unverified. 38.7s |
 | Page redesign that broke paging | Returned 7 rows against a baseline of 14, and all 7 missing records still returned 200 at their own URLs. Diagnosed `pagination`, repaired in 330.6s, re-measured, contract passed, served as `healed`. **MTTR 347.6s** |
 | Repair that reported success and returned nothing | Contract still failed after the repair, result rejected, last-good served as unverified |
-| Repair that could not start | A repair was already running on that collector, so this one was recorded as deferred rather than as a repair that failed |
-| A withdrawn record relisted | Reported as a `resurrected` incident and dropped from the withdrawn list. Nothing is broken and the contract passes, which is exactly why it used to pass in silence |
 
 An earlier full detect, classify, repair and verify cycle on the Arcadia collector
 completed in 166s, measured before the account cap. All four causes have now been
 produced against live collectors, and the repairable two are the only two that were
 repaired.
+
+### Two cases seen live, handled only in tests
+
+Both conditions below happened during development and neither produced a published
+incident, so they are stated separately rather than in the table above.
+
+A repair returns HTTP 409 while another repair is running on the same collector, and the
+CLI reports that as a trigger failure with zero steps completed, which reads as a repair
+that failed. It is not: nothing was attempted. That 409 was hit repeatedly against
+`c_msxnf5nk1ltg20ga7`. The code that tells the two apart and records a deferral was
+written afterwards, and the one incident file that had recorded the case was written
+before the flag existed, so it counted a queue conflict as a refusal we made. It was
+deleted rather than backfilled, because editing a recorded incident is the one thing this
+project cannot do. The deferral path is covered by `runner.test.ts`.
+
+Restoring the baseline fixture brought three withdrawn refs back on sale and the cycle
+said nothing, because the contract passed and the classifier had no failure to report. In
+a recall feed a relisted recalled product is the most actionable event there is, so
+silence was the wrong default. Reporting it as a `resurrected` incident is also covered by
+tests only. No live cycle has yet written one.
 
 The refusal is enforced in code rather than by convention. Flipping the `gone` branch to
 healable `drift` fails exactly six tests and nothing else: four on the classifier's
@@ -140,11 +158,21 @@ npm run dev                               # the feed
 npm run build                             # export, then verify the exported HTML
 ```
 
-`npm run build` ends by running `verify-output.mjs` against the exported HTML, which
-fails the build if any string the engine wrote was truncated or paraphrased on its way to
-the page, or if a seller field reached it. The check runs per page, because the first
-version concatenated them and passed a refusal that was intact on one page and truncated
-on another.
+`npm run build` ends by running `verify-output.mjs` against the exported HTML. It fails
+the build if a string the engine wrote was altered on its way to the page, if a page that
+owes a string no longer carries it, if anything is hidden behind a disclosure or CSS, or
+if a seller field reached the output.
+
+That script has been wrong three times, and each rule in it exists because a mutation got
+past the version before. It concatenated the pages, so a refusal intact on one page
+satisfied the check for the same refusal truncated on another. It then held a page to a
+string only if the page contained the string's first 40 characters, so truncating the
+head instead of the tail dropped the page out of the checked set. It stripped `<script>`
+tags but kept their contents, and a static Next export inlines every server-rendered
+string in the RSC flight payload, so a block could be deleted from the page entirely and
+still be found in the payload. Six mutations are now caught, including all three of
+those. A check that reports success without establishing the property is worse than no
+check.
 
 The engine has no network calls of its own. Everything that touches the outside world
 goes through `CycleDeps`, injected at the entry point, which is why the classifier,
@@ -165,16 +193,16 @@ engine/src/
   sources/        one adapter per collector. Not ceremony: see docs/decisions.md
 web/              the feed, rendering a published snapshot rather than scraping
 fixtures/         the synthetic sites, with their drift, delisted and blocked variants
-docs/             decisions.md, scraper-studio.md
+docs/             decisions.md, scraper-studio.md, ai-assistance.md
 runs/timing.log   every measurement, written when it was taken
 ```
 
 ## Documents
 
-- [Decisions](docs/decisions.md) — the choices that shaped this, and what forced them
-- [Working with Scraper Studio](docs/scraper-studio.md) — what the tool does well, where
+- [Decisions](docs/decisions.md): the choices that shaped this, and what forced them
+- [Working with Scraper Studio](docs/scraper-studio.md): what the tool does well, where
   it surprised us, and the workarounds
-- [AI assistance](docs/ai-assistance.md) — what was AI-assisted and what was not
+- [AI assistance](docs/ai-assistance.md): what was AI-assisted and what was not
 
 ## Known limits
 

@@ -56,7 +56,7 @@ describe("buildQuery on the real CPSC sample", () => {
   });
 
   it("uses the recalled brand, not the recalling company", () => {
-    // "Fastbuy Recalls Zimtown Portable Gas and Fuel Cans ..." — a shopper searches
+    // "Fastbuy Recalls Zimtown Portable Gas and Fuel Cans ..." and a shopper searches
     // for Zimtown, which is on the product, not Fastbuy, which is on the paperwork.
     assert.equal(queryFor("26700"), "Zimtown Fuel Can");
   });
