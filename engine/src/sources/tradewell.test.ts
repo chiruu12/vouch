@@ -1,4 +1,4 @@
-// Two collectors, one site, two output shapes.
+// Three collectors, one site, three output shapes.
 //
 // These tests exist because the assumption that a collector's output follows the site
 // cost four minutes of credits and made a working scraper look broken. Both captures
@@ -9,6 +9,11 @@
 //                                  no currency, `listed` as a date
 //   collector B (c_msxnf5nk1l...)  flat rows, price as {value,currency,symbol},
 //                                  `listed_date` as a full timestamp, `item_url`
+//   collector C (c_msydlwlb20...)  flat rows, price as a number, `listing_id`,
+//                                  `date_listed`, `listing_url`. A third collector
+//                                  produced a third naming of the same fields, which
+//                                  is the strongest evidence yet that shape follows
+//                                  the collector and not the site.
 //
 // Both captures are committed with seller names replaced by their hashes, because this
 // repository is public and a fixture is not an exemption from that rule.
@@ -25,6 +30,7 @@ const load = (name: string): unknown =>
 const CAPTURES = [
   { name: "collector A, nested results[]", raw: load("tradewell-baseline.json") },
   { name: "collector B, flat rows", raw: load("tradewell-collector-b.json") },
+  { name: "collector C, third field naming", raw: load("tradewell-collector-c.json") },
 ];
 
 for (const { name, raw } of CAPTURES) {
@@ -69,20 +75,28 @@ for (const { name, raw } of CAPTURES) {
   });
 }
 
-test("both collectors agree on the facts, not just the shape", () => {
+test("all collectors agree on the facts, not just the shape", () => {
+  // Pairwise against the first capture rather than a two-way comparison, so adding a
+  // fourth collector extends the coverage by one line and cannot quietly go unchecked.
   const byId = (raw: unknown) => new Map(normaliseTradewell(raw).map((r) => [r.id, r]));
   const a = byId(CAPTURES[0]!.raw);
-  const b = byId(CAPTURES[1]!.raw);
 
-  assert.deepEqual([...a.keys()].sort(), [...b.keys()].sort(), "different ids extracted");
-  for (const [id, ra] of a) {
-    const rb = b.get(id)!;
-    assert.equal(ra.title, rb.title, `${id} title disagrees`);
-    assert.equal(ra.price, rb.price, `${id} price disagrees`);
-    assert.equal(ra.listedOn, rb.listedOn, `${id} listedOn disagrees`);
-    // The same seller hashes to the same key from either collector, which is what
-    // makes the key useful for de-duplication across sources.
-    assert.equal(ra.sellerKey, rb.sellerKey, `${id} sellerKey disagrees`);
+  for (const other of CAPTURES.slice(1)) {
+    const b = byId(other.raw);
+    assert.deepEqual(
+      [...a.keys()].sort(),
+      [...b.keys()].sort(),
+      `${other.name}: different ids extracted`
+    );
+    for (const [id, ra] of a) {
+      const rb = b.get(id)!;
+      assert.equal(ra.title, rb.title, `${other.name}: ${id} title disagrees`);
+      assert.equal(ra.price, rb.price, `${other.name}: ${id} price disagrees`);
+      assert.equal(ra.listedOn, rb.listedOn, `${other.name}: ${id} listedOn disagrees`);
+      // The same seller hashes to the same key from any collector, which is what
+      // makes the key useful for de-duplication across sources.
+      assert.equal(ra.sellerKey, rb.sellerKey, `${other.name}: ${id} sellerKey disagrees`);
+    }
   }
 });
 

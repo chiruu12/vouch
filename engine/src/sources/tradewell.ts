@@ -82,8 +82,16 @@ function normaliseOne(row: Record<string, unknown>): Listing | null {
     blankToNull(row.url) ??
     blankToNull(row.permalink) ??
     blankToNull(row.item_url) ??
+    blankToNull(row.listing_url) ??
     blankToNull(row.product_page_url);
-  const id = blankToNull(row.item_id) ?? blankToNull(row.id) ?? blankToNull(row.sku);
+  // Three collectors over one site have now produced three names for the same field.
+  // The aliases are not defensive coding: each one is a shape a real collector emitted,
+  // and the list grows when a new collector proves it needs to.
+  const id =
+    blankToNull(row.item_id) ??
+    blankToNull(row.id) ??
+    blankToNull(row.listing_id) ??
+    blankToNull(row.sku);
   const title = blankToNull(row.title);
   if (id === null || title === null) return null;
 
@@ -105,7 +113,10 @@ function normaliseOne(row: Record<string, unknown>): Listing | null {
     condition: blankToNull(row.condition),
     location: blankToNull(row.location),
     listedOn:
-      toIsoDate(row.listed) ?? toIsoDate(row.listed_on) ?? toIsoDate(row.listed_date),
+      toIsoDate(row.listed) ??
+      toIsoDate(row.listed_on) ??
+      toIsoDate(row.listed_date) ??
+      toIsoDate(row.date_listed),
   };
   if (seller !== null) listing.sellerKey = hashSeller(seller);
   return listing;

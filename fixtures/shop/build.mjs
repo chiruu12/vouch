@@ -14,6 +14,8 @@
 //              "Condition" relabelled "Item condition", prices prefixed "US $"
 //   delisted   three recall-linked listings removed, permalinks 404.
 //              In this domain the seller complied; healing would fabricate an accusation.
+//   relisted   one of the three back on sale, permalink resolving again. Nothing is
+//              broken and the contract passes, which is why this used to pass in silence.
 //   blocked    every route is an anti-bot interstitial (HTTP 200 on purpose)
 
 import { readFileSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
@@ -69,6 +71,13 @@ const usdLong = (n) => `US $${Number(n).toFixed(2)}`;
 // Three recall-linked listings. Removing them is compliance, not layout drift.
 // A healer that invents replacements would accuse sellers who already took the items down.
 const DELISTED_IDS = ["TW-88214", "TW-44903", "TW-33887"];
+
+// One of the three back on sale, the other two still down. A marketplace relists
+// individual items, not batches, so a variant that brought all three back at once
+// would be testing something that does not happen. The one that returns is the gas
+// can, because a recalled fuel container reappearing is the case that makes this
+// event worth reporting rather than absorbing in silence.
+const RELISTED_ID = "TW-33887";
 
 // --- record templates -------------------------------------------------------
 
@@ -233,6 +242,11 @@ const VARIANTS = {
     renderRecord: recordBaseline,
     listClass: "result-list",
     records: data.listings.filter((r) => !DELISTED_IDS.includes(r.id)),
+  },
+  relisted: {
+    renderRecord: recordBaseline,
+    listClass: "result-list",
+    records: data.listings.filter((r) => !DELISTED_IDS.includes(r.id) || r.id === RELISTED_ID),
   },
   blocked: { interstitial: true },
 };
