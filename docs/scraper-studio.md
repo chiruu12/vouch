@@ -1,6 +1,7 @@
 # Working with Bright Data Scraper Studio
 
-Notes from building Vouch on Scraper Studio and the `bdata` CLI (v0.3.5) over six days.
+Notes from building Vouch on Scraper Studio and the `bdata` CLI (v0.3.5) during the
+hackathon week.
 Everything here was measured rather than read in the docs, and the numbers come from
 `runs/timing.log`, written at the moment each run happened.
 
@@ -23,9 +24,9 @@ selectors, no browser session, no login. Timings for a 12-record, 2-page listing
 | `scraper run --sync` | 5s to 6s |
 
 **It handles a real hostile target.** eBay search results, 193 rows from one query in
-about six minutes, zero error rows. Three of those rows repeat a listing URL, so the
-capture is 190 distinct listings; the study counts rows, which is why it says 193. An
-earlier query returned 169 rows in 244 seconds, also clean. That is the case we most expected to fail, and it did not need any
+about six minutes, zero error rows. Every row is a distinct listing once
+`listing_url` and `product_page_url` are coalesced; four rows carry only the latter. An earlier
+hand-picked query returned 169 rows, also clean, though we did not time that one. That is the case we most expected to fail, and it did not need any
 tuning.
 
 **Cost at this volume is not a factor.** Account balance held at $52.00 throughout: nine

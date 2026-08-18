@@ -109,7 +109,14 @@ export function classify(input: ClassifyInput): Diagnosis {
   // records are still published, and we just failed to establish it.
   const unresolvedRefs = missing.filter((r) => {
     const p = probeByRef.get(r);
-    return p === undefined || p.status === 0 || p.status >= 500;
+    if (p === undefined) return true;
+    // Anything that is not a clean 200 and not a withdrawal status tells us nothing.
+    // 403 and 429 are the ones that matter in practice: a permalink we are rate limited
+    // or walled off from is not evidence the record is still published, and treating it
+    // as merely lost is what hands the case to a repair.
+    if (p.status === 0 || p.status >= 500) return true;
+    if (p.status === 403 || p.status === 429 || p.status === 408) return true;
+    return false;
   });
 
   const lostRefs = missing.filter(
@@ -161,9 +168,19 @@ export function classify(input: ClassifyInput): Diagnosis {
 
   // 3. Withdrawals, recorded whether or not anything else is wrong.
   if (withdrawnRefs.length > 0) {
+    // Say which signal actually fired. Claiming "404 or 410" when a body phrase or a
+    // redirect established the withdrawal would put a number in the incident log that
+    // the probe never saw, in the one place the log exists to be checkable.
+    const signals = withdrawnRefs.map((r) => {
+      const p = probeByRef.get(r);
+      if (p === undefined) return "unknown";
+      if (WITHDRAWN_STATUSES.has(p.status)) return `HTTP ${p.status}`;
+      return p.goneSignature ?? "gone";
+    });
+    const distinct = [...new Set(signals)];
     evidence.push(
-      `${withdrawnRefs.length} notice(s) absent from the listing AND their permalinks return ` +
-        `404 or 410: ${withdrawnRefs.slice(0, 5).join(", ")}` +
+      `${withdrawnRefs.length} notice(s) absent from the listing AND their permalinks no ` +
+        `longer serve the record (${distinct.join("; ")}): ${withdrawnRefs.slice(0, 5).join(", ")}` +
         (withdrawnRefs.length > 5 ? ` and ${withdrawnRefs.length - 5} more` : "")
     );
     // Source-neutral wording. This line is rendered in the incident timeline, and the

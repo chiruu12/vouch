@@ -358,3 +358,37 @@ healthy), semantic drift (a price that starts including shipping still parses), 
 soft-gone wording outside the deliberately narrow GONE_MARKERS list.
 
 121 tests.
+
+## Second verification pass, and four claims I got wrong (2026-08-18)
+grok-4.6-xhigh, read-only, briefed to check that the earlier fixes were real. It read the
+commit before the redirect fix, so its lead finding was already closed. The rest was not.
+
+Still open, now fixed:
+  - 403, 429 and 408 on a permalink were treated as "lost", which authorises a repair.
+    Being rate limited or walled off from a record's page is not evidence the record is
+    still published. Now unresolved, with three tests.
+  - The withdrawn evidence line said "permalinks return 404 or 410" whatever the probe
+    actually saw, so a withdrawal established by a body phrase or a redirect was reported
+    with a status nobody observed. It now names the signal that fired.
+  - prompt_too_long fell through to healAttempted, same class as heal_call_failed.
+  - decisions.md said the unresolved guard runs "before a cause is even assigned". The
+    code assigns drift. Doc corrected rather than code, and it now says plainly that an
+    oracle failure and a real layout change land under the same word.
+  - No test asserted cause === "pagination". Every other test in that file is about
+    refusing, so the repairable path could have silently died. Added.
+
+Claims it caught that I had wrong:
+  - docs/scraper-studio.md still opened "over six days" after I corrected the same claim
+    in ai-assistance.md. Fixed.
+  - "169 rows in 244 seconds": the 169-row capture is real, the 244s appears nowhere in
+    this log. Timing dropped rather than invented.
+  - engine/src/bdata.ts still commented "128s to 306s" after the docs went to 362s.
+  - "190 distinct listing URLs", which I added this morning acting on a review finding I
+    did not check myself. listing_url is present on 189 of 193 rows and product_page_url
+    on all 193; coalesced, there are 193 distinct permalinks and no duplicate listings.
+    The original claim was right and my correction introduced the error. Reverted.
+
+That last one is the one worth remembering: a review finding is a lead, not a fact, and I
+published a wrong number by trusting one without running the count.
+
+126 tests.

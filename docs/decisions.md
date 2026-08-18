@@ -247,9 +247,12 @@ because the fixtures return clean 404s and nothing in the test suite asked.
 
 So the oracle now reads bodies, with a deliberately narrow list of phrases, since a false
 positive here marks a live record withdrawn. And a probe that did not answer produces a
-third category: not withdrawn, not lost, unresolved. Any unresolved ref stops a repair
-before a cause is even assigned, because a repair asserts the missing records are still
-published and that is the assertion we just failed to establish. Five tests hold the
+third category: not withdrawn, not lost, unresolved. Any unresolved ref stops a repair before any
+repairable branch is reached, because a repair asserts the missing records are still
+published and that is the assertion we just failed to establish. The incident still
+carries a cause, and it says `drift`, which is the closest honest label for "something
+changed and we could not check what". A reader of the log should know that an oracle
+failure and a genuine layout change land under the same word. Five tests hold the
 line, including the mixed case where two refs are confirmed live and one is unreachable,
 which is the one a careless implementation gets wrong.
 

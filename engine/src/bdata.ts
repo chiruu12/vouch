@@ -4,7 +4,7 @@
 // Recorded so nobody re-derives it at 2am:
 //
 //   Timings on a 12-record, 2-page listing:
-//     scraper create   128s to 306s
+//     scraper create   128s to 362s
 //     scraper heal      90s and up; it loops code_fixer internally on retry
 //     scraper run --sync  5s to 6s
 //   All three were free. Account balance did not move across two creates, three

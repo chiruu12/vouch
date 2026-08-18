@@ -347,7 +347,11 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
   // or CLI failure still fell through and was recorded as a repair that ran and produced
   // nothing, which is the same misreading one door along. The collector is untouched in
   // both cases, and the incident log exists to keep exactly this column honest.
-  if (healed.status === "heal_call_failed" || healed.status === "heal_trigger_failed") {
+  if (
+    healed.status === "heal_call_failed" ||
+    healed.status === "heal_trigger_failed" ||
+    healed.status === "prompt_too_long"
+  ) {
     incident.healDeferred = true;
     incident.refusal =
       `the repair could not be sent to the collector (${healed.status}); ` +

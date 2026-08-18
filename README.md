@@ -56,7 +56,9 @@ probe the listing      before extracting, so a block cannot read as a change
 run the collector      a failed run is data, not an exception
 check the contract     per-field null rates, type checks, and a row-count cliff
 reconcile refs         against the last good run, whether or not the contract passed
-probe the permalinks   of anything missing. 404 means withdrawn, 200 means we lost it
+probe the permalinks   of anything missing. 404, 410, a gone page or a redirect away
+                       means withdrawn. A clean 200 means we lost it. No answer at all
+                       means we cannot say, and nothing is repaired until we can
 classify               into one of the four causes above
 repair, or refuse      and record which, with the evidence
 verify                 by re-running and re-measuring. The vendor's "done" is not evidence
@@ -94,9 +96,8 @@ is a weaker claim, and that is the only claim the feed makes.
   product agree. A 4-litre fridge is not covered by a recall of the 10 and 15 litre
   models, however well the words line up.
 
-Measured on a real capture: **17 publishable matches out of 193 real eBay rows**, 168
-quarantined, 8 with no match at all. The capture holds 190 distinct listing URLs; the
-counts are per row. The rate is low on purpose. A false positive
+Measured on a real capture: **17 publishable matches out of 193 real eBay listings**,
+168 quarantined, 8 with no match at all. The rate is low on purpose. A false positive
 here is an accusation and a false negative is only a miss.
 
 ## What is real and what is synthetic
@@ -106,7 +107,7 @@ Stated plainly because the distinction matters when reading the numbers.
 | Source | Real? | How it is fetched |
 | --- | --- | --- |
 | US CPSC recalls | Real | The CPSC publishes a free JSON API. Not scraped, and the feed says so |
-| eBay listings | Real | Bright Data Scraper Studio. 193 rows (190 distinct listings) from one recall-derived query, about 6 minutes, 0 error rows |
+| eBay listings | Real | Bright Data Scraper Studio. 193 listings from one recall-derived query, about 6 minutes, 0 error rows |
 | Arcadia Product Safety | Synthetic fixture | Scraper Studio, against a site we built and are allowed to break |
 | Tradewell Market | Synthetic fixture | Scraper Studio, same |
 
@@ -182,7 +183,7 @@ has the originals.
 cd engine
 npm install
 npm run demo                              # watch all four causes decided, no API key
-npm test                                  # 121 tests, no network
+npm test                                  # 126 tests, no network
 node --import tsx src/cycle.ts arcadia    # one supervision cycle, needs BRIGHTDATA_API_KEY
 node --import tsx src/snapshot.ts         # publish web/public/snapshot.json
 

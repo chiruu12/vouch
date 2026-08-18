@@ -512,3 +512,60 @@ describe("the withdrawal oracle when it is not a clean 404", () => {
     assert.deepEqual(diagnosis.unresolvedRefs, []);
   });
 });
+
+describe("oracle statuses that are neither alive nor withdrawn", () => {
+  for (const status of [403, 429, 408]) {
+    it(`refuses to repair when a permalink answers ${status}`, () => {
+      // Being rate limited or walled off from a record's page is not evidence the
+      // record is still published. Filing it as merely lost is what hands the case
+      // to a repair, which is the whole failure this file prevents.
+      const diagnosis = classify(
+        input({
+          report: report({ rows: 10, baselineRows: 12, rowDropRate: 2 / 12, passed: false }),
+          listing: listing({ status: 200 }),
+          baselineRefs: refs(12),
+          currentRefs: refs(10),
+          permalinks: ["ARC-0011", "ARC-0012"].map((ref) => ({ ref, status })),
+        })
+      );
+      assert.equal(diagnosis.healable, false, `${status} must not authorise a repair`);
+      assert.deepEqual(diagnosis.unresolvedRefs, ["ARC-0011", "ARC-0012"]);
+    });
+  }
+
+  it("names the signal that established each withdrawal", () => {
+    // The evidence line used to claim "404 or 410" whatever the probe actually saw.
+    const diagnosis = classify(
+      input({
+        report: report({ rows: 10, baselineRows: 12, rowDropRate: 2 / 12, passed: false }),
+        listing: listing({ status: 200 }),
+        baselineRefs: refs(12),
+        currentRefs: refs(10),
+        permalinks: [
+          { ref: "ARC-0011", status: 404 },
+          { ref: "ARC-0012", status: 200, goneSignature: "permalink redirected to /category" },
+        ],
+      })
+    );
+    const line = diagnosis.evidence.find((e) => e.includes("no longer serve the record")) ?? "";
+    assert.match(line, /HTTP 404/);
+    assert.match(line, /redirected to \/category/);
+  });
+
+  it("classifies a clean pagination break as repairable", () => {
+    // Asserted explicitly because every other test here is about refusing. If the
+    // repairable path silently stopped working, the refusals would stop meaning anything.
+    const diagnosis = classify(
+      input({
+        report: report({ rows: 7, baselineRows: 14, rowDropRate: 0.5, passed: false }),
+        listing: listing({ status: 200 }),
+        baselineRefs: refs(14),
+        currentRefs: refs(7),
+        permalinks: refs(14).slice(7).map((ref) => ({ ref, status: 200 })),
+        rowsPerPage: 7,
+      })
+    );
+    assert.equal(diagnosis.cause, "pagination");
+    assert.equal(diagnosis.healable, true);
+  });
+});
