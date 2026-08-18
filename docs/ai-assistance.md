@@ -1,9 +1,12 @@
 # AI assistance
 
-Written for the WeMakeDevs "Into the Scrape-Verse" hackathon. The kick-off post does not
-demand a disclosure like this, so this is not us satisfying a rule. A project whose
-argument is that you should not publish what you have not verified would look ridiculous
-being vague about how it was built.
+Required by the WeMakeDevs "Into the Scrape-Verse" rules: "AI coding assistants are
+allowed, but their use must be disclosed." The rules also say a participant must
+understand the submitted code and be able to explain it, so this document is written to
+be checkable rather than to be sufficient. Ask me about any file in the repository.
+
+It would exist anyway. A project whose argument is that you should not publish what you
+have not verified would look ridiculous being vague about how it was built.
 
 ## The short answer
 
