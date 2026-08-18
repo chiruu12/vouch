@@ -19,6 +19,15 @@ central argument, and every call about what the system is allowed to claim are m
   `data.json` was chosen by hand so the fixtures mirror real recalled products.
 - **Tests.** The 105 tests were written with assistance. Several caught real bugs, and
   where they did the fix is described in the file the bug lived in.
+- **The visual design.** The feed was redesigned by Kimi K3 running headless in an
+  isolated git worktree, briefed on the constraints and given no access to the branch it
+  would be merged into. Its diagnosis was better than the design it replaced: refusals
+  had been rendered in the visual vocabulary of errors, and severity used the same red,
+  so a serious hazard and a decision not to publish looked alike. Separating those two
+  channels, so hue means only what the system decided about a record, is its call. I
+  reviewed the diff, changed the favicon, and integrated it.
+- **The audit.** A second Kimi K3, read-only, audited the result and was told to attack
+  the output verifier specifically. It found three ways past it. See below.
 - **Prose.** These documents and the README were drafted with assistance and edited by
   me.
 
@@ -55,12 +64,26 @@ Recording these because a disclosure that only lists successes is not a disclosu
   rather than derived from the recalls they were meant to match.
 - A seller-name scrubber handled the top-level field and missed the same field nested
   one level down. It would have reported success while publishing 14 names.
+- `web/verify-output.mjs` checks that the built pages quote engine text whole. It was
+  wrong three times, and each version passed a mutation it claimed to catch. Version one
+  concatenated every page into one string, so a refusal intact on the incident log
+  satisfied the check for the same refusal truncated on the front page. Version two
+  fixed that and then held a page to a string only if the page contained the string's
+  first 40 characters, so truncating the head instead of the tail dropped the page out
+  of the checked set entirely. Version three stripped `<script>` tags but kept their
+  contents, and a static Next export inlines every server-rendered string in the RSC
+  flight payload, so a whole section could be deleted from a page and still be found in
+  its own payload. The first was caught by mutation-testing my own check. The second and
+  third were found by an AI audit I commissioned to attack it.
 
-Each of these was caught by a gate or a test rather than by inspection, which is the
-argument for having them.
+Each of these was caught by a gate, a test, or a review pass rather than by inspection,
+which is the argument for having them. The verifier is the sharpest case: it is the
+component that enforces the project's central promise, it is the one I was most
+confident in, and it was broken for longer than anything else here.
 
 ## Models used
 
-Claude (Opus and Sonnet) via Claude Code, for code, tests and prose. Bright Data
-Scraper Studio's own LLM generates and repairs the collectors, which is the subject of
-the project rather than an assistance disclosure.
+Claude (Opus and Sonnet) via Claude Code, for code, tests and prose. Kimi K3 via a
+headless fleet runner, for the visual design pass and the adversarial audit that
+followed it. Bright Data Scraper Studio's own LLM generates and repairs the collectors,
+which is the subject of the project rather than an assistance disclosure.
