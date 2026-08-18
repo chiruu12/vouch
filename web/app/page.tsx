@@ -171,6 +171,22 @@ export default function Page() {
         <Figure value={snap.totals.refusals} label="times the engine declined, on record" emphasis="refusal" />
       </div>
 
+      {/* The feed's own matched listings are all against a fixture we control, because
+          we cannot ask a real marketplace to delist on cue. The matcher itself was run
+          against real eBay output, and a reader who never leaves the front page should
+          be told that here rather than finding it two clicks away on the method page. */}
+      <section className="notice-strip" aria-label="Measured on real marketplace data">
+        <p>
+          The matcher was run against <strong>{snap.study.listings} real eBay rows</strong>{" "}
+          captured with Bright Data Scraper Studio on {snap.study.capturedAt}, cross-checked
+          against {snap.study.recalls} real US CPSC recalls. It published{" "}
+          <strong>{snap.study.publishable}</strong> and held back {snap.study.quarantined}.{" "}
+          <a href="/method">The working is on the method page.</a> The listings below are
+          matched against a synthetic fixture instead, because a real marketplace cannot be
+          asked to break, delist and relist on cue.
+        </p>
+      </section>
+
       {refusals.length === 0 ? null : (
         <section className="block" aria-labelledby="refusals-h">
           <div className="section-head">
@@ -179,8 +195,8 @@ export default function Page() {
             </h2>
             <p className="section-note">
               {declinedToStart} times the engine refused to attempt a repair, and{" "}
-              {rejectedResult} times it threw away a repair that finished and still failed the
-              contract. A healer that always answers will eventually invent a safety recall, so
+              {rejectedResult} {rejectedResult === 1 ? "time" : "times"} it threw away a repair
+              that finished and still failed the contract. A healer that always answers will eventually invent a safety recall, so
               each decision is recorded and published with the evidence that produced it. The{" "}
               <a href="/incidents">incident log</a> holds every one in full.
             </p>
