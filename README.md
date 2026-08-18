@@ -1,24 +1,40 @@
 # Vouch
 
-A product recall feed that refuses to publish a record it cannot vouch for.
+A self-healing recall feed that knows which failures it must not heal.
 
 Built for the WeMakeDevs "Into the Scrape-Verse" hackathon, August 2026.
 
-**Live feed: https://vouch-black.vercel.app**
+**Live feed: https://vouch-black.vercel.app** · `cd engine && npm run demo` to watch it decide.
 
 Recalled products keep selling on resale marketplaces long after large retailers pull
-them, because a recall notice never reaches the secondhand market. Finding them means
-scraping, and scrapers break. The interesting question is not how to repair a broken
-scraper. It is how to tell the difference between a scraper that broke and a product
-that was deliberately taken down, because repairing the second one publishes a
-fabricated safety recall.
+them, because a recall notice rarely reaches an individual secondhand seller. Finding
+them means scraping, and scrapers break.
 
-## The problem with self-healing scrapers
+## It repairs, and it proves the repair worked
+
+Bright Data Scraper Studio builds and repairs the collectors. This engine supervises
+them, and the repair loop runs end to end:
+
+| Measured live | Result |
+| --- | --- |
+| Page redesign that broke paging | Diagnosed `pagination`, repaired in 330.6s, re-measured, contract passed, served. **MTTR 347.6s** |
+| Repair that reported `status: "done"` and returned zero rows | Contract still failed on the re-run. Result rejected, never served |
+
+The second row is why the first one is worth trusting. Our first repair came back
+`done`, having completed a stage literally named `request_fulfillment_validator`, and
+the collector then extracted nothing. **Nothing is served on the vendor's word.** Every
+repair is followed by a fresh run measured against the same contract, and the output is
+published only if that run passes.
+
+## The two failures a repair must never touch
+
+Repairing is the easy half and it is well covered by prior art. The hard half is knowing
+when a repair is the wrong move.
 
 Point an LLM-driven healer at a page where the data has been removed and it will
-obediently find *something* to fill the gap. It has to: you asked it to find the
-missing field, so it finds a field. In a safety feed that means republishing a recall
-notice that no longer exists, or inventing a listing for a product that was delisted.
+obediently find *something* to fill the gap. It has to: you asked it to find the missing
+field, so it finds a field. In a safety feed that means republishing a recall notice that
+no longer exists, or inventing a listing for a product that was delisted.
 
 There are four reasons a field goes null, and two of them must never be repaired.
 
@@ -47,7 +63,7 @@ verify                 by re-running and re-measuring. The vendor's "done" is no
 serve                  only what passed, labelled with what we can say about it
 ```
 
-Two gates are load-bearing:
+Two gates carry the weight. The first:
 
 **The permalink is the withdrawal oracle.** A record vanishing from a listing page is
 ambiguous. The same record's own URL returning 404 is not. That single probe is what
@@ -61,10 +77,8 @@ default: no repair runs while any missing record is unchecked, since repairing a
 those records are still published and an unreachable probe is exactly the failure to
 establish it. Both holes were found by an adversarial review, not by us.
 
-**Nothing is served on the vendor's word.** Our first repair returned `status: "done"`
-having completed a stage literally named `request_fulfillment_validator`, and the
-collector then extracted zero rows. Every repair is followed by a fresh run measured
-against the same contract, and the result is only served if that run passes.
+The second is the verify-then-serve rule described at the top. It is the only thing
+standing between a repair that says it worked and a feed that believes it.
 
 ## What it publishes, and what it will not
 
@@ -227,12 +241,14 @@ engine/src/
   sources/        one adapter per collector. Not ceremony: see docs/decisions.md
 web/              the feed, rendering a published snapshot rather than scraping
 fixtures/         the synthetic sites, with their drift, delisted and blocked variants
-docs/             decisions.md, scraper-studio.md, ai-assistance.md
+docs/             decisions.md, scraper-studio.md, ai-assistance.md, example-output.md
 runs/timing.log   every measurement, written when it was taken
 ```
 
 ## Documents
 
+- [Example structured output](docs/example-output.md): real records from the published
+  snapshot, annotated with why each field is shaped the way it is
 - [Decisions](docs/decisions.md): the choices that shaped this, and what forced them
 - [Working with Scraper Studio](docs/scraper-studio.md): what the tool does well, where
   it surprised us, and the workarounds

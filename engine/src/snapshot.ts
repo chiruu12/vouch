@@ -316,7 +316,25 @@ function provenanceFor(sourceId: SourceId, state: SourceState | null, trust: Rec
   };
 }
 
-function sourceCard(sourceId: SourceId, state: SourceState | null, rows: readonly object[]): PubSource {
+/** Verified repairs on this source, counted from the published incident log rather
+ *  than from the state file.
+ *
+ *  The state file only knows about the collector it belongs to. The repair this project
+ *  quotes its MTTR from ran on a third collector against a preview deployment, and that
+ *  collector's state is not committed, so every source card said "0 verified heals"
+ *  while the incident log two clicks away described a repair that took 330.6s and was
+ *  served. The feed was under-reporting its own strongest evidence. Incidents are the
+ *  published record, so they are what the count should come from. */
+function verifiedHeals(sourceId: SourceId, incidents: readonly PubIncident[]): number {
+  return incidents.filter((i) => i.sourceId === sourceId && i.healAttempted && i.verified).length;
+}
+
+function sourceCard(
+  sourceId: SourceId,
+  state: SourceState | null,
+  rows: readonly object[],
+  incidents: readonly PubIncident[]
+): PubSource {
   const meta = META[sourceId];
   if (meta === undefined) throw new Error(`no metadata for source ${sourceId}`);
   const report = checkContract(meta.contract, rows, state?.baselineRows ?? null);
@@ -350,7 +368,10 @@ function sourceCard(sourceId: SourceId, state: SourceState | null, rows: readonl
     breaches: report.breaches,
     lastVerifiedAt: state?.lastVerifiedAt ?? meta.capturedAt ?? null,
     withdrawnRefs: state?.withdrawnRefs ?? [],
-    heals: state?.healHistory.filter((h) => h.verified).length ?? 0,
+    heals: Math.max(
+      state?.healHistory.filter((h) => h.verified).length ?? 0,
+      verifiedHeals(sourceId, incidents)
+    ),
   };
 }
 
@@ -590,9 +611,9 @@ export function buildSnapshot(now = new Date()): Snapshot {
   const study = buildStudy(cpscRecalls, normaliseEbay(load("engine/samples/ebay-cooluli-minifridge.json")));
 
   const sources: PubSource[] = [
-    sourceCard("cpsc", cpscState, cpscRows),
-    sourceCard("arcadia", arcadiaState, arcadiaRows),
-    sourceCard("tradewell", twState, twLive as unknown as object[]),
+    sourceCard("cpsc", cpscState, cpscRows, incidents),
+    sourceCard("arcadia", arcadiaState, arcadiaRows, incidents),
+    sourceCard("tradewell", twState, twLive as unknown as object[], incidents),
   ];
 
   return {
