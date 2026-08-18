@@ -9,6 +9,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname } from "node:path";
 import { emptyLedger, observePage, type PhraseLedger, type Verdict } from "./gone-markers.js";
+import { disprovedMarkers, loadMarkers, retract, saveMarkers, type Retraction } from "./markers.js";
 
 const PATH = new URL("../../learned/gone-candidates.json", import.meta.url).pathname;
 
@@ -36,7 +37,7 @@ export function saveLedger(ledger: PhraseLedger): void {
  *  the one signal this ledger carries. */
 export function pageCollector(source: string): {
   observe: (page: { ref: string; body: string; verdict: "gone" | "live" | "unresolved" }) => void;
-  flush: () => void;
+  flush: () => Retraction[];
 } {
   let ledger = loadLedger();
   let touched = 0;
@@ -49,6 +50,25 @@ export function pageCollector(source: string): {
     },
     flush: () => {
       if (touched > 0) saveLedger(ledger);
+      return retractDisproved(source, ledger);
     },
   };
+}
+
+/** Take back any learned phrase this cycle's pages disproved.
+ *
+ *  This is the half of self-evolution that runs without asking. Adding a withdrawal
+ *  phrase needs a person because a wrong one removes live safety recalls from the feed.
+ *  Removing one is safe in exactly the way adding is not: the worst case is a withdrawn
+ *  record lingering until somebody notices, which the rest of the system already handles
+ *  by refusing to heal it. So the supervisor is allowed to narrow its own oracle on
+ *  evidence, and never to widen it. */
+export function retractDisproved(source: string, ledger: PhraseLedger): Retraction[] {
+  let store = loadMarkers();
+  const found = disprovedMarkers(store, ledger);
+  if (found.length === 0) return [];
+  const now = new Date().toISOString();
+  for (const r of found) store = retract(store, r, source, now);
+  saveMarkers(store);
+  return found;
 }

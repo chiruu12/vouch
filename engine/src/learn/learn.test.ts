@@ -17,6 +17,16 @@ import {
   visibleText,
 } from "./gone-markers.js";
 import { carriesObservedMarkup, proposeStrategies, splitByMarkup } from "./heal-strategy.js";
+import type { PhraseLedger } from "./gone-markers.js";
+import {
+  BUILTIN_MARKERS,
+  acceptMarker,
+  activeMarkers,
+  disprovedMarkers,
+  emptyMarkerStore,
+  retract,
+  type MarkerStore,
+} from "./markers.js";
 
 const alias: Change = {
   kind: "alias",
@@ -231,5 +241,87 @@ describe("measuring whether the scraped half of a repair prompt earns its place"
     // A tie is not a reason to keep the larger attack surface.
     const found = proposeStrategies([withMarkup(true), withMarkup(false), without(true), without(false)]);
     assert.equal(found[0]?.prefer, "prompt without observed markup");
+  });
+});
+
+// Adding a withdrawal phrase and taking one back.
+//
+// These two directions are deliberately not symmetric, and that asymmetry is the whole
+// argument for letting any of this run unattended. Adding a phrase can remove live
+// safety recalls from the feed, so it needs a person. Removing one can at worst leave a
+// withdrawn record showing until somebody notices, which the rest of the system already
+// handles. So the supervisor may narrow its own oracle on evidence, and never widen it.
+describe("the withdrawal phrases the oracle looks for", () => {
+  const CAND = {
+    marker: "this listing was ended by the seller",
+    source: "ebay",
+    goneRefs: 4,
+    evidence: "seen on 4 gone records, 0 live",
+  };
+  const NOW = "2026-08-19T00:00:00.000Z";
+
+  const ledgerWith = (marker: string, gone: string[], live: string[]): PhraseLedger => ({
+    version: 1,
+    sources: { ebay: { [marker]: { goneRefs: gone, liveRefs: live } } },
+  });
+
+  it("starts with the phrases a person wrote and nothing else", () => {
+    assert.deepEqual([...activeMarkers(emptyMarkerStore())], [...BUILTIN_MARKERS]);
+  });
+
+  it("looks for a phrase once it has been accepted", () => {
+    const store = acceptMarker(emptyMarkerStore(), CAND, NOW);
+    assert.equal(activeMarkers(store).includes(CAND.marker), true);
+  });
+
+  it("does not duplicate a phrase, or re-add one already built in", () => {
+    const once = acceptMarker(emptyMarkerStore(), CAND, NOW);
+    const twice = acceptMarker(once, CAND, NOW);
+    assert.equal(twice.learned.length, 1);
+    const builtin = acceptMarker(emptyMarkerStore(), { ...CAND, marker: "listing ended" }, NOW);
+    assert.deepEqual(builtin.learned, []);
+  });
+
+  it("retracts a learned phrase the moment one live page carries it", () => {
+    // One counterexample, not a rate. The claim a marker makes is "a page saying this is
+    // gone", so a single live page saying it is a disproof.
+    const store = acceptMarker(emptyMarkerStore(), CAND, NOW);
+    const found = disprovedMarkers(store, ledgerWith(CAND.marker, ["A1", "A2"], ["B7"]));
+    assert.deepEqual(found, [{ marker: CAND.marker, disprovedBy: "B7" }]);
+    const after = retract(store, found[0], "ebay", NOW);
+    assert.equal(activeMarkers(after).includes(CAND.marker), false);
+    assert.equal(after.retracted[0]?.disprovedBy, "B7", "the record that disproved it is recorded");
+  });
+
+  it("leaves a learned phrase alone while nothing contradicts it", () => {
+    const store = acceptMarker(emptyMarkerStore(), CAND, NOW);
+    assert.deepEqual(disprovedMarkers(store, ledgerWith(CAND.marker, ["A1", "A2"], [])), []);
+  });
+
+  it("never retracts a phrase a person wrote", () => {
+    // The built-ins are the floor. A live page carrying one is a reason for a person to
+    // look, not for the machine to quietly narrow the oracle below what was reviewed.
+    const store = emptyMarkerStore();
+    assert.deepEqual(disprovedMarkers(store, ledgerWith("listing ended", [], ["B7"])), []);
+    assert.equal(activeMarkers(store).includes("listing ended"), true);
+  });
+
+  it("keeps a retraction even if the learned entry lingers", () => {
+    const store: MarkerStore = {
+      version: 1,
+      learned: [{ marker: "x phrase", source: "ebay", acceptedAt: NOW, goneRefs: 2, evidence: "e" }],
+      retracted: [{ marker: "x phrase", source: "ebay", retractedAt: NOW, disprovedBy: "B1" }],
+    };
+    assert.equal(activeMarkers(store).includes("x phrase"), false);
+  });
+
+  it("lets a person overrule a retraction by accepting again", () => {
+    const retracted: MarkerStore = {
+      version: 1,
+      learned: [],
+      retracted: [{ marker: CAND.marker, source: "ebay", retractedAt: NOW, disprovedBy: "B1" }],
+    };
+    const after = acceptMarker(retracted, CAND, NOW);
+    assert.equal(activeMarkers(after).includes(CAND.marker), true);
   });
 });

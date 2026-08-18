@@ -99,6 +99,20 @@ const MUTATIONS = [
     from: "return link.host === new URL(sourceUrl).host ? permalink : null;",
     to: "return permalink;",
   },
+  {
+    name: "a disproved withdrawal phrase is kept",
+    breaks: "the supervisor's only unattended change to its own oracle, which is the safe direction",
+    file: "src/learn/markers.ts",
+    from: "if (live.length > 0) out.push({ marker: l.marker, disprovedBy: live[0] ?? \"unknown\" });",
+    to: "if (false) out.push({ marker: l.marker, disprovedBy: live[0] ?? \"unknown\" });",
+  },
+  {
+    name: "a retracted phrase stays active",
+    breaks: "a retraction can be undone by an edit that forgets to remove the learned entry too",
+    file: "src/learn/markers.ts",
+    from: "const learned = store.learned.map((l) => l.marker).filter((m) => !dead.has(m));",
+    to: "const learned = store.learned.map((l) => l.marker);",
+  },
 ];
 
 /** How many tests fail, or null if the suite passed. The count is the useful part: a

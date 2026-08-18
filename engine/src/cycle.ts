@@ -263,8 +263,12 @@ async function main(): Promise<void> {
   );
 
   // Written once the cycle is done rather than per page, so a run that dies part way
-  // through does not leave half a probe's worth of counts behind.
-  pages.flush();
+  // through does not leave half a probe's worth of counts behind. The flush also takes
+  // back any learned withdrawal phrase this cycle's live pages disproved, which is the
+  // one change the supervisor makes to its own oracle without being asked.
+  for (const r of pages.flush()) {
+    console.log(`retracted   withdrawal phrase "${r.marker}", seen on ${r.disprovedBy} which is live`);
+  }
 
   const { report, diagnosis, incident, serving } = result;
 

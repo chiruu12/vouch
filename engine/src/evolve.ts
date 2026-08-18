@@ -32,13 +32,13 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { aliasStore, knownRawFields, canonicalFields, pick, type AliasStore } from "./aliases.js";
-import { GONE_MARKERS } from "./bdata.js";
 import type { AliasChange, Change as AnyChange } from "./learn/change.js";
 import { changeKey } from "./learn/change.js";
 import { partition, mayApplyUnattended } from "./learn/policy.js";
 import { LEARNERS } from "./learn/registry.js";
 import type { Capture as LearnerCapture, Evidence } from "./learn/learner.js";
 import { emptyLedger, type PhraseLedger } from "./learn/gone-markers.js";
+import { acceptMarker, activeMarkers, loadMarkers, saveMarkers } from "./learn/markers.js";
 import type { HealRecord } from "./learn/heal-strategy.js";
 
 const ROOT = new URL("../..", import.meta.url).pathname;
@@ -309,7 +309,7 @@ function gatherEvidence(): Evidence {
     captures,
     heals,
     ledger: loadLedger(),
-    knownMarkers: GONE_MARKERS,
+    knownMarkers: activeMarkers(),
     knownRefsFor,
   };
 }
@@ -356,9 +356,25 @@ function main(): void {
       console.error(`  no proposal ${accept}. There are ${proposed.length}.`);
       process.exit(2);
     }
-    console.log(`  accepting proposal ${accept} is a manual edit: ${c.what}`);
-    console.log(`  ${c.evidence}`);
-    console.log("  Nothing here edits a gate on your behalf. Make the change and commit it.");
+    if (c.kind !== "gone-marker") {
+      // Nothing else has a store to accept into yet, and inventing one on the fly is how
+      // an evolver quietly grows the ability to change things nobody reviewed.
+      console.log(`  proposal ${accept} is a ${c.kind} change, which has no accept path.`);
+      console.log(`  ${c.evidence}`);
+      console.log("  Make this change by hand and commit it.");
+      return;
+    }
+    const next = acceptMarker(
+      loadMarkers(),
+      { marker: c.marker, source: c.source, goneRefs: c.goneRefs, evidence: c.evidence },
+      now
+    );
+    if (!dry) saveMarkers(next);
+    console.log(`  ACCEPTED  ${c.what}`);
+    console.log(`            ${c.evidence}`);
+    console.log(`            the oracle now looks for it. It will be retracted automatically`);
+    console.log(`            and without asking if it is ever seen on a page proved live.`);
+    if (dry) console.log("            (dry run, nothing written)");
     return;
   }
 

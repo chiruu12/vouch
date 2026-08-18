@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "learned": [
+    {
+      "marker": "looks like this page is missing",
+      "source": "ebay",
+      "acceptedAt": "2026-08-18T21:16:18.257Z",
+      "goneRefs": 2,
+      "evidence": "seen on 2 distinct records whose permalink proved gone, and on 0 records proved live. Read it before accepting: a phrase that is one listing's own wording rather than the site's would take live recalls off the feed"
+    }
+  ],
+  "retracted": []
+}

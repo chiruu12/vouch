@@ -31,6 +31,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { visibleText } from "./html.js";
+import { activeMarkersCached, BUILTIN_MARKERS } from "./learn/markers.js";
 
 const exec = promisify(execFile);
 
@@ -273,18 +274,10 @@ async function plainProbe(url: string, timeoutMs: number): Promise<UrlProbe> {
  *  oracle, and a status-only oracle then reports the record as merely lost, which is
  *  the one verdict that authorises a repair. Kept narrow on purpose: these phrases are
  *  unambiguous, and a false positive here marks a live record withdrawn. */
-export const GONE_MARKERS = [
-  "no longer available",
-  "this listing has ended",
-  "listing ended",
-  "item is no longer available",
-  "no longer for sale",
-  "has been removed",
-  "page not found",
-  "notice not found",
-  "recall not found",
-  "404 not found",
-];
+/** Kept as the name the rest of the tree already imports. The list itself moved to
+ *  learn/markers.ts, where it is the floor under a set a person can add to and the
+ *  evidence can take away from. */
+export const GONE_MARKERS = BUILTIN_MARKERS;
 
 /** A permalink that answers 200 somewhere else is not evidence its own record exists.
  *
@@ -313,7 +306,9 @@ export function detectGone(body: string): string | null {
   // feed. The bug was unreachable only while a plain fetch was being refused with a 403,
   // and probing through the Unlocker made it reachable on the first real page.
   const hay = visibleText(body).toLowerCase();
-  for (const m of GONE_MARKERS) {
+  // The active set, not the built-in one: a phrase a person accepted from the learner
+  // counts, and a phrase the evidence later disproved does not.
+  for (const m of activeMarkersCached()) {
     if (hay.includes(m)) return m;
   }
   return null;
