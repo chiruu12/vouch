@@ -529,7 +529,18 @@ export function buildSnapshot(now = new Date()): Snapshot {
 
   // --- the marketplace we supervise -------------------------------------------
   const twState = readState("tradewell");
-  const twLive = (twState?.lastGoodRows ?? []) as unknown as Listing[];
+  const withdrawnRefs = new Set(twState?.withdrawnRefs ?? []);
+
+  // A withdrawn record should never be in lastGoodRows: the supervisor strips it from
+  // the fallback, and a repair that hands one back is discarded before it can be
+  // promoted. This filter does not restate that, it refuses to take its word for it.
+  // The publish boundary is where a phantom stops being a bad row and becomes a live
+  // safety claim about a product someone might buy, so it is worth a second lock. A
+  // bug that put a confirmed-withdrawn record back into lastGoodRows during an
+  // unrelated repair is exactly how the first lock failed.
+  const twLive = ((twState?.lastGoodRows ?? []) as unknown as Listing[]).filter(
+    (l) => !withdrawnRefs.has(String(l.id))
+  );
   const twProv = provenanceFor("tradewell", twState, "verified");
 
   // Withdrawn listings are not in lastGoodRows any more, by design. Their text comes
@@ -559,7 +570,6 @@ export function buildSnapshot(now = new Date()): Snapshot {
     }));
   })();
 
-  const withdrawnRefs = new Set(twState?.withdrawnRefs ?? []);
   const withdrawnProv = provenanceFor("tradewell", twState, "withdrawn");
 
   // --- match the recalls we hold against the marketplace we supervise ----------

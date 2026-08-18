@@ -294,7 +294,7 @@ test("a repair that never reached the collector is not logged as a repair that r
   );
 });
 
-test("a heal that resurrects a withdrawn ref is served as healed, republishing the phantom", async () => {
+test("a heal that resurrects a ref withdrawn this cycle is discarded, not served", async () => {
   let run = 0;
   const { deps: d, calls } = deps({
     runScraper: async () => {

@@ -404,20 +404,27 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
     durationMs: healed.durationMs,
   };
 
-  // The contract measures shape. It knows nothing about the withdrawals this cycle
-  // established, so a repair that hands back a record we just confirmed was taken down
-  // satisfies it and gets served as `healed`. That is the phantom this whole project
-  // exists to prevent, arriving through the repair path rather than the classifier.
+  // The contract measures shape. It knows nothing about which records have been
+  // confirmed taken down, so a repair that hands one back satisfies it and gets served
+  // as `healed`. That is the phantom this whole project exists to prevent, arriving
+  // through the repair path rather than the classifier.
   //
   // It is not hypothetical: an LLM healer asked to recover missing rows will produce
   // rows, and a record that 404s at its own URL is exactly the kind of thing it will
   // reconstruct from a stale cache or an adjacent listing. Verifying a repair means
   // checking it against everything we know, not only against the contract.
-  const phantoms = afterRefs.filter((r) => diagnosis.withdrawnRefs.includes(r));
+  //
+  // "Everything we know" is `knownWithdrawn`, not this cycle's withdrawals. The first
+  // version of this guard checked only `diagnosis.withdrawnRefs`, which meant a record
+  // confirmed gone in an earlier cycle could be re-fabricated during an unrelated drift
+  // repair and served, because no ref went missing this cycle for the classifier to
+  // notice. Resurrections are already excluded from `knownWithdrawn`: a record that
+  // came back in the source's own listing is live, and this guard must not reject it.
+  const phantoms = afterRefs.filter((r) => knownWithdrawn.includes(r));
   if (phantoms.length > 0) {
     incident.refusal =
-      `the repair returned ${phantoms.length} record(s) confirmed withdrawn earlier in ` +
-      `this cycle (${phantoms.slice(0, 5).join(", ")}); their permalinks do not resolve, ` +
+      `the repair returned ${phantoms.length} record(s) confirmed withdrawn ` +
+      `(${phantoms.slice(0, 5).join(", ")}); their permalinks do not resolve, ` +
       `so the repair fabricated them and the result was discarded`;
     return {
       report: afterReport,
