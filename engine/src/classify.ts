@@ -107,16 +107,20 @@ export function classify(input: ClassifyInput): Diagnosis {
   // presence. These refs are neither withdrawn nor lost, and while any of them are
   // outstanding no repair may run: repairing requires establishing that the missing
   // records are still published, and we just failed to establish it.
+  // An allowlist, deliberately. This started as a blocklist naming the statuses we had
+  // been bitten by, and a property test immediately produced a permalink answering 418
+  // that fell straight through it into `lost`, which is the verdict that authorises a
+  // repair. Enumerating the bad cases means the next status nobody thought of is
+  // treated as evidence the record is still published.
+  //
+  // So: exactly one response means "still there", a clean 200 with nothing in the body
+  // saying otherwise. Withdrawal signals are handled above. Everything else, whatever it
+  // is, means we could not establish anything, and nothing is repaired until we can.
   const unresolvedRefs = missing.filter((r) => {
+    if (withdrawnRefs.includes(r)) return false;
     const p = probeByRef.get(r);
     if (p === undefined) return true;
-    // Anything that is not a clean 200 and not a withdrawal status tells us nothing.
-    // 403 and 429 are the ones that matter in practice: a permalink we are rate limited
-    // or walled off from is not evidence the record is still published, and treating it
-    // as merely lost is what hands the case to a repair.
-    if (p.status === 0 || p.status >= 500) return true;
-    if (p.status === 403 || p.status === 429 || p.status === 408) return true;
-    return false;
+    return !(p.status === 200 && (p.goneSignature ?? null) === null);
   });
 
   const lostRefs = missing.filter(

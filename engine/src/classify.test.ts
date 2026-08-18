@@ -533,6 +533,25 @@ describe("oracle statuses that are neither alive nor withdrawn", () => {
     });
   }
 
+  it("refuses to repair on a status nobody thought of", () => {
+    // 418 is not a real case. It stands in for every status this list does not name.
+    // The guard started as a blocklist of statuses we had been bitten by, and a
+    // property test produced this within seconds: an unrecognised status fell through
+    // to `lost`, which is the verdict that authorises a repair. The guard is now an
+    // allowlist, so the next unfamiliar response is refused rather than trusted.
+    const diagnosis = classify(
+      input({
+        report: report({ rows: 10, baselineRows: 12, rowDropRate: 2 / 12, passed: false }),
+        listing: listing({ status: 200 }),
+        baselineRefs: refs(12),
+        currentRefs: refs(10),
+        permalinks: ["ARC-0011", "ARC-0012"].map((ref) => ({ ref, status: 418 })),
+      })
+    );
+    assert.equal(diagnosis.healable, false);
+    assert.deepEqual(diagnosis.unresolvedRefs, ["ARC-0011", "ARC-0012"]);
+  });
+
   it("names the signal that established each withdrawal", () => {
     // The evidence line used to claim "404 or 410" whatever the probe actually saw.
     const diagnosis = classify(

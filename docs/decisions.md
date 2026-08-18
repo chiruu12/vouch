@@ -275,4 +275,20 @@ assume are handled:
   rate, not meaning.
 - **A soft-gone page whose wording is not in the list.** `GONE_MARKERS` is deliberately
   narrow, because a false positive marks a live record withdrawn. Narrow means it misses
-  phrasings nobody anticipated.
+  phrasings nobody anticipated. This one is asymmetric on purpose: a missed gone-phrase
+  leaves the record unresolved, which refuses the repair, so the failure is a stale cycle
+  rather than a fabricated record.
+
+The "unresolved" test is an allowlist rather than a list of bad statuses, and that was
+not the first design. It began as a blocklist naming 0, 5xx, 403, 429 and 408, which are
+the responses that had actually bitten us. A property test in
+`engine/src/classify.fuzz.test.ts` generated a permalink answering 418 and it fell
+straight through into `lost`, which is the one verdict that authorises a repair.
+Enumerating known-bad cases means every response nobody thought of is read as evidence
+the record is still published. Exactly one response now means "still there", a clean 200
+with nothing in the body saying otherwise, and everything else refuses.
+
+That is worth stating as a general rule rather than a bug report. Three of the four holes
+in this oracle were the same mistake: deciding what counts as absence, and letting
+everything else default to presence. Presence is the claim that costs something, so
+presence is what has to be proven.

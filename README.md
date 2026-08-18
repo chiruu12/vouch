@@ -183,7 +183,7 @@ has the originals.
 cd engine
 npm install
 npm run demo                              # watch all four causes decided, no API key
-npm test                                  # 126 tests, no network
+npm test                                  # 132 tests, no network
 node --import tsx src/cycle.ts arcadia    # one supervision cycle, needs BRIGHTDATA_API_KEY
 node --import tsx src/snapshot.ts         # publish web/public/snapshot.json
 

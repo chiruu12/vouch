@@ -392,3 +392,29 @@ That last one is the one worth remembering: a review finding is a lead, not a fa
 published a wrong number by trusting one without running the count.
 
 126 tests.
+
+## Property tests, and a fourth hole in the oracle (2026-08-18)
+Added engine/src/classify.fuzz.test.ts: a seeded generator, 3000 inputs, five invariants.
+It found a real defect on its first run, in code that four model reviews and six example
+tests had already been over.
+
+  seed 26: a permalink answering HTTP 418 was healable.
+
+The unresolved guard was a blocklist naming 0, 5xx, 403, 429 and 408, the statuses that
+had bitten us. Anything else fell through to `lost`, which authorises a repair. Now an
+allowlist: a clean 200 with no gone signal is the only response that means "still
+published"; everything else refuses. Grok's phrasing on the earlier pass was exactly
+right, "the named holes are closed, the class of hole is not", and this is what that
+looked like in practice.
+
+The generator also flagged a case that turned out to be my property being wrong, not the
+code: a withdrawn record can legitimately sit alongside a genuinely lost one, because the
+repair addresses the loss while the withdrawal is already marked and preserved. Property
+corrected to say what the guarantee actually is, with an added assertion that a withdrawn
+ref is never also queued for repair.
+
+Three of the four holes found in this oracle were the same mistake: enumerating what
+counts as absence and letting everything else default to presence. Presence is the claim
+that costs something.
+
+132 tests, of which 5 are properties over generated input.
