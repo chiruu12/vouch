@@ -205,12 +205,19 @@ them found a live defect within seconds of being written, which is described in
 `docs/decisions.md`. Both suites assert their own coverage, because a property test that
 never reaches the interesting branch passes without checking anything.
 
-The refusal is enforced in code rather than by convention. Flipping the `gone` branch to
-healable `drift` fails exactly seven tests and nothing else: five on the classifier's
-verdict, including the soft-404 case where the record says it is gone in the body rather
-than the status, and two on what the cycle then does, which is the half that actually
-matters. One of those two asserts that `deps.heal` is never called, not that its result
-is discarded.
+The refusal is enforced in code rather than by convention, and that claim is measured
+rather than asserted. `engine/verify-mutations.mjs` breaks eight safety invariants one at
+a time and requires the suite to go red for each. Flipping the `gone` branch to healable
+`drift` fails nine tests: the classifier's verdict, including the soft-404 case where the
+record says it is gone in the body rather than the status, and what the cycle then does,
+which is the half that actually matters. One of those asserts that `deps.heal` is never
+called, not merely that its result is discarded.
+
+The harness earns its place. It was written because this paragraph had said "seven" since
+the day it was true, and it found two tests that passed for a reason other than the one
+their names gave: a check on Bright Data's own error header that a later status rule was
+covering for, and the second lock on the seller field, which no test reached because the
+first lock stopped everything before it. Both are now asserted directly.
 
 ## Running it
 

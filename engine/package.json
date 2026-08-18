@@ -9,7 +9,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
     "demo": "node --import tsx src/demo.ts",
-    "evolve": "node --import tsx src/evolve.ts"
+    "evolve": "node --import tsx src/evolve.ts",
+    "mutations": "node verify-mutations.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

@@ -9,7 +9,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { inferAliases, applyAlias } from "./evolve.js";
+import { inferAliases, applyAlias, NEVER_LEARN_INTO } from "./evolve.js";
 import type { AliasChange } from "./learn/change.js";
 import { mayApplyUnattended } from "./learn/policy.js";
 import type { AliasStore } from "./aliases.js";
@@ -252,5 +252,17 @@ describe("the case this was built for", () => {
     // evolver that keeps finding work on unchanged evidence is just noisy.
     const found = CAPTURE_C.length === 0 ? [] : inferAliases(cap(CAPTURE_C), KNOWN_REFS);
     assert.deepEqual(found, [], "nothing new to learn from a capture the adapter handles");
+  });
+});
+
+describe("the second lock on the seller field", () => {
+  it("names seller in the never-learn list, independently of what is inferable", () => {
+    // `INFERABLE` already excludes seller, so this list is not what stops the evolver
+    // today, and a test driving `inferAliases` passes whether or not it exists. That is
+    // exactly why it needs asserting directly: it is the lock that still holds if
+    // someone later adds seller to INFERABLE, which is a plausible thing to want to do
+    // in order to hash a newly-named seller field. A mutation suite caught this test
+    // passing for the wrong reason.
+    assert.equal(NEVER_LEARN_INTO.has("seller"), true);
   });
 });

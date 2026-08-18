@@ -110,7 +110,7 @@ const INFERABLE = new Set(["id", "ref", "permalink", "listedOn", "published", "p
  *  the published type has no field for it; a learned alias that fed something new into
  *  `seller` would be the evolver quietly building a second door into the one guarantee
  *  this project makes about people rather than data. */
-const NEVER_LEARN_INTO = new Set(["seller"]);
+export const NEVER_LEARN_INTO = new Set(["seller"]);
 
 /** What each canonical field must look like for a raw field to be a candidate for it.
  *  Deliberately strict: a wrong alias is silent, and silence is the failure mode this

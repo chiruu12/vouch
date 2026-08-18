@@ -116,3 +116,15 @@ describe("the gone oracle reads the page, not the page's vocabulary", () => {
     assert.equal(detectGone(ended), "has been removed");
   });
 });
+
+describe("the proxy's own failure is never the site's answer", () => {
+  it("refuses an error header even on a status that looks like a real reply", () => {
+    // The first version of this test used the 502 seen in the wild, which the >= 500
+    // rule rejects on its own, so the error-header check could be deleted and every
+    // test still passed. A proxy failure does not have to arrive as a 5xx, and if one
+    // arrives as a 200 with an empty body, reading it as the site's answer would mean
+    // a record with no gone-signal reads as live, or an empty page reads as removed.
+    const out = `{"status_code":200,"headers":{"x-brd-error":"Navigation timeout"},"body":""}`;
+    assert.equal(readUnlockerEnvelope(out, "https://www.ebay.com/itm/1"), null);
+  });
+});
