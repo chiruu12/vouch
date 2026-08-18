@@ -252,3 +252,24 @@ before a cause is even assigned, because a repair asserts the missing records ar
 published and that is the assertion we just failed to establish. Five tests hold the
 line, including the mixed case where two refs are confirmed live and one is unreachable,
 which is the one a careless implementation gets wrong.
+
+A third route was closed at the same time: a permalink that answers 200 after being
+redirected somewhere else. Marketplaces send an ended listing to a category page or a
+similar product, and following the redirect to a 200 made a removed record look present.
+Only a changed path counts, since a scheme upgrade, a host alias and a trailing slash are
+all the same page and treating those as withdrawals would mark live records gone.
+
+What the oracle still cannot see, stated because these are the cases a reader should not
+assume are handled:
+
+- **In-place revision.** A notice whose permalink returns 200 with materially changed
+  content, most importantly a recall expanded to cover more units. The record looks
+  healthy and the change is invisible. This is the most common real-world event the
+  classifier misses, and closing it needs content hashing per record rather than a
+  liveness probe.
+- **Semantic drift.** Fields that still parse while their meaning moves, a price that
+  starts including shipping being the obvious one. The contract checks shape and null
+  rate, not meaning.
+- **A soft-gone page whose wording is not in the list.** `GONE_MARKERS` is deliberately
+  narrow, because a false positive marks a live record withdrawn. Narrow means it misses
+  phrasings nobody anticipated.

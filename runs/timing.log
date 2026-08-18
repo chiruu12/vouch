@@ -342,3 +342,19 @@ Claims the panel checked and found correct: 17/168/8 study figures, MTTR 347.6s 
 the six-tests-fail claim for the gone branch.
 
 116 tests.
+
+## Redirect route closed, and what the oracle still cannot see (2026-08-18)
+Third way past the withdrawal oracle, from the same panel: a permalink that answers 200
+after redirecting somewhere else. Marketplaces send an ended listing to a category page
+or a similar product; following the redirect and reading 200 made a removed record look
+present, which files it as lost, which authorises a repair. probeUrl now reports the
+final URL and a changed path counts as a gone signal. Scheme upgrades, host aliases and
+trailing slashes are normalised away, because treating those as withdrawals would mark
+live records gone. Five tests.
+
+Stated as unhandled rather than left for a reader to assume: in-place revision (a recall
+expanded to cover more units returns 200 at the same URL with changed content and looks
+healthy), semantic drift (a price that starts including shipping still parses), and any
+soft-gone wording outside the deliberately narrow GONE_MARKERS list.
+
+121 tests.

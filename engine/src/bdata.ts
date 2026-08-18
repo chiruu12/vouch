@@ -57,6 +57,9 @@ export interface UrlProbe {
   status: number;
   bytes: number;
   body: string;
+  /** Where the request actually landed, after redirects. Differs from the requested
+   *  URL when a record's own page has been redirected somewhere else. */
+  finalUrl: string;
 }
 
 function isErrorRow(r: unknown): r is { error: string; error_code?: string } {
@@ -168,12 +171,13 @@ export async function probeUrl(url: string, timeoutMs = 20_000): Promise<UrlProb
   try {
     const res = await fetch(url, { signal: ctrl.signal, redirect: "follow" });
     const body = await res.text();
-    return { status: res.status, bytes: body.length, body };
+    return { status: res.status, bytes: body.length, body, finalUrl: res.url || url };
   } catch {
     // A transport failure is not a 404. Reporting 0 keeps the classifier from
     // mistaking a flaky network for a withdrawal, which would mark live notices
-    // withdrawn and stop showing real recalls.
-    return { status: 0, bytes: 0, body: "" };
+    // withdrawn and stop showing real recalls. The classifier treats 0 as
+    // "could not establish", which refuses a repair rather than authorising one.
+    return { status: 0, bytes: 0, body: "", finalUrl: url };
   } finally {
     clearTimeout(timer);
   }
@@ -200,7 +204,25 @@ const GONE_MARKERS = [
   "404 not found",
 ];
 
-function detectGone(body: string): string | null {
+/** A permalink that answers 200 somewhere else is not evidence its own record exists.
+ *
+ *  Marketplaces routinely redirect an ended listing to a category page or a similar
+ *  product. Following the redirect and reading 200 makes a removed record look alive,
+ *  which files it as lost, which authorises a repair. Only a changed path counts:
+ *  http to https, a host alias and a trailing slash are all the same page. */
+export function redirectedAway(requested: string, landed: string): string | null {
+  try {
+    const a = new URL(requested);
+    const b = new URL(landed);
+    const norm = (p: string): string => p.replace(/\/+$/, "").toLowerCase();
+    if (norm(a.pathname) === norm(b.pathname)) return null;
+    return `permalink redirected to ${b.pathname}`;
+  } catch {
+    return null;
+  }
+}
+
+export function detectGone(body: string): string | null {
   const hay = body.toLowerCase();
   for (const m of GONE_MARKERS) {
     if (hay.includes(m)) return m;
@@ -228,7 +250,10 @@ export async function probePermalinks(
       out.push({
         ref: next.ref,
         status: probe.status,
-        goneSignature: probe.status === 200 ? detectGone(probe.body) : null,
+        goneSignature:
+          probe.status === 200
+            ? (detectGone(probe.body) ?? redirectedAway(next.url, probe.finalUrl))
+            : null,
       });
     }
   }

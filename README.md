@@ -182,7 +182,7 @@ has the originals.
 cd engine
 npm install
 npm run demo                              # watch all four causes decided, no API key
-npm test                                  # 116 tests, no network
+npm test                                  # 121 tests, no network
 node --import tsx src/cycle.ts arcadia    # one supervision cycle, needs BRIGHTDATA_API_KEY
 node --import tsx src/snapshot.ts         # publish web/public/snapshot.json
 
@@ -262,6 +262,10 @@ MIT. See [LICENSE](LICENSE).
 
 - Matching is title-based. It cannot read a lot code off a photo, so batch-level
   certainty is out of reach by construction.
+- The withdrawal oracle detects removal, not revision. A recall expanded to cover more
+  units returns 200 at the same URL with changed content, and the engine sees a healthy
+  record. Closing that needs per-record content hashing, not a liveness probe, and it is
+  probably the most consequential thing still missing.
 - Three collectors in the account are stuck: one on a repair prompt that was too
   aggressive, and two holding a repair lock that outlived the job that took it. A
   repair can damage a working scraper, and nothing here prevents that beyond refusing to
