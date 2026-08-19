@@ -143,6 +143,13 @@ const MUTATIONS = [
     to: '  return s.toLowerCase();',
   },
   {
+    name: "the evolver gains access to the contract module",
+    breaks: "the one boundary evolve.ts claims for itself, that nothing which learns can loosen the gate it is judged by",
+    file: "src/evolve.ts",
+    from: 'import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";',
+    to: 'import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";\nimport { checkContract } from "./contract.js";',
+  },
+  {
     name: "the vouch check walks the snapshot instead of the declared source list",
     breaks: "a recall source missing from the build stops being checked exactly when it matters",
     file: "src/context.ts",

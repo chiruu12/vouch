@@ -8,7 +8,7 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { inferAliases, applyAlias, NEVER_LEARN_INTO } from "./evolve.js";
 import type { AliasChange } from "./learn/change.js";
 import { mayApplyUnattended } from "./learn/policy.js";
@@ -304,4 +304,35 @@ describe("the second lock on the seller field", () => {
     // passing for the wrong reason.
     assert.equal(NEVER_LEARN_INTO.has("seller"), true);
   });
+});
+
+it("the evolver cannot reach the contract module", () => {
+  // The claim `evolve.ts` makes about itself, in its own header: nothing here may loosen
+  // a contract, and it has no access to contract.ts at all. That was true by habit and
+  // by nothing else, and an import is one line. A system that quietly retunes its own
+  // thresholds until nothing fails is the exact thing this project argues against, so
+  // the boundary is asserted rather than assumed.
+  //
+  // Read as text on purpose. Importing the modules to inspect them would prove they can
+  // be loaded, not that they do not reach across; the import graph is the thing being
+  // pinned, so the import graph is what gets read.
+  const dir = new URL("./learn/", import.meta.url);
+  const files = [
+    new URL("./evolve.ts", import.meta.url),
+    ...readdirSync(dir)
+      .filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"))
+      .map((f) => new URL(f, dir)),
+  ];
+
+  for (const f of files) {
+    const src = readFileSync(f, "utf8");
+    for (const line of src.split("\n")) {
+      const isImport = /^\s*import\b/.test(line) || /\bfrom\s+["']/.test(line);
+      if (!isImport) continue;
+      assert.ok(
+        !/["'][^"']*contract(\.js|\.ts)?["']/.test(line),
+        `${f.pathname.split("/").pop()} imports the contract module: ${line.trim()}`
+      );
+    }
+  }
 });
