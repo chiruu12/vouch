@@ -67,10 +67,56 @@ const PATH = new URL("../../learned/markers.json", import.meta.url).pathname;
 
 export const emptyMarkerStore = (): MarkerStore => ({ version: 1, learned: [], retracted: [] });
 
-export function loadMarkers(): MarkerStore {
-  if (!existsSync(PATH)) return emptyMarkerStore();
+/** The shortest phrase that may be a withdrawal marker.
+ *
+ *  A short phrase is a common substring, and this oracle matches by `includes`, so the
+ *  shorter it is the more live pages it takes off the feed. The empty string is the
+ *  degenerate case and the reason there is a floor at all: `"anything".includes("")` is
+ *  true, so an empty marker reads every page that answered as withdrawn. The shortest
+ *  built-in is 13 characters, so this refuses nothing a person has actually written. */
+export const MIN_MARKER_LENGTH = 8;
+
+function usableMarker(m: unknown): m is string {
+  return typeof m === "string" && m.trim().length >= MIN_MARKER_LENGTH;
+}
+
+/** Keep only entries that are the shape this module promises the rest of the engine.
+ *
+ *  Everything here is defence against a file, not against a caller. `acceptMarker` already
+ *  refuses a bad phrase, but the store is a JSON file on disk that a person edits and a
+ *  process writes, and the failure modes of a bad one are not survivable by the code that
+ *  reads it: `{}` parses fine and then `store.retracted.map` throws on undefined, taking
+ *  the whole supervision cycle down, and a hand-added `""` marks every page withdrawn.
+ *  Parsing successfully is not the same as being a marker store. */
+export function sanitiseMarkerStore(raw: unknown): MarkerStore {
+  if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return emptyMarkerStore();
+  const r = raw as Partial<MarkerStore>;
+  const learned = Array.isArray(r.learned) ? r.learned : [];
+  const retracted = Array.isArray(r.retracted) ? r.retracted : [];
+  return {
+    version: typeof r.version === "number" ? r.version : 1,
+    learned: learned.filter(
+      (l): l is LearnedMarker =>
+        l !== null && typeof l === "object" && usableMarker(l.marker) && typeof l.source === "string"
+    ),
+    // Retractions are kept even when malformed in their metadata, because a retraction
+    // only ever narrows the oracle. Dropping one for a missing timestamp would put a
+    // phrase back that the evidence disproved, which is the wrong direction to fail in.
+    retracted: retracted.filter(
+      (x): x is RetractedMarker =>
+        x !== null && typeof x === "object" && typeof x.marker === "string" && typeof x.source === "string"
+    ),
+  };
+}
+
+/** `path` is a parameter so a test can hand this a junk file. The sanitiser is pure and
+ *  tested directly, but the invariant that matters to the engine is that the function which
+ *  actually reads the disk applies it, and a test that only calls the sanitiser cannot see
+ *  the difference between a store that is validated and one that is not. */
+export function loadMarkers(path: string = PATH): MarkerStore {
+  if (!existsSync(path)) return emptyMarkerStore();
   try {
-    return JSON.parse(readFileSync(PATH, "utf8")) as MarkerStore;
+    return sanitiseMarkerStore(JSON.parse(readFileSync(path, "utf8")));
   } catch {
     // An unreadable store must not silently widen the oracle, and it must not narrow it
     // below the phrases a person wrote either. Empty means builtins only.
@@ -129,6 +175,7 @@ export function acceptMarker(
   m: { marker: string; source: string; goneRefs: number; evidence: string },
   now: string
 ): MarkerStore {
+  if (!usableMarker(m.marker)) return store;
   if (BUILTIN_MARKERS.includes(m.marker)) return store;
   if (store.learned.some((l) => l.marker === m.marker)) return store;
   return {

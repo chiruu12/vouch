@@ -149,6 +149,41 @@ const MUTATIONS = [
     to: "      nextState: { ...state, baselineRefs: baselineAfterWithdrawals, withdrawnRefs: knownWithdrawn, streak },\n    };\n  }\n\n  // A call that never reached the collector",
   },
   {
+    name: "one withdrawal excuses a drop of any size",
+    breaks: "the check that withdrawals actually account for missing rows, so silent extraction loss reads as verified",
+    file: "src/snapshot.ts",
+    from: "    volumeOnly && shortfall > 0 && shortfall <= (state?.withdrawnRefs.length ?? 0);",
+    to: "    volumeOnly && (state?.withdrawnRefs.length ?? 0) > 0;",
+  },
+  {
+    name: "the collector-block pattern forgets half the refusal statuses",
+    breaks: "the consistency between what the probe calls a refusal and what the collector's error may say",
+    file: "src/classify.ts",
+    from: 'const BLOCK_STATUS_PATTERN = new RegExp(`(?<![0-9])(${[...BLOCK_STATUSES].join("|")})(?![0-9])`);',
+    to: 'const BLOCK_STATUS_PATTERN = /(?<![0-9])(403|407|429)(?![0-9])/;',
+  },
+  {
+    name: "a block discards a withdrawal already established",
+    breaks: "a 404 the oracle saw plainly is thrown away, so a withdrawn recall keeps being served as active",
+    file: "src/classify.ts",
+    from: "      cause: \"blocked\",\n      withdrawnRefs,",
+    to: "      cause: \"blocked\",\n      withdrawnRefs: [],",
+  },
+  {
+    name: "the marker store trusts whatever parsed",
+    breaks: "an empty-string marker reads every page as withdrawn, and a wrong-shape file crashes the cycle",
+    file: "src/learn/markers.ts",
+    from: "    return sanitiseMarkerStore(JSON.parse(readFileSync(path, \"utf8\")));",
+    to: "    return JSON.parse(readFileSync(path, \"utf8\")) as MarkerStore;",
+  },
+  {
+    name: "a phrase too short to mean anything is accepted",
+    breaks: "the floor under a learned marker, below which one phrase empties the feed",
+    file: "src/learn/markers.ts",
+    from: "  if (!usableMarker(m.marker)) return store;",
+    to: "  if (false) return store;",
+  },
+  {
     name: "a block only the collector saw is healed",
     breaks: "the flagship refusal, whenever the wall is on the scraper's path and not the operator's",
     file: "src/classify.ts",
@@ -182,6 +217,24 @@ for (const n of chosen) {
   }
 
   const before = readFileSync(m.file, "utf8");
+
+  // A mutation is only evidence if it edits what it names. This guard exists because one
+  // did not: escaping collapsed a `from` string to "0", which occurs all over the file, so
+  // `includes` passed, the replace landed inside an unrelated comment, the suite stayed
+  // green, and the harness reported a hole in the tests that was not there. A target has to
+  // be long enough to be deliberate and to appear exactly once.
+  const occurrences = before.split(m.from).length - 1;
+  if (m.from.length < 20 || occurrences > 1) {
+    console.error(`\nmutation ${n} (${m.name})`);
+    console.error(
+      m.from.length < 20
+        ? `  TARGET TOO SHORT: ${JSON.stringify(m.from)} is not a deliberate anchor.`
+        : `  TARGET NOT UNIQUE: appears ${occurrences} times in ${m.file}.`
+    );
+    console.error("  A mutation that edits the wrong place proves nothing either way.");
+    process.exit(2);
+  }
+
   if (!before.includes(m.from)) {
     console.error(`\nmutation ${n} (${m.name})`);
     console.error(`  STALE: ${m.file} no longer contains the target text.`);

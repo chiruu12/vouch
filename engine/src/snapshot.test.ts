@@ -161,6 +161,18 @@ describe("what the feed is willing to say about a record", () => {
   it("still says unverified when rows are missing and nothing accounts for them", () => {
     assert.equal(deriveTrust("tradewell", rows(4), state()), "unverified");
   });
+
+  it("refuses to let one withdrawal excuse a drop of five", () => {
+    // The bug this replaces: any withdrawal at all vouched for any volume breach. Seven
+    // rows out of a baseline of twelve with a single record taken down means five records
+    // stopped extracting and nobody noticed. The rows are read cleanly, which is what made
+    // it look fine, and cleanly read is not the same as complete.
+    const oneWithdrawal = state({ withdrawnRefs: ["TW-88214"] });
+    assert.equal(deriveTrust("tradewell", rows(7), oneWithdrawal), "unverified");
+    // The same seven rows with the drop fully accounted for are still vouched for.
+    const five = state({ withdrawnRefs: ["a", "b", "c", "d", "e"] });
+    assert.equal(deriveTrust("tradewell", rows(7), five), "verified");
+  });
 });
 
 // The link under the trust pill.

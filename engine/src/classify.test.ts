@@ -768,6 +768,46 @@ describe("a block on the scraper's path only", () => {
     }
   });
 
+  it("reads every status the probe side calls a refusal", () => {
+    // These two lists used to be written out separately and they disagreed. The probe
+    // treated 401, 451 and 503 as refusals; the error pattern knew only 403, 407 and 429.
+    // The same wall was therefore refused when our probe hit it and healed when only the
+    // collector did, which is the exact inconsistency this branch exists to remove.
+    for (const code of ["http_401", "http_403", "http_407", "http_429", "http_451", "http_503"]) {
+      assert.equal(blockedAtSource([{ error: "refused", error_code: code }]) !== null, true, code);
+    }
+    // No separator at all, which flattening never helped with.
+    assert.equal(blockedAtSource([{ error: "http403 from target" }]) !== null, true, "http403");
+  });
+
+  it("does not find a block status inside a longer number", () => {
+    // 4030 is not 403. Without the digit guards this reads a page size or an item id as a
+    // refusal and permanently refuses to repair the source.
+    assert.equal(blockedAtSource([{ error: "returned 4030 items", error_code: "ok" }]), null);
+    assert.equal(blockedAtSource([{ error: "id 14510 missing", error_code: "extraction_failed" }]), null);
+  });
+
+  it("keeps a withdrawal that was established before the wall went up", () => {
+    // A block means we cannot trust what we failed to read. It says nothing about a
+    // permalink that answered us plainly with a 404, and dropping that record left it in
+    // the baseline, still served from last-good as an active recall, until the wall came
+    // down and it could be rediscovered.
+    const d = classify({
+      report: report({ rows: 0, passed: false, breaches: ["row count fell to 0"] }),
+      listing: cleanProbe,
+      baselineRefs: ["r1", "r2", "r3"],
+      currentRefs: [],
+      permalinks: [{ ref: "r1", status: 404 }, { ref: "r2", status: 200 }, { ref: "r3", status: 200 }],
+      extractionErrors: [{ error: "Too Many Requests", error_code: "http_429" }],
+    });
+    assert.equal(d.cause, "blocked");
+    assert.equal(d.healable, false);
+    assert.deepEqual(d.withdrawnRefs, ["r1"]);
+    // Still nothing is repairable. "Missing while its own page is fine" is precisely the
+    // inference a block invalidates, so lostRefs stays empty.
+    assert.deepEqual(d.lostRefs, []);
+  });
+
   it("still diagnoses drift when the collector reported nothing", () => {
     const d = classify({
       report: report({ rows: 0, passed: false, breaches: ["row count fell to 0"] }),

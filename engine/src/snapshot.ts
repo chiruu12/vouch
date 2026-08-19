@@ -336,7 +336,24 @@ export function deriveTrust(sourceId: SourceId, rows: readonly unknown[], state:
   if (meta === undefined) throw new Error(`no metadata for source ${sourceId}`);
   const report = checkContract(meta.contract, rows as Record<string, unknown>[], state?.baselineRows ?? null);
   const volumeOnly = report.breaches.length > 0 && report.fields.every((f) => !f.breached);
-  const explainedByWithdrawal = volumeOnly && (state?.withdrawnRefs.length ?? 0) > 0;
+  // The withdrawals have to actually account for the missing rows, not merely exist.
+  //
+  // This used to be `withdrawnRefs.length > 0`, which vouched for any volume breach that
+  // happened to coincide with a withdrawal. Five records silently stopping extracting
+  // while one unrelated record was taken down published all seven survivors as verified,
+  // because one withdrawal was treated as explaining a drop of five. Cleanly read is not
+  // the same as complete, and a feed that quietly loses recalls is the failure this
+  // project is about, arriving as a shortfall rather than as a phantom.
+  //
+  // The comparison is on counts because trust is derived from rows a source knows nothing
+  // about the refs of. `withdrawnRefs` accumulates across cycles while `baselineRows`
+  // tracks the last passing run, so a long-lived source with many past withdrawals gets a
+  // larger allowance than a strict per-cycle reconciliation would give it. That is a known
+  // slack, not an oversight: it is bounded by the number of records the source has ever
+  // withdrawn, and it is strictly tighter than the "any withdrawal at all" it replaced.
+  const shortfall = (state?.baselineRows ?? report.rows) - report.rows;
+  const explainedByWithdrawal =
+    volumeOnly && shortfall > 0 && shortfall <= (state?.withdrawnRefs.length ?? 0);
   if (!(report.passed || explainedByWithdrawal)) return "unverified";
   return (state?.healHistory.some((h) => h.verified) ?? false) ? "healed" : "verified";
 }

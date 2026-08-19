@@ -65,22 +65,41 @@ export interface ClassifyInput {
   extractionErrors?: readonly { error: string; error_code?: string }[];
 }
 
+/** Statuses that mean "we were refused", not "the content changed". */
+const BLOCK_STATUSES = new Set([401, 403, 407, 429, 451, 503]);
+
 /** Extraction errors that mean "we were refused", not "the page changed". Kept narrow,
  *  like every other detector here: a false positive stops a repair that should have
  *  happened, which is a cost, but a false negative heals a block, which is the failure
  *  this branch exists to prevent. */
-const BLOCK_ERROR_PATTERN =
-  /\b(403|407|429|forbidden|blocked|captcha|challenge|rate.?limit|too many requests|access denied|bot detect)/i;
+const BLOCK_WORDS =
+  /(forbidden|blocked|captcha|challenge|rate.?limit|too many requests|access denied|bot detect)/i;
+
+/** The status half, built from BLOCK_STATUSES rather than written out a second time.
+ *
+ *  The two used to be independent lists and they disagreed. The probe side treated 401,
+ *  451 and 503 as refusals; this pattern knew only 403, 407 and 429. So the same wall was
+ *  refused when our own probe hit it and sent to the healer when only the collector did,
+ *  which is precisely the inconsistency this branch was added to remove. Deriving one from
+ *  the other means they cannot drift apart again.
+ *
+ *  Guarded on digits rather than `\b`. An underscore is a word character, so `\b403` never
+ *  matched inside `http_403`, the shape vendors actually emit. Flattening separators fixed
+ *  that one and did nothing for `http403`. A digit guard matches the number however it is
+ *  glued to its neighbours while still refusing to read 403 out of 4030. */
+const BLOCK_STATUS_PATTERN = new RegExp(`(?<![0-9])(${[...BLOCK_STATUSES].join("|")})(?![0-9])`);
 
 export function blockedAtSource(
   errors: readonly { error: string; error_code?: string }[]
 ): string | null {
   for (const e of errors) {
-    // Separators are flattened first. Vendor error codes look like `http_403`, and an
-    // underscore is a word character, so `\b403` does not match inside one. The first
-    // version of this missed exactly the case it was written for, which a test caught.
-    const text = `${e.error_code ?? ""} ${e.error}`.replace(/[_\-.]/g, " ");
-    if (BLOCK_ERROR_PATTERN.test(text)) return (e.error_code ?? e.error).slice(0, 80);
+    const raw = `${e.error_code ?? ""} ${e.error}`;
+    // Words are matched against a separator-flattened copy so `rate_limit` reads as two
+    // words. The status pattern reads the raw string, because flattening is what put a
+    // digit next to a word boundary in the first place.
+    if (BLOCK_WORDS.test(raw.replace(/[_\-.]/g, " ")) || BLOCK_STATUS_PATTERN.test(raw)) {
+      return (e.error_code ?? e.error).slice(0, 80);
+    }
   }
   return null;
 }
@@ -103,8 +122,6 @@ export interface Diagnosis {
   evidence: string[];
 }
 
-/** Statuses that mean "we were refused", not "the content changed". */
-const BLOCK_STATUSES = new Set([401, 403, 407, 429, 451, 503]);
 /** Statuses that mean a specific document is no longer published. */
 const WITHDRAWN_STATUSES = new Set([404, 410]);
 
@@ -198,9 +215,22 @@ export function classify(input: ClassifyInput): Diagnosis {
       );
     }
     evidence.push("healing cannot clear a block; backing off instead");
+    // A withdrawal established this cycle survives the block, and it used to not.
+    // Returning an empty list threw away a 404 the oracle had already seen, so the record
+    // stayed in the baseline, kept being served from last-good as an active recall, and
+    // had to be rediscovered once the wall came down. A block means we cannot trust what
+    // we FAILED to read; it says nothing about a permalink that answered us plainly.
+    // `lostRefs` stays empty on purpose: "missing while its own page is fine" is exactly
+    // the inference a block invalidates, and it is the one that authorises a repair.
+    if (withdrawnRefs.length > 0) {
+      evidence.push(
+        `${withdrawnRefs.length} record(s) were confirmed withdrawn before the block and ` +
+          `remain recorded as withdrawn: ${withdrawnRefs.slice(0, 5).join(", ")}`
+      );
+    }
     return {
       cause: "blocked",
-      withdrawnRefs: [],
+      withdrawnRefs,
       lostRefs: [],
       unresolvedRefs: [],
       healable: false,

@@ -6,6 +6,9 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { mayApplyUnattended, partition } from "./policy.js";
 import type { Change } from "./change.js";
 import { changeKey } from "./change.js";
@@ -26,6 +29,9 @@ import {
   emptyMarkerStore,
   retract,
   type MarkerStore,
+  MIN_MARKER_LENGTH,
+  loadMarkers,
+  sanitiseMarkerStore,
 } from "./markers.js";
 
 const alias: Change = {
@@ -314,6 +320,57 @@ describe("the withdrawal phrases the oracle looks for", () => {
       retracted: [{ marker: "x phrase", source: "ebay", retractedAt: NOW, disprovedBy: "B1" }],
     };
     assert.equal(activeMarkers("ebay", store).includes("x phrase"), false);
+  });
+
+  it("refuses a phrase too short to mean anything", () => {
+    // The degenerate case is the empty string: `"anything".includes("")` is true, so an
+    // empty marker reads every page that answered as withdrawn and empties the feed. Short
+    // phrases are the same failure with a smaller blast radius, so there is a floor.
+    for (const marker of ["", "   ", "gone", "ended"]) {
+      const after = acceptMarker(emptyMarkerStore(), { ...CAND, marker }, NOW);
+      assert.deepEqual(after.learned, [], `"${marker}" must not become an oracle`);
+    }
+    // The shortest built-in still clears the floor, so nothing a person wrote is refused.
+    const shortest = [...BUILTIN_MARKERS].sort((a, b) => a.length - b.length)[0] ?? "";
+    assert.ok(shortest.length >= MIN_MARKER_LENGTH);
+  });
+
+  it("sanitises what it reads off disk, not just what a caller hands it", () => {
+    // The sanitiser is pure and tested above. What the engine depends on is that the
+    // function which actually opens the file applies it, and a test that only calls the
+    // sanitiser cannot tell the two apart. A mutation that dropped the call from
+    // loadMarkers went unnoticed until this test existed.
+    const path = join(mkdtempSync(join(tmpdir(), "vouch-markers-")), "markers.json");
+    writeFileSync(path, JSON.stringify({ version: 1, learned: [{ marker: "", source: "ebay" }] }));
+    assert.deepEqual([...activeMarkers("ebay", loadMarkers(path))], [...BUILTIN_MARKERS]);
+
+    writeFileSync(path, "{}");
+    assert.deepEqual([...activeMarkers("ebay", loadMarkers(path))], [...BUILTIN_MARKERS]);
+  });
+
+  it("survives a marker file that is valid JSON and not a marker store", () => {
+    // `{}` parses. Then `store.retracted.map` throws on undefined and takes the whole
+    // supervision cycle down with it. Parsing successfully is not the same as being a
+    // marker store, and one bad write should cost the learned phrases, not the cycle.
+    for (const junk of [{}, [], "str", 42, null]) {
+      const store = sanitiseMarkerStore(junk);
+      assert.deepEqual([...activeMarkers("ebay", store)], [...BUILTIN_MARKERS]);
+    }
+  });
+
+  it("drops a hand-edited phrase that is too short, and keeps the rest", () => {
+    const store = sanitiseMarkerStore({
+      version: 1,
+      learned: [
+        { marker: "", source: "ebay", acceptedAt: NOW, goneRefs: 2, evidence: "e" },
+        { marker: "this listing was ended by the seller", source: "ebay", acceptedAt: NOW, goneRefs: 2, evidence: "e" },
+      ],
+      retracted: [],
+    });
+    assert.deepEqual(
+      [...activeMarkers("ebay", store)].filter((m) => !BUILTIN_MARKERS.includes(m)),
+      ["this listing was ended by the seller"]
+    );
   });
 
   it("a phrase learned on one site is not an oracle on another", () => {
