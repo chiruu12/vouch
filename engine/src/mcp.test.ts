@@ -4,12 +4,19 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { TOOLS, handle } from "./mcp.js";
+import { TOOLS, handle, resetSession } from "./mcp.js";
 
 const call = (method: string, params?: Record<string, unknown>, id: number | null = 1) =>
   handle({ jsonrpc: "2.0", id, method, ...(params ? { params } : {}) }) as
     | { result?: Record<string, unknown>; error?: { code: number; message: string } }
     | null;
+
+// A tool call is refused until the session has been initialized, and the flag lives in
+// the module rather than in each call. Every test below that reaches a tool wants a
+// handshaken session, so it is done once, here, in the open. The two tests that care
+// about the handshake itself drive it deliberately and put it back when they are done:
+// a test that leaves module state changed is a test that breaks whatever runs next.
+call("initialize", {});
 
 test("initialize echoes a protocol version the client asked for when we support it", () => {
   const r = call("initialize", { protocolVersion: "2025-06-18" })!;
@@ -113,4 +120,32 @@ test("breakage_report tells a caller whether retrying is pointless", () => {
       assert.match(line, /healable=(true|false)/, "a broken source must say whether a repair is even allowed");
     }
   }
+});
+
+// The caveat is sent once, so the session that never received it may not be answered.
+//
+// `initialize` carries the sentence that a match is on the product line and not on the
+// individual unit, and it is sent once per session rather than stapled to every answer,
+// because a constant costs tokens on every call for a fact that never changes. That
+// trade only holds while the client has actually been told. A `tools/call` arriving with
+// no handshake behind it would otherwise be answered with `RECALL <ref> conf=0.72` and
+// the notice's own "stop using it immediately" line, and nothing anywhere in that reply
+// saying it matched a product line rather than the unit in front of the caller. That is
+// the one claim this project refuses to make, reachable by skipping a step.
+test("a tool call before the handshake is refused rather than answered", () => {
+  resetSession();
+  const r = call("tools/call", { name: "recall_context", arguments: { product: "Breville Smart Kettle" } })!;
+  assert.equal(r.result, undefined);
+  assert.equal(r.error?.code, -32002);
+  assert.match(r.error?.message ?? "", /initialize/);
+  call("initialize", {});
+});
+
+test("the same call is answered once the handshake has happened", () => {
+  resetSession();
+  call("initialize", {});
+  // and the session stays initialized for anything appended after this.
+  const r = call("tools/call", { name: "recall_context", arguments: { product: "Breville Smart Kettle" } })!;
+  assert.equal(r.error, undefined);
+  assert.ok(Array.isArray((r.result as { content: unknown[] }).content));
 });

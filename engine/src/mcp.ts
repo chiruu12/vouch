@@ -148,11 +148,27 @@ interface Req {
   params?: Record<string, unknown>;
 }
 
+/** Whether this session has been told what it is reading.
+ *
+ *  The constant caveat, that a match is on the product line and not on the individual
+ *  unit, rides in the `initialize` instructions rather than on every answer, because a
+ *  sentence that never changes should not be billed per call. That is only sound while
+ *  the client has actually received it. A `tools/call` with no handshake behind it would
+ *  be answered with an asserted recall and none of the language that stops a caller
+ *  reading it as "this listing is the recalled unit", so it is refused instead. */
+let handshaken = false;
+
+/** Forget the handshake. For tests, which drive many sessions through one process. */
+export function resetSession(): void {
+  handshaken = false;
+}
+
 export function handle(req: Req): object | null {
   const reply = (result: unknown): object => ({ jsonrpc: "2.0", id: req.id ?? null, result });
 
   switch (req.method) {
     case "initialize": {
+      handshaken = true;
       const asked = str((req.params as { protocolVersion?: unknown } | undefined)?.protocolVersion);
       return reply({
         protocolVersion: SUPPORTED.has(asked) ? asked : PROTOCOL,
@@ -198,6 +214,19 @@ export function handle(req: Req): object | null {
         })),
       });
     case "tools/call": {
+      if (!handshaken) {
+        return {
+          jsonrpc: "2.0",
+          id: req.id ?? null,
+          error: {
+            code: -32002,
+            message:
+              "initialize first. The caveat that a match is on the product line rather " +
+              "than the individual unit is sent once, in the initialize instructions, and " +
+              "an answer given before it would read as a claim about the unit itself.",
+          },
+        };
+      }
       const p = (req.params ?? {}) as { name?: unknown; arguments?: unknown };
       const tool = TOOLS.find((t) => t.name === p.name);
       if (tool === undefined) {
