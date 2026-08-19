@@ -15,6 +15,21 @@ export type SourceId =
 
 export type RiskLevel = "Serious" | "High" | "Medium" | "Low" | "Unknown";
 
+/** The recall sources that must be present and healthy before this feed may report that
+ *  a product is NOT recalled. Everything else publishes marketplace listings.
+ *
+ *  Declared here rather than derived from whatever a given snapshot happens to contain,
+ *  because the case that matters is a source having a bad enough day to be missing. A
+ *  set derived from the snapshot's own contents would quietly stop asking about the one
+ *  source that had vanished, exactly when the answer mattered most. Declared, an absent
+ *  source is a refusal.
+ *
+ *  So this lists what is WIRED, not what is planned. `eu-safety-gate` and `uk-opss` are
+ *  in `SourceId` and are not here, because adding a source to this list before it can
+ *  answer would refuse every query. Add the id here in the same change that wires it. */
+export const RECALL_SOURCES: readonly SourceId[] = ["cpsc", "arcadia"];
+
+
 /**
  * Why a probe failed. The whole project turns on this distinction: two of these
  * are repaired, two of them must never be repaired.
