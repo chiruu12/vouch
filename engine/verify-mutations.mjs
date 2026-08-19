@@ -38,6 +38,20 @@ const MUTATIONS = [
     to: "const phantoms = afterRefs.filter((r) => diagnosis.withdrawnRefs.includes(r));",
   },
   {
+    name: "a repair may abandon the record it was called for",
+    breaks: "a partial repair closes the incident as healed and the abandoned notice leaves the baseline",
+    file: "src/runner.ts",
+    from: 'const abandoned = diagnosis.lostRefs.filter((r) => !afterRefs.includes(r));',
+    to: 'const abandoned = [];',
+  },
+  {
+    name: "the abandonment refusal is downgraded to a warning",
+    breaks: "the row-drop limit then ratchets: each accepted partial repair is the next one's baseline",
+    file: "src/runner.ts",
+    from: 'if (abandoned.length > 0) {',
+    to: 'if (abandoned.length > 99) {',
+  },
+  {
     name: "the gone oracle reads script payloads",
     breaks: "a live listing whose page embeds the phrase in a UI string table is published as withdrawn",
     file: "src/bdata.ts",

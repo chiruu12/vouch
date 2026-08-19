@@ -626,6 +626,47 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
   }
 
   if (afterReport.passed) {
+    // Shape is not enough. A repair does not get to close an incident by agreeing
+    // with the loss.
+    //
+    // The classifier is deliberately slow to call a record gone: a ref missing from the
+    // listing is only `withdrawn` once its own permalink stops resolving, and one that is
+    // missing while its page still returns 200 is `drift`. `lostRefs` is that second set,
+    // and it is the reason this heal was paid for at all.
+    //
+    // Nothing above looks at it. The phantom check asks whether the output contains a
+    // record we proved is gone, and the contract asks whether the output has the right
+    // shape. A repair that comes back still missing a notice we proved is live satisfies
+    // both, because five of six rows is a 17% drop against a 20% limit. The incident would
+    // close as verified, an MTTR would be recorded, and the notice would leave the baseline
+    // with nothing open to say it was dropped. On a recall feed that is the whole failure.
+    //
+    // It also compounds, which is what makes it worth a separate refusal rather than a
+    // softer label. Each accepted partial repair becomes the baseline the next one is
+    // measured against, so a source can be walked down one legal step at a time while every
+    // cycle reports success. Refusing here is what keeps the baseline from ratcheting.
+    const abandoned = diagnosis.lostRefs.filter((r) => !afterRefs.includes(r));
+    if (abandoned.length > 0) {
+      incident.refusal =
+        `the repair returned ${afterRefs.length} record(s) but ${abandoned.length} of the ` +
+        `record(s) it was called to recover are still missing ` +
+        `(${abandoned.slice(0, 5).join(", ")}); their permalinks resolve, so they have not ` +
+        "been withdrawn and the result was discarded";
+      return {
+        report: afterReport,
+        diagnosis,
+        resurrectedRefs,
+        incident,
+        serving: { rows: servableLastGood, state: "unverified" },
+        // Charged to the budget, as the phantom branch is. The repair ran and produced
+        // output we cannot serve. `carried` also keeps the abandoned refs in the baseline,
+        // which is what stops the next repair being measured against the smaller set.
+        nextState: carried({
+          healHistory: [...state.healHistory, { ...healEvent, verified: false, promoted: false }],
+        }),
+      };
+    }
+
     incident.closedAt = afterReport.at;
     incident.verified = true;
     incident.serving = true;
