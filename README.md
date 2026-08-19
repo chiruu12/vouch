@@ -230,8 +230,13 @@ has the originals.
 cd engine
 npm install
 npm run demo                              # watch all four causes decided, no API key
+npm run ask                               # the same feed answered for an agent
+npm run ask -- "cooluli minifridge"       # one question against the published snapshot
+npm run mcp                               # serve it over MCP on stdio
 npm run evolve -- --dry                   # what the supervisor would teach itself
 npm test                                  # the whole suite, no network
+npm run mutations                         # break every stated invariant, require red
+npm run tokens                            # what one question costs, against a budget
 node --import tsx src/cycle.ts arcadia    # one supervision cycle, needs BRIGHTDATA_API_KEY
 node --import tsx src/snapshot.ts         # publish web/public/snapshot.json
 
