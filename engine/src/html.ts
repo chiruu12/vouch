@@ -25,9 +25,33 @@ export function visibleText(html: string): string {
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
     .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">");
+    .replace(/&gt;/g, ">")
+    // Numeric entities, all of them, and only after the tags are gone so a decoded
+    // `&#60;` cannot become one. This used to be a single hard-coded `&#39;`, which
+    // meant a page writing its non-breaking space as `&#160;` rather than `&nbsp;`
+    // kept the literal text `&#160;` in the middle of whatever it was saying. A
+    // withdrawal marker written that way did not fire, and a withdrawal marker that
+    // does not fire is what turns "gone, refuse to heal" into "drift, heal it".
+    .replace(/&#(\d+);/g, (m, d: string) => codePoint(Number(d), m))
+    .replace(/&#x([0-9a-f]+);/gi, (m, h: string) => codePoint(parseInt(h, 16), m))
+    // Characters a reader cannot see. Sites insert these for line breaking, and inside
+    // a phrase they split it for a string match while changing nothing on screen. This
+    // module is about what a reader actually sees, so a character that renders as
+    // nothing is not part of what the page said.
+    .replace(/[\u200B-\u200D\uFEFF\u00AD]/g, "");
+}
+
+/** A numeric entity's character, or the entity left alone if it does not name one.
+ *
+ *  Out-of-range and surrogate code points are returned unchanged rather than thrown on
+ *  or dropped. This runs over whatever a site served, so a malformed entity is an
+ *  ordinary input, and turning one into a replacement character would put a symbol on
+ *  the page the page never said. */
+function codePoint(n: number, raw: string): string {
+  if (!Number.isFinite(n) || n < 0 || n > 0x10ffff) return raw;
+  if (n >= 0xd800 && n <= 0xdfff) return raw;
+  return String.fromCodePoint(n);
 }
 
 /** Collapse runs of horizontal whitespace, and only horizontal whitespace.

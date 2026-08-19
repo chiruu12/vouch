@@ -69,3 +69,43 @@ test("every block signature is a phrase, not a fragment that could match a real 
     assert.equal(m, m.toLowerCase(), `${m} must be lowercase, the haystack is`);
   }
 });
+
+// A withdrawal notice that a reader sees but the oracle does not.
+//
+// `visibleText` decoded five named entities and one numeric one (`&#39;`), which left
+// every other numeric entity sitting in the haystack as literal text. A page saying
+// "no longer&#160;available" reads to a person as the marker and to the oracle as a
+// string with `&#160;` in the middle of it, so the marker did not fire. The same held
+// for characters a reader cannot see at all: a zero-width space or a soft hyphen inside
+// the phrase, which sites insert for line breaking, split the marker in the haystack
+// while changing nothing on screen.
+//
+// The direction is what makes this worth pinning. A missed withdrawal marker leaves a
+// removed record looking merely missing, and missing-while-the-permalink-answers is the
+// one verdict that authorises a repair. The bug turns "gone, refuse to heal" into
+// "drift, heal it", which republishes a recall for a product nobody is selling.
+//
+// The tag-split case is deliberately NOT here. `<p>no longer</p><p>available</p>` are
+// two things the page said separately, and matching across that boundary is the false
+// positive `normaliseSpacing` keeps newlines to prevent. Being wrong in that direction
+// retires a live safety recall, so it stays unmatched on purpose.
+test("a withdrawal marker written with a numeric non-breaking space still fires", () => {
+  const dec = `<html><body><p>This listing is no longer&#160;available</p></body></html>`;
+  const hex = `<html><body><p>This listing is no longer&#xA0;available</p></body></html>`;
+  assert.equal(detectGone(dec, "arcadia"), "no longer available");
+  assert.equal(detectGone(hex, "arcadia"), "no longer available");
+});
+
+test("characters a reader cannot see do not hide a withdrawal marker", () => {
+  const zwsp = `<html><body><p>This listing is no longer ​available</p></body></html>`;
+  const shy = `<html><body><p>This listing is no longer a­vailable</p></body></html>`;
+  assert.equal(detectGone(zwsp, "arcadia"), "no longer available");
+  assert.equal(detectGone(shy, "arcadia"), "no longer available");
+});
+
+test("a marker split across two elements still does not fire", () => {
+  // The other direction, pinned so a fix for the entity gap cannot quietly widen into
+  // this one. Two elements are two statements, and neither one said the marker.
+  const split = `<html><body><li>no longer</li><li>available</li></body></html>`;
+  assert.equal(detectGone(split, "arcadia"), null);
+});
