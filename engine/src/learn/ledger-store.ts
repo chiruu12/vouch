@@ -50,7 +50,7 @@ export function pageCollector(source: string): {
     },
     flush: () => {
       if (touched > 0) saveLedger(ledger);
-      return retractDisproved(source, ledger);
+      return retractDisproved(ledger);
     },
   };
 }
@@ -63,11 +63,14 @@ export function pageCollector(source: string): {
  *  record lingering until somebody notices, which the rest of the system already handles
  *  by refusing to heal it. So the supervisor is allowed to narrow its own oracle on
  *  evidence, and never to widen it. */
-export function retractDisproved(source: string, ledger: PhraseLedger): Retraction[] {
+export function retractDisproved(ledger: PhraseLedger): Retraction[] {
   let store = loadMarkers();
   const found = disprovedMarkers(store, ledger);
   if (found.length === 0) return [];
   const now = new Date().toISOString();
+  // Each retraction names the source it belongs to, so this does not need to know
+  // which source is running. A phrase learned on eBay is retracted against eBay even when
+  // the cycle that disproved it was reading somewhere else.
   for (const r of found) store = retract(store, r, now);
   saveMarkers(store);
   return found;

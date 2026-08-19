@@ -286,10 +286,30 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
     (r) => !diagnosis.withdrawnRefs.includes(r)
   );
 
-  const nextStateOnGoodRun = {
-    baselineRefs: currentRefs,
+  // How many cycles in a row this has now gone wrong. Computed once so every refusal
+  // path below stores the same number, and so the incident can say it out loud.
+  const streak = advance(state.streak, diagnosis.cause, openedAt);
+
+  // --- the two shapes a cycle's memory can take ----------------------------
+  //
+  // Every exit from this function has to say what the next cycle should remember, and
+  // there are eleven of them. Written out at each exit, that was nine hand-built state
+  // literals which had to agree about fields none of them were really about: adding the
+  // backoff counter meant editing all nine, and one of them got it wrong. A field should
+  // be added in one place, so there are two builders and they are the only things in this
+  // file that know the shape of a SourceState.
+  //
+  // The split is the actual decision each exit makes, which is not "which branch am I" but
+  // "did we vouch for what we read". Nothing else about a cycle changes what is carried.
+
+  /** A cycle we vouched for. The rows we are serving become everything we remember.
+   *
+   *  `baselineRefs` is derived from the same rows rather than passed in beside them, which
+   *  removes the chance of remembering one run's refs against another run's rows. */
+  const vouched = (rows: Row[], at: string, over: Partial<SourceState> = {}): SourceState => ({
+    baselineRefs: rows.map(args.refOf).filter((r) => r.length > 0),
     baselineRows: rows.length,
-    lastVerifiedAt: report.at,
+    lastVerifiedAt: at,
     lastGoodRows: rows,
     healHistory: state.healHistory,
     withdrawnRefs: knownWithdrawn,
@@ -298,7 +318,22 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
     // still be treated as one strike from a repair budget it already earned back.
     streak: null,
     cooldownUntil: null,
-  };
+    ...over,
+  });
+
+  /** A cycle we did not vouch for. What we knew survives, plus what this cycle established
+   *  despite failing: confirmed withdrawals, and one more mark against the source. */
+  const carried = (over: Partial<SourceState> = {}): SourceState => ({
+    ...state,
+    baselineRefs: baselineAfterWithdrawals,
+    withdrawnRefs: knownWithdrawn,
+    streak,
+    // Only a block arms a cooldown, so every other failing exit clears it. Defaulted here
+    // rather than repeated so a new refusal branch cannot silently inherit a wait it did
+    // not earn.
+    cooldownUntil: null,
+    ...over,
+  });
 
   // --- healthy, and possibly a resurrection --------------------------------
   if (diagnosis.cause === "healthy") {
@@ -338,13 +373,9 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
       resurrectedRefs,
       incident: resurrectionIncident,
       serving: { rows, state: "verified" },
-      nextState: nextStateOnGoodRun,
+      nextState: vouched(rows, report.at),
     };
   }
-
-  // How many cycles in a row this has now gone wrong. Computed once so every refusal
-  // path below stores the same number, and so the incident can say it out loud.
-  const streak = advance(state.streak, diagnosis.cause, openedAt);
 
   const incident: Incident = {
     sourceId,
@@ -394,19 +425,10 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
       resurrectedRefs,
       incident,
       serving: { rows, state: "verified" },
-      nextState: {
-        baselineRefs: currentRefs,
-        baselineRows: rows.length,
-        lastVerifiedAt: report.at,
-        lastGoodRows: rows,
-        healHistory: state.healHistory,
-        withdrawnRefs: knownWithdrawn,
-        // A withdrawal is the source working correctly, not a failure, so it clears the
-        // streak like any other cycle we serve. Backoff must never end up throttling the
-        // one event this feed exists to publish.
-        streak: null,
-        cooldownUntil: null,
-      },
+      // A withdrawal is the source working correctly, not a failure, so it is vouched for
+      // like any other cycle we serve, which also clears the streak. Backoff must never
+      // end up throttling the one event this feed exists to publish.
+      nextState: vouched(rows, report.at),
     };
   }
 
@@ -433,15 +455,10 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
       resurrectedRefs,
       incident,
       serving: { rows: servableLastGood, state: "unverified" },
-      nextState: {
-        ...state,
-        baselineRefs: baselineAfterWithdrawals,
-        withdrawnRefs: knownWithdrawn,
-        streak,
-        // Only a block sets this. An unhealable diagnosis that is not a block gets the
-        // counter but no cooldown: nothing is rate limiting us, so waiting buys nothing.
-        cooldownUntil: until,
-      },
+      // Only a block sets a cooldown. An unhealable diagnosis that is not a block gets the
+      // counter but no wait, because nothing is rate limiting us. `cooldownUntil` is null
+      // here when `until` is, so this is the one branch that can arm it.
+      nextState: carried({ cooldownUntil: until }),
     };
   }
 
@@ -470,13 +487,7 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
       resurrectedRefs,
       incident,
       serving: { rows: servableLastGood, state: "unverified" },
-      nextState: {
-        ...state,
-        baselineRefs: baselineAfterWithdrawals,
-        withdrawnRefs: knownWithdrawn,
-        streak,
-        cooldownUntil: null,
-      },
+      nextState: carried(),
     };
   }
 
@@ -500,13 +511,7 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
       resurrectedRefs,
       incident,
       serving: { rows: servableLastGood, state: "unverified" },
-      nextState: {
-        ...state,
-        baselineRefs: baselineAfterWithdrawals,
-        withdrawnRefs: knownWithdrawn,
-        streak,
-        cooldownUntil: null,
-      },
+      nextState: carried(),
     };
   }
 
@@ -534,7 +539,9 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
       resurrectedRefs,
       incident,
       serving: { rows: servableLastGood, state: "unverified" },
-      nextState: { ...state, baselineRefs: baselineAfterWithdrawals, withdrawnRefs: knownWithdrawn },
+      // The streak is explicitly the one we came in with. See the note above: a repair
+      // that never left the building is not a repair that failed.
+      nextState: carried({ streak: state.streak }),
     };
   }
 
@@ -558,7 +565,9 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
       resurrectedRefs,
       incident,
       serving: { rows: servableLastGood, state: "unverified" },
-      nextState: { ...state, baselineRefs: baselineAfterWithdrawals, withdrawnRefs: knownWithdrawn },
+      // The streak is explicitly the one we came in with. See the note above: a repair
+      // that never left the building is not a repair that failed.
+      nextState: carried({ streak: state.streak }),
     };
   }
 
@@ -607,16 +616,12 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
       resurrectedRefs,
       incident,
       serving: { rows: servableLastGood, state: "unverified" },
-      nextState: {
-        ...state,
-        baselineRefs: baselineAfterWithdrawals,
+      // A repair that fabricated a withdrawn record counts against the budget, which
+      // `carried` does by default. It ran, it produced output, and the output was worse
+      // than nothing.
+      nextState: carried({
         healHistory: [...state.healHistory, { ...healEvent, verified: false, promoted: false }],
-        withdrawnRefs: knownWithdrawn,
-        // A repair that fabricated a withdrawn record counts against the budget. It ran,
-        // it produced output, and the output was worse than nothing.
-        streak,
-        cooldownUntil: null,
-      },
+      }),
     };
   }
 
@@ -631,18 +636,11 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
       resurrectedRefs,
       incident,
       serving: { rows: after.rows, state: "healed" },
-      nextState: {
-        baselineRefs: afterRefs,
-        baselineRows: after.rows.length,
-        lastVerifiedAt: afterReport.at,
-        lastGoodRows: after.rows,
+      // The repair landed and was verified, so the budget is earned back in full. Two
+      // failures then a fix is not two thirds of the way to giving up.
+      nextState: vouched(after.rows, afterReport.at, {
         healHistory: [...state.healHistory, healEvent],
-        withdrawnRefs: knownWithdrawn,
-        // The repair landed and was verified, so the budget is earned back in full. Two
-        // failures then a fix is not two thirds of the way to giving up.
-        streak: null,
-        cooldownUntil: null,
-      },
+      }),
     };
   }
 
@@ -658,13 +656,6 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
     resurrectedRefs,
     incident,
     serving: { rows: servableLastGood, state: "unverified" },
-    nextState: {
-      ...state,
-      baselineRefs: baselineAfterWithdrawals,
-      healHistory: [...state.healHistory, healEvent],
-      withdrawnRefs: knownWithdrawn,
-      streak,
-      cooldownUntil: null,
-    },
+    nextState: carried({ healHistory: [...state.healHistory, healEvent] }),
   };
 }

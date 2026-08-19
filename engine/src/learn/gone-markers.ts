@@ -1,6 +1,6 @@
 // Learning what "this record is gone" looks like on a site nobody has read yet.
 //
-// `GONE_MARKERS` in bdata.ts is a hand-written list of phrases, and it is deliberately
+// `BUILTIN_MARKERS` in markers.ts is a hand-written list of phrases, and it is deliberately
 // narrow because a false marker takes a live safety recall off the feed. Narrow also
 // means it only knows the sites it was written against: point the oracle at a new
 // marketplace and a removed listing that answers 200 with its own wording reads as

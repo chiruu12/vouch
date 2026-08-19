@@ -9,7 +9,9 @@
 
 import { test, describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { buildSnapshot, deriveTrust, samePlaceWeScraped, type PubListing, type PubRecall } from "./snapshot.js";
+import { buildSnapshot, type PubListing, type PubRecall } from "./snapshot.js";
+import { deriveTrust, samePlaceWeScraped } from "./trust.js";
+import { TRADEWELL_CONTRACT } from "./sources/tradewell.js";
 import type { SourceState } from "./runner.js";
 import { PUBLISH_THRESHOLD } from "./match.js";
 
@@ -126,13 +128,13 @@ describe("what the feed is willing to say about a record", () => {
   });
 
   it("says verified when the contract passes", () => {
-    assert.equal(deriveTrust("tradewell", rows(12), state()), "verified");
+    assert.equal(deriveTrust(TRADEWELL_CONTRACT, rows(12), state()), "verified");
   });
 
   it("says unverified when a field breached, which is the case that was impossible before", () => {
     // Kimi's reproduction: null out condition on the rows the runner would be serving
     // stale after a degraded cycle. The strip said FAIL, every record said verified.
-    assert.equal(deriveTrust("tradewell", rows(12, { condition: null }), state()), "unverified");
+    assert.equal(deriveTrust(TRADEWELL_CONTRACT, rows(12, { condition: null }), state()), "unverified");
   });
 
   it("says healed once a repair has been verified behind these rows", () => {
@@ -149,17 +151,17 @@ describe("what the feed is willing to say about a record", () => {
         },
       ],
     });
-    assert.equal(deriveTrust("tradewell", rows(12), healed), "healed");
+    assert.equal(deriveTrust(TRADEWELL_CONTRACT, rows(12), healed), "healed");
   });
 
   it("keeps vouching for survivors when the only breach is volume explained by withdrawals", () => {
     // The rows we did read were read cleanly. A record 404ing does not un-verify them.
     const withWithdrawals = state({ withdrawnRefs: ["TW-88214", "TW-44903", "TW-33887"] });
-    assert.equal(deriveTrust("tradewell", rows(10), withWithdrawals), "verified");
+    assert.equal(deriveTrust(TRADEWELL_CONTRACT, rows(10), withWithdrawals), "verified");
   });
 
   it("still says unverified when rows are missing and nothing accounts for them", () => {
-    assert.equal(deriveTrust("tradewell", rows(4), state()), "unverified");
+    assert.equal(deriveTrust(TRADEWELL_CONTRACT, rows(4), state()), "unverified");
   });
 
   it("refuses to let one withdrawal excuse a drop of five", () => {
@@ -168,10 +170,10 @@ describe("what the feed is willing to say about a record", () => {
     // stopped extracting and nobody noticed. The rows are read cleanly, which is what made
     // it look fine, and cleanly read is not the same as complete.
     const oneWithdrawal = state({ withdrawnRefs: ["TW-88214"] });
-    assert.equal(deriveTrust("tradewell", rows(7), oneWithdrawal), "unverified");
+    assert.equal(deriveTrust(TRADEWELL_CONTRACT, rows(7), oneWithdrawal), "unverified");
     // The same seven rows with the drop fully accounted for are still vouched for.
     const five = state({ withdrawnRefs: ["a", "b", "c", "d", "e"] });
-    assert.equal(deriveTrust("tradewell", rows(7), five), "verified");
+    assert.equal(deriveTrust(TRADEWELL_CONTRACT, rows(7), five), "verified");
   });
 });
 

@@ -31,7 +31,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { visibleText } from "./html.js";
-import { activeMarkersCached, BUILTIN_MARKERS } from "./learn/markers.js";
+import { activeMarkersCached } from "./learn/markers.js";
 
 const exec = promisify(execFile);
 
@@ -266,19 +266,6 @@ async function plainProbe(url: string, timeoutMs: number): Promise<UrlProbe> {
   }
 }
 
-/** Phrases that mean "this record is gone" on a page that answered 200 anyway.
- *
- *  The mirror of BLOCK_MARKERS, and it exists for the same reason: the dangerous
- *  response is the one that does not announce itself in the status line. A site that
- *  serves a removed listing as a 200 "no longer available" page defeats a status-only
- *  oracle, and a status-only oracle then reports the record as merely lost, which is
- *  the one verdict that authorises a repair. Kept narrow on purpose: these phrases are
- *  unambiguous, and a false positive here marks a live record withdrawn. */
-/** Kept as the name the rest of the tree already imports. The list itself moved to
- *  learn/markers.ts, where it is the floor under a set a person can add to and the
- *  evidence can take away from. */
-export const GONE_MARKERS = BUILTIN_MARKERS;
-
 /** A permalink that answers 200 somewhere else is not evidence its own record exists.
  *
  *  Marketplaces routinely redirect an ended listing to a category page or a similar
@@ -297,6 +284,15 @@ export function redirectedAway(requested: string, landed: string): string | null
   }
 }
 
+/** Phrases that mean "this record is gone" on a page that answered 200 anyway.
+ *
+ *  The mirror of BLOCK_MARKERS, and it exists for the same reason: the dangerous response
+ *  is the one that does not announce itself in the status line. A site that serves a
+ *  removed listing as a 200 "no longer available" page defeats a status-only oracle, and a
+ *  status-only oracle then reports the record as merely lost, which is the one verdict
+ *  that authorises a repair. Kept narrow on purpose: a false positive here marks a live
+ *  record withdrawn. The phrases themselves live in learn/markers.ts, where the built-in
+ *  list is the floor under a set a person can add to and the evidence can take away from. */
 export function detectGone(body: string, source: string): string | null {
   // Visible text only, and this is not a refinement. Matching these phrases against raw
   // HTML reads a site's embedded JSON string tables as if they were the page speaking: a

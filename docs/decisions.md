@@ -275,7 +275,7 @@ assume are handled:
 - **Semantic drift.** Fields that still parse while their meaning moves, a price that
   starts including shipping being the obvious one. The contract checks shape and null
   rate, not meaning.
-- **A soft-gone page whose wording is not in the list.** `GONE_MARKERS` is deliberately
+- **A soft-gone page whose wording is not in the list.** `BUILTIN_MARKERS` is deliberately
   narrow, because a false positive marks a live record withdrawn. Narrow means it misses
   phrasings nobody anticipated. This one is asymmetric on purpose: a missed gone-phrase
   leaves the record unresolved, which refuses the repair, so the failure is a stale cycle

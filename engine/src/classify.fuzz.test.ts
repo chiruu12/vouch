@@ -181,7 +181,7 @@ describe("classifier invariants over generated input", () => {
   });
 
   it("never marks a record withdrawn without a signal that says so", () => {
-    // The opposite failure, and the reason GONE_MARKERS is a short list: calling a
+    // The opposite failure, and the reason the built-in marker list is short: calling a
     // live record withdrawn removes a real recall from the feed.
     for (let seed = 1; seed <= RUNS; seed++) {
       const g = generate(seed);
