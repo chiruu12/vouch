@@ -68,7 +68,7 @@ export function retractDisproved(source: string, ledger: PhraseLedger): Retracti
   const found = disprovedMarkers(store, ledger);
   if (found.length === 0) return [];
   const now = new Date().toISOString();
-  for (const r of found) store = retract(store, r, source, now);
+  for (const r of found) store = retract(store, r, now);
   saveMarkers(store);
   return found;
 }

@@ -297,7 +297,7 @@ export function redirectedAway(requested: string, landed: string): string | null
   }
 }
 
-export function detectGone(body: string): string | null {
+export function detectGone(body: string, source: string): string | null {
   // Visible text only, and this is not a refinement. Matching these phrases against raw
   // HTML reads a site's embedded JSON string tables as if they were the page speaking: a
   // live eBay listing ships "remove_success_message":"The item has been removed" inside a
@@ -306,9 +306,10 @@ export function detectGone(body: string): string | null {
   // feed. The bug was unreachable only while a plain fetch was being refused with a 403,
   // and probing through the Unlocker made it reachable on the first real page.
   const hay = visibleText(body).toLowerCase();
-  // The active set, not the built-in one: a phrase a person accepted from the learner
-  // counts, and a phrase the evidence later disproved does not.
-  for (const m of activeMarkersCached()) {
+  // The active set for THIS source, not the built-in one and not every site's: a phrase a
+  // person accepted from the learner counts on the site it was learned from, and a phrase
+  // the evidence later disproved does not count anywhere.
+  for (const m of activeMarkersCached(source)) {
     if (hay.includes(m)) return m;
   }
   return null;
@@ -342,6 +343,7 @@ function verdictOf(status: number, goneSignature: string | null): "gone" | "live
 
 export async function probePermalinks(
   entries: readonly { ref: string; url: string }[],
+  source: string,
   concurrency = 4,
   observe?: PageObserver
 ): Promise<{ ref: string; status: number; goneSignature: string | null }[]> {
@@ -355,7 +357,7 @@ export async function probePermalinks(
       const probe = await probeUrl(next.url);
       const goneSignature =
         probe.status === 200
-          ? (detectGone(probe.body) ?? redirectedAway(next.url, probe.finalUrl))
+          ? (detectGone(probe.body, source) ?? redirectedAway(next.url, probe.finalUrl))
           : null;
       out.push({ ref: next.ref, status: probe.status, goneSignature });
       observe?.({ ref: next.ref, body: probe.body, verdict: verdictOf(probe.status, goneSignature) });

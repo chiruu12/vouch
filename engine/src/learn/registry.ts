@@ -23,7 +23,7 @@ const goneMarkerLearner: Learner = {
   id: "gone-markers",
   learns: "phrases that appear only on pages proved withdrawn",
   propose: (e) =>
-    proposeMarkers(e.ledger, e.knownMarkers).map((c) => ({
+    proposeMarkers(e.ledger, e.knownMarkersFor).map((c) => ({
       kind: "gone-marker" as const,
       source: c.source,
       marker: c.marker,

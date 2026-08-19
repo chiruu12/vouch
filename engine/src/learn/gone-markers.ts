@@ -121,12 +121,16 @@ export interface MarkerCandidate {
  *  something, so it has to be the thing that is proved. */
 export function proposeMarkers(
   ledger: PhraseLedger,
-  known: readonly string[],
+  /** What the oracle already looks for ON A GIVEN SOURCE. A function rather than one list
+   *  because the oracle is scoped: a phrase accepted for eBay is not active on Arcadia, so
+   *  suppressing it from Arcadia's proposals would hide a phrase that still needs a
+   *  person's decision before it could ever apply there. */
+  knownFor: (source: string) => readonly string[],
   minDistinctGone: number = MIN_DISTINCT_GONE
 ): MarkerCandidate[] {
-  const lowered = known.map((k) => k.toLowerCase());
   const out: MarkerCandidate[] = [];
   for (const [source, phrases] of Object.entries(ledger.sources)) {
+    const lowered = knownFor(source).map((k) => k.toLowerCase());
     for (const [marker, rec] of Object.entries(phrases)) {
       if (rec.liveRefs.length > 0) continue;
       if (rec.goneRefs.length < minDistinctGone) continue;

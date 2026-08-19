@@ -73,6 +73,8 @@ function baseline(): SourceState {
     lastGoodRows: CATALOGUE,
     healHistory: [],
     withdrawnRefs: [],
+    streak: null,
+    cooldownUntil: null,
   };
 }
 

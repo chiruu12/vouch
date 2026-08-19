@@ -125,7 +125,7 @@ describe("proposing a withdrawal phrase", () => {
     let l = emptyLedger();
     l = observePage(l, "ebay", "A1", ENDED, "gone");
     l = observePage(l, "ebay", "A2", ENDED, "gone");
-    const found = proposeMarkers(l, []);
+    const found = proposeMarkers(l, () => []);
     assert.equal(found[0]?.marker, "this listing was ended by the seller");
     assert.equal(found[0]?.goneRefs, 2);
   });
@@ -136,7 +136,7 @@ describe("proposing a withdrawal phrase", () => {
     // on two unrelated withdrawn records.
     let l = emptyLedger();
     l = observePage(l, "ebay", "A1", ENDED, "gone");
-    assert.deepEqual(proposeMarkers(l, []), []);
+    assert.deepEqual(proposeMarkers(l, () => []), []);
   });
 
   it("refuses a phrase that also appears on a record proved live", () => {
@@ -145,7 +145,7 @@ describe("proposing a withdrawal phrase", () => {
     l = observePage(l, "ebay", "A2", ENDED, "gone");
     l = observePage(l, "ebay", "B1", LIVE, "live");
     assert.deepEqual(
-      proposeMarkers(l, []).map((c) => c.marker),
+      proposeMarkers(l, () => []).map((c) => c.marker),
       [],
       "one live sighting disqualifies it, whatever the gone count"
     );
@@ -155,7 +155,7 @@ describe("proposing a withdrawal phrase", () => {
     let l = emptyLedger();
     l = observePage(l, "ebay", "A1", ENDED, "gone");
     l = observePage(l, "ebay", "A2", ENDED, "gone");
-    assert.deepEqual(proposeMarkers(l, ["ended by the seller"]), []);
+    assert.deepEqual(proposeMarkers(l, () => ["ended by the seller"]), []);
   });
 
   it("never writes a page down, only phrases and which records carried them", () => {
@@ -176,7 +176,7 @@ describe("proposing a withdrawal phrase", () => {
     l = observePage(l, "ebay", "A1", ENDED, "gone");
     l = observePage(l, "ebay", "A1", ENDED, "gone");
     l = observePage(l, "ebay", "A2", ENDED, "gone");
-    assert.equal(proposeMarkers(l, [])[0]?.goneRefs, 2, "two records, not three probes");
+    assert.equal(proposeMarkers(l, () => [])[0]?.goneRefs, 2, "two records, not three probes");
   });
 
   it("does not mutate the ledger it was given", () => {
@@ -266,12 +266,12 @@ describe("the withdrawal phrases the oracle looks for", () => {
   });
 
   it("starts with the phrases a person wrote and nothing else", () => {
-    assert.deepEqual([...activeMarkers(emptyMarkerStore())], [...BUILTIN_MARKERS]);
+    assert.deepEqual([...activeMarkers("ebay", emptyMarkerStore())], [...BUILTIN_MARKERS]);
   });
 
   it("looks for a phrase once it has been accepted", () => {
     const store = acceptMarker(emptyMarkerStore(), CAND, NOW);
-    assert.equal(activeMarkers(store).includes(CAND.marker), true);
+    assert.equal(activeMarkers("ebay", store).includes(CAND.marker), true);
   });
 
   it("does not duplicate a phrase, or re-add one already built in", () => {
@@ -287,10 +287,10 @@ describe("the withdrawal phrases the oracle looks for", () => {
     // gone", so a single live page saying it is a disproof.
     const store = acceptMarker(emptyMarkerStore(), CAND, NOW);
     const found = disprovedMarkers(store, ledgerWith(CAND.marker, ["A1", "A2"], ["B7"]));
-    assert.deepEqual(found, [{ marker: CAND.marker, disprovedBy: "B7" }]);
+    assert.deepEqual(found, [{ marker: CAND.marker, source: "ebay", disprovedBy: "B7" }]);
     assert.ok(found[0] !== undefined);
-    const after = retract(store, found[0], "ebay", NOW);
-    assert.equal(activeMarkers(after).includes(CAND.marker), false);
+    const after = retract(store, found[0], NOW);
+    assert.equal(activeMarkers("ebay", after).includes(CAND.marker), false);
     assert.equal(after.retracted[0]?.disprovedBy, "B7", "the record that disproved it is recorded");
   });
 
@@ -304,7 +304,7 @@ describe("the withdrawal phrases the oracle looks for", () => {
     // look, not for the machine to quietly narrow the oracle below what was reviewed.
     const store = emptyMarkerStore();
     assert.deepEqual(disprovedMarkers(store, ledgerWith("listing ended", [], ["B7"])), []);
-    assert.equal(activeMarkers(store).includes("listing ended"), true);
+    assert.equal(activeMarkers("ebay", store).includes("listing ended"), true);
   });
 
   it("keeps a retraction even if the learned entry lingers", () => {
@@ -313,7 +313,37 @@ describe("the withdrawal phrases the oracle looks for", () => {
       learned: [{ marker: "x phrase", source: "ebay", acceptedAt: NOW, goneRefs: 2, evidence: "e" }],
       retracted: [{ marker: "x phrase", source: "ebay", retractedAt: NOW, disprovedBy: "B1" }],
     };
-    assert.equal(activeMarkers(store).includes("x phrase"), false);
+    assert.equal(activeMarkers("ebay", store).includes("x phrase"), false);
+  });
+
+  it("a phrase learned on one site is not an oracle on another", () => {
+    // This was a real hole. The store recorded `source` on every learned marker and the
+    // retraction logic already read the ledger per source, but the active set concatenated
+    // every learned phrase regardless, so a phrase accepted from eBay's 404 chrome was a
+    // withdrawal signal for a regulator's site. A false withdrawal removes a live safety
+    // recall from the feed, which is the exact failure the accept/retract asymmetry was
+    // built to prevent, arriving through the back door.
+    const store = acceptMarker(emptyMarkerStore(), CAND, NOW);
+    assert.equal(activeMarkers("ebay", store).includes(CAND.marker), true);
+    assert.equal(activeMarkers("arcadia", store).includes(CAND.marker), false);
+    // The floor a person wrote is still everywhere.
+    assert.equal(activeMarkers("arcadia", store).includes("listing ended"), true);
+  });
+
+  it("one site disproving a phrase does not retract it on another", () => {
+    const both: MarkerStore = {
+      version: 1,
+      learned: [
+        { marker: "gone for good", source: "ebay", acceptedAt: NOW, goneRefs: 2, evidence: "e" },
+        { marker: "gone for good", source: "arcadia", acceptedAt: NOW, goneRefs: 2, evidence: "e" },
+      ],
+      retracted: [],
+    };
+    const after = retract(both, { marker: "gone for good", source: "ebay", disprovedBy: "B7" }, NOW);
+    // Two sites can independently use the same wording, and eBay showing it on a live page
+    // says nothing about what it means on a regulator's site.
+    assert.equal(activeMarkers("ebay", after).includes("gone for good"), false);
+    assert.equal(activeMarkers("arcadia", after).includes("gone for good"), true);
   });
 
   it("lets a person overrule a retraction by accepting again", () => {
@@ -323,6 +353,6 @@ describe("the withdrawal phrases the oracle looks for", () => {
       retracted: [{ marker: CAND.marker, source: "ebay", retractedAt: NOW, disprovedBy: "B1" }],
     };
     const after = acceptMarker(retracted, CAND, NOW);
-    assert.equal(activeMarkers(after).includes(CAND.marker), true);
+    assert.equal(activeMarkers("ebay", after).includes(CAND.marker), true);
   });
 });

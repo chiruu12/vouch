@@ -309,7 +309,7 @@ function gatherEvidence(): Evidence {
     captures,
     heals,
     ledger: loadLedger(),
-    knownMarkers: activeMarkers(),
+    knownMarkersFor: (source) => activeMarkers(source),
     knownRefsFor,
   };
 }

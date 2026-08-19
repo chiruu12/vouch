@@ -11,14 +11,14 @@ import { detectGone, readUnlockerEnvelope, redirectedAway } from "./bdata.js";
 describe("the withdrawal oracle's body and redirect signals", () => {
   it("reads an ended-listing page that answered 200", () => {
     assert.equal(
-      detectGone("<html><body><h1>This listing is no longer available</h1></body></html>"),
+      detectGone("<html><body><h1>This listing is no longer available</h1></body></html>", "tradewell"),
       "no longer available"
     );
   });
 
   it("does not fire on an ordinary product page", () => {
     assert.equal(
-      detectGone("<html><body><h1>Zimtown 5 gal portable gas can</h1><p>In stock</p></body></html>"),
+      detectGone("<html><body><h1>Zimtown 5 gal portable gas can</h1><p>In stock</p></body></html>", "tradewell"),
       null
     );
   });
@@ -108,12 +108,12 @@ describe("the gone oracle reads the page, not the page's vocabulary", () => {
       `<html><body><h1>Cooluli Mini Fridge</h1><p>Buy It Now</p>` +
       `<script>var i18n={"remove_success_message":"The item has been removed",` +
       `"general_error":"An error has occurred"};</script></body></html>`;
-    assert.equal(detectGone(live), null);
+    assert.equal(detectGone(live, "tradewell"), null);
   });
 
   it("still reads a marker the page actually shows the reader", () => {
     const ended = `<html><body><h1>Cooluli Mini Fridge</h1><p>This listing has been removed.</p></body></html>`;
-    assert.equal(detectGone(ended), "has been removed");
+    assert.equal(detectGone(ended, "tradewell"), "has been removed");
   });
 });
 

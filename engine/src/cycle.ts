@@ -21,7 +21,7 @@ import { pageCollector } from "./learn/ledger-store.js";
 import { ARCADIA_CONTRACT, type SourceContract } from "./contract.js";
 import type { ListingProbe } from "./classify.js";
 import type { MarkupObservation } from "./prompt.js";
-import { emptyState, runCycle, type CycleDeps, type Row, type SourceState } from "./runner.js";
+import { emptyState, hydrateState, runCycle, type CycleDeps, type Row, type SourceState } from "./runner.js";
 import { normaliseArcadia } from "./sources/arcadia.js";
 import { TRADEWELL_CONTRACT, normaliseTradewell } from "./sources/tradewell.js";
 import type { SourceId } from "./types.js";
@@ -137,7 +137,7 @@ function observeMarkup(body: string, contract: SourceContract): MarkupObservatio
   };
 }
 
-function makeDeps(normalise: (raw: unknown) => Row[], observe?: PageObserver): CycleDeps {
+function makeDeps(sourceId: SourceId, normalise: (raw: unknown) => Row[], observe?: PageObserver): CycleDeps {
   return {
   async probeListing(url: string): Promise<ListingProbe> {
     const probe = await probeUrl(url);
@@ -173,7 +173,7 @@ function makeDeps(normalise: (raw: unknown) => Row[], observe?: PageObserver): C
       errors: dropped > 0 ? [...result.errors, { error: `${dropped} row(s) failed to normalise` }] : result.errors,
     };
   },
-  probePermalinks: (entries) => probePermalinks(entries, 4, observe),
+  probePermalinks: (entries) => probePermalinks(entries, sourceId, 4, observe),
   async heal(collectorId, prompt, url) {
     const r = await healScraper(collectorId, prompt, url);
     return { ok: r.ok, durationMs: r.durationMs, status: r.status };
@@ -191,7 +191,10 @@ function statePath(sourceId: string): string {
 
 function loadState(sourceId: string): SourceState {
   try {
-    return JSON.parse(readFileSync(statePath(sourceId), "utf8")) as SourceState;
+    // Hydrated rather than cast. A state file written before backoff existed has no
+    // streak field, and an undefined streak read as a real one resets the counter every
+    // cycle, which is a backoff that never backs off.
+    return hydrateState(JSON.parse(readFileSync(statePath(sourceId), "utf8")) as Partial<SourceState>);
   } catch {
     return emptyState();
   }
@@ -239,6 +242,12 @@ async function main(): Promise<void> {
   console.log(`collector   ${collectorId}`);
   console.log(`url         ${url}`);
   console.log(`baseline    ${firstRun ? "none (this run establishes it)" : `${state.baselineRefs.length} refs`}`);
+  if (state.streak !== null) {
+    console.log(`streak      ${state.streak.count} consecutive ${state.streak.cause} since ${state.streak.since}`);
+  }
+  if (state.cooldownUntil !== null) {
+    console.log(`cooldown    until ${state.cooldownUntil}`);
+  }
   console.log("");
 
   const started = Date.now();
@@ -259,7 +268,7 @@ async function main(): Promise<void> {
       ...(wiring.rowsPerPage !== undefined ? { rowsPerPage: wiring.rowsPerPage } : {}),
       ...(wiring.extraPaths !== undefined ? { extraPaths: wiring.extraPaths } : {}),
     },
-    makeDeps(wiring.normalise, pages.observe)
+    makeDeps(sourceId, wiring.normalise, pages.observe)
   );
 
   // Written once the cycle is done rather than per page, so a run that dies part way

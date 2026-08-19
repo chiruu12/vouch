@@ -31,7 +31,8 @@ export interface Evidence {
   /** Phrase counts accumulated by the oracle. Never contains page text. */
   ledger: PhraseLedger;
   /** The withdrawal phrases the oracle already looks for. */
-  knownMarkers: readonly string[];
+  /** What the oracle already looks for on a given source. Scoped: see proposeMarkers. */
+  knownMarkersFor: (source: string) => readonly string[];
   /** Refs the source is known to have published, used to check an identifier candidate
    *  against something rather than adopting it on shape alone. */
   knownRefsFor(source: string): string[];

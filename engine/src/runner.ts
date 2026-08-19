@@ -20,6 +20,15 @@ import type { FailureCause, HealEvent, RecordState, SourceId } from "./types.js"
 import { checkContract, type ContractReport, type SourceContract } from "./contract.js";
 import { classify, type Diagnosis, type ListingProbe, type PermalinkProbe } from "./classify.js";
 import { NotHealableError, synthesiseHealPrompt, type MarkupObservation } from "./prompt.js";
+import {
+  advance,
+  coolingDown,
+  cooldownUntil,
+  describeWait,
+  repairExhausted,
+  REPAIR_BUDGET,
+  type Streak,
+} from "./backoff.js";
 
 export type Row = Record<string, unknown>;
 
@@ -36,6 +45,11 @@ export interface SourceState {
   healHistory: HealEvent[];
   /** Refs the source has withdrawn. Retained so they are never silently resurrected. */
   withdrawnRefs: string[];
+  /** Consecutive cycles that ended the same way without our vouching for the result.
+   *  Null after any cycle we served as current. See backoff.ts. */
+  streak: Streak | null;
+  /** Set only by a block. While it holds, the cycle is skipped without a request. */
+  cooldownUntil: string | null;
 }
 
 export interface Incident {
@@ -110,6 +124,26 @@ export function emptyState(): SourceState {
     lastGoodRows: [],
     healHistory: [],
     withdrawnRefs: [],
+    streak: null,
+    cooldownUntil: null,
+  };
+}
+
+/** Fill in fields a state file written by an older build does not have.
+ *
+ *  loadState casts parsed JSON straight to SourceState, so an absent field arrives as
+ *  undefined and every read of it silently takes the wrong branch. `coolingDown` treats
+ *  undefined as "not cooling" for the same reason, but a streak of undefined would be
+ *  passed to `advance` and reset the count on every cycle, which is a backoff that never
+ *  backs off. Normalising once on load is cheaper than making every reader defensive. */
+export function hydrateState(raw: Partial<SourceState> | null | undefined): SourceState {
+  const base = emptyState();
+  if (raw === null || raw === undefined) return base;
+  return {
+    ...base,
+    ...raw,
+    streak: raw.streak ?? null,
+    cooldownUntil: raw.cooldownUntil ?? null,
   };
 }
 
@@ -117,6 +151,70 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
   const { contract, state, url, collectorId, sourceId } = args;
   const openedAt = deps.now().toISOString();
   const openedMs = deps.now().getTime();
+
+  // 0. Are we meant to be leaving this source alone?
+  //
+  // This is the only branch that returns without making a request, and it exists because
+  // the correct response to a bot wall is to stop asking. Every other refusal in this
+  // file still costs a scrape. Note what it serves: last-good with confirmed withdrawals
+  // already removed, labelled unverified, which is exactly what the blocked branch below
+  // would serve after paying for the request. A cooldown changes what we spend, never
+  // what we claim.
+  const waiting = coolingDown(state.cooldownUntil, deps.now());
+  if (waiting !== null) {
+    const streak = state.streak;
+    const cooling: Incident = {
+      sourceId,
+      openedAt,
+      closedAt: null,
+      cause: "blocked",
+      evidence: [
+        `${streak?.count ?? 1} consecutive blocked cycle(s) since ${streak?.since ?? openedAt}`,
+        `holding off for a further ${describeWait(waiting)}; no request was made this cycle`,
+        "backing off is the only response that can clear a wall, so the source is left alone",
+      ],
+      prompt: null,
+      healAttempted: false,
+      healDeferred: false,
+      healDurationMs: null,
+      verified: false,
+      serving: false,
+      mttrMs: null,
+      withdrawnRefs: [],
+      resurrectedRefs: [],
+      refusal:
+        `the source is in backoff after ${streak?.count ?? 1} blocked cycle(s); ` +
+        `${describeWait(waiting)} remaining, and nothing was requested`,
+    };
+    return {
+      report: {
+        sourceId,
+        contractVersion: contract.version,
+        at: openedAt,
+        rows: 0,
+        baselineRows: state.baselineRows,
+        rowDropRate: null,
+        passed: false,
+        breaches: ["not measured: the source is in backoff and was not read this cycle"],
+        fields: [],
+      },
+      diagnosis: {
+        cause: "blocked",
+        withdrawnRefs: [],
+        lostRefs: [],
+        unresolvedRefs: [],
+        healable: false,
+        evidence: cooling.evidence,
+      },
+      resurrectedRefs: [],
+      incident: cooling,
+      serving: {
+        rows: state.lastGoodRows.filter((r) => !state.withdrawnRefs.includes(args.refOf(r))),
+        state: "unverified",
+      },
+      nextState: state,
+    };
+  }
 
   // 1. The listing itself, before extraction. A block must not read as a change.
   const listing = await deps.probeListing(url);
@@ -195,6 +293,11 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
     lastGoodRows: rows,
     healHistory: state.healHistory,
     withdrawnRefs: knownWithdrawn,
+    // A cycle we vouch for clears the memory of failing. This is the reset half of the
+    // backoff: without it the counter only ever grows and a source that recovered would
+    // still be treated as one strike from a repair budget it already earned back.
+    streak: null,
+    cooldownUntil: null,
   };
 
   // --- healthy, and possibly a resurrection --------------------------------
@@ -238,6 +341,10 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
       nextState: nextStateOnGoodRun,
     };
   }
+
+  // How many cycles in a row this has now gone wrong. Computed once so every refusal
+  // path below stores the same number, and so the incident can say it out loud.
+  const streak = advance(state.streak, diagnosis.cause, openedAt);
 
   const incident: Incident = {
     sourceId,
@@ -294,6 +401,11 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
         lastGoodRows: rows,
         healHistory: state.healHistory,
         withdrawnRefs: knownWithdrawn,
+        // A withdrawal is the source working correctly, not a failure, so it clears the
+        // streak like any other cycle we serve. Backoff must never end up throttling the
+        // one event this feed exists to publish.
+        streak: null,
+        cooldownUntil: null,
       },
     };
   }
@@ -303,17 +415,68 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
   // selectors cannot clear a block, and attempting it burns credits and can deepen
   // the block.
   if (!diagnosis.healable) {
+    const until = cooldownUntil(streak, deps.now());
     incident.refusal =
       diagnosis.cause === "blocked"
         ? "the source refused the request; healing cannot clear a block"
         : "classifier marked this diagnosis unhealable";
+    if (until !== null && streak !== null) {
+      incident.evidence = [
+        ...incident.evidence,
+        `blocked cycle ${streak.count} in a row; holding off until ${until} before ` +
+          "the next request",
+      ];
+    }
     return {
       report,
       diagnosis,
       resurrectedRefs,
       incident,
       serving: { rows: servableLastGood, state: "unverified" },
-      nextState: { ...state, baselineRefs: baselineAfterWithdrawals, withdrawnRefs: knownWithdrawn },
+      nextState: {
+        ...state,
+        baselineRefs: baselineAfterWithdrawals,
+        withdrawnRefs: knownWithdrawn,
+        streak,
+        // Only a block sets this. An unhealable diagnosis that is not a block gets the
+        // counter but no cooldown: nothing is rate limiting us, so waiting buys nothing.
+        cooldownUntil: until,
+      },
+    };
+  }
+
+  // --- the repair budget ---------------------------------------------------
+  // The source changed, the repair is the right kind of answer, and it has now failed
+  // REPAIR_BUDGET times in a row on this same cause. The next attempt would send a
+  // prompt built from the same evidence to the same collector and there is no reason
+  // to expect a different result, so we stop paying for it and say so.
+  //
+  // This is the loop being able to give up, which it previously could not do. Reading
+  // continues, because a source we cannot repair is still a source we can watch: the
+  // moment it starts satisfying the contract again the streak clears on its own and the
+  // budget comes back. What stops is the spending.
+  if (repairExhausted(state.streak, diagnosis.cause) && streak !== null) {
+    incident.refusal =
+      `${streak.count} repairs in a row have failed to restore the contract on this ` +
+      `${streak.cause} since ${streak.since}; no further repair will be attempted ` +
+      "until the source reads cleanly again or a person changes the contract";
+    incident.evidence = [
+      ...incident.evidence,
+      `repair budget of ${REPAIR_BUDGET} spent, so the healer was not called this cycle`,
+    ];
+    return {
+      report,
+      diagnosis,
+      resurrectedRefs,
+      incident,
+      serving: { rows: servableLastGood, state: "unverified" },
+      nextState: {
+        ...state,
+        baselineRefs: baselineAfterWithdrawals,
+        withdrawnRefs: knownWithdrawn,
+        streak,
+        cooldownUntil: null,
+      },
     };
   }
 
@@ -337,7 +500,13 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
       resurrectedRefs,
       incident,
       serving: { rows: servableLastGood, state: "unverified" },
-      nextState: { ...state, baselineRefs: baselineAfterWithdrawals, withdrawnRefs: knownWithdrawn },
+      nextState: {
+        ...state,
+        baselineRefs: baselineAfterWithdrawals,
+        withdrawnRefs: knownWithdrawn,
+        streak,
+        cooldownUntil: null,
+      },
     };
   }
 
@@ -349,6 +518,11 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
   // outright and nothing is attempted. That is a deferral, not a failed repair, and
   // conflating them would put "we tried to fix this and could not" in the incident log
   // for an event where we never got to try. Serve last-good and come back.
+  //
+  // A deferral also leaves the streak alone, and that is load-bearing rather than an
+  // accident of the spread below. The repair budget counts repairs that were tried and
+  // failed. Charging it for a repair that never left the building would exhaust the
+  // budget on a busy collector and refuse the source a fix it had not yet been given.
   if (healed.status === "heal_busy") {
     incident.healDeferred = true;
     incident.refusal =
@@ -438,6 +612,10 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
         baselineRefs: baselineAfterWithdrawals,
         healHistory: [...state.healHistory, { ...healEvent, verified: false, promoted: false }],
         withdrawnRefs: knownWithdrawn,
+        // A repair that fabricated a withdrawn record counts against the budget. It ran,
+        // it produced output, and the output was worse than nothing.
+        streak,
+        cooldownUntil: null,
       },
     };
   }
@@ -460,6 +638,10 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
         lastGoodRows: after.rows,
         healHistory: [...state.healHistory, healEvent],
         withdrawnRefs: knownWithdrawn,
+        // The repair landed and was verified, so the budget is earned back in full. Two
+        // failures then a fix is not two thirds of the way to giving up.
+        streak: null,
+        cooldownUntil: null,
       },
     };
   }
@@ -481,6 +663,8 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
       baselineRefs: baselineAfterWithdrawals,
       healHistory: [...state.healHistory, healEvent],
       withdrawnRefs: knownWithdrawn,
+      streak,
+      cooldownUntil: null,
     },
   };
 }

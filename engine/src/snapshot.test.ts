@@ -114,6 +114,8 @@ describe("what the feed is willing to say about a record", () => {
     }));
 
   const state = (over: Partial<SourceState> = {}): SourceState => ({
+    streak: null,
+    cooldownUntil: null,
     baselineRefs: [],
     baselineRows: 12,
     lastVerifiedAt: "2026-08-18T08:48:18.707Z",

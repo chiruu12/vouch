@@ -87,19 +87,39 @@ export function saveMarkers(store: MarkerStore): void {
  *  timing. A retraction written during a cycle therefore takes effect on the next run,
  *  which is the right direction to be slow in: the phrase stays active for one more
  *  cycle at worst, and an active phrase only ever holds a record back from the feed. */
-let cached: readonly string[] | null = null;
+const cached = new Map<string, readonly string[]>();
 
-export function activeMarkersCached(): readonly string[] {
-  cached ??= activeMarkers();
-  return cached;
+export function activeMarkersCached(source: string): readonly string[] {
+  const hit = cached.get(source);
+  if (hit !== undefined) return hit;
+  const set = activeMarkers(source);
+  cached.set(source, set);
+  return set;
 }
 
-/** Everything the oracle currently looks for. Retracted phrases are excluded even if
+/** Everything the oracle looks for ON ONE SOURCE. Retracted phrases are excluded even if
  *  they somehow remain in `learned`, so a retraction cannot be undone by an edit that
- *  forgets to remove the other half. */
-export function activeMarkers(store: MarkerStore = loadMarkers()): readonly string[] {
-  const dead = new Set(store.retracted.map((r) => r.marker));
-  const learned = store.learned.map((l) => l.marker).filter((m) => !dead.has(m));
+ *  forgets to remove the other half.
+ *
+ *  Scoped, and the scoping is the point. A learned phrase is evidence about one site's
+ *  wording for a removed page, gathered from that site's pages and accepted on that
+ *  site's evidence. Applying it everywhere asserts something nobody established: that a
+ *  regulator uses eBay's chrome to say a recall notice is gone. The cost of being wrong
+ *  is not symmetric either, because a phrase that matches a live page takes a live safety
+ *  recall off the feed. The store already recorded `source` on every learned marker and
+ *  `disprovedMarkers` already reads the ledger per source; only the application was
+ *  global, so a phrase learned from eBay's 404 page was a withdrawal signal for Arcadia.
+ *
+ *  `source` is required rather than defaulted. Every caller has to say which site it is
+ *  speaking about, so the compiler finds the ones that were assuming a global oracle. */
+export function activeMarkers(source: string, store: MarkerStore = loadMarkers()): readonly string[] {
+  const dead = new Set(store.retracted.filter((r) => r.source === source).map((r) => r.marker));
+  const learned = store.learned
+    .filter((l) => l.source === source && !dead.has(l.marker))
+    .map((l) => l.marker);
+  // The built-ins are unscoped on purpose. A person wrote them as phrases any site might
+  // use for a page that is gone, and they are the floor the learner is not allowed to
+  // move. Everything above the floor has to have been earned on the site it applies to.
   return [...BUILTIN_MARKERS, ...learned];
 }
 
@@ -125,6 +145,8 @@ export function acceptMarker(
 
 export interface Retraction {
   marker: string;
+  /** The site the phrase was learned on, and the only one it applies to. */
+  source: string;
   disprovedBy: string;
 }
 
@@ -141,19 +163,29 @@ export function disprovedMarkers(store: MarkerStore, ledger: PhraseLedger): Retr
     if (alreadyGone.has(l.marker)) continue;
     const rec = ledger.sources[l.source]?.[l.marker];
     const live = rec?.liveRefs ?? [];
-    if (live.length > 0) out.push({ marker: l.marker, disprovedBy: live[0] ?? "unknown" });
+    // The source travels with the retraction. It used to be supplied by the caller, which
+    // was whichever source happened to be running the cycle, so a phrase learned on eBay
+    // and disproved by eBay's own ledger could be filed against Arcadia. That mislabels
+    // the record and, now that the active set is scoped, would retract nothing.
+    if (live.length > 0) {
+      out.push({ marker: l.marker, source: l.source, disprovedBy: live[0] ?? "unknown" });
+    }
   }
   return out;
 }
 
-export function retract(store: MarkerStore, r: Retraction, source: string, now: string): MarkerStore {
-  if (store.retracted.some((x) => x.marker === r.marker)) return store;
+export function retract(store: MarkerStore, r: Retraction, now: string): MarkerStore {
+  // Matched on the pair, not the phrase. Two sites can independently use the same wording
+  // for a removed page, and one site disproving it says nothing about the other.
+  const same = (x: { marker: string; source: string }): boolean =>
+    x.marker === r.marker && x.source === r.source;
+  if (store.retracted.some(same)) return store;
   return {
     ...store,
-    learned: store.learned.filter((l) => l.marker !== r.marker),
+    learned: store.learned.filter((l) => !same(l)),
     retracted: [
       ...store.retracted,
-      { marker: r.marker, source, retractedAt: now, disprovedBy: r.disprovedBy },
+      { marker: r.marker, source: r.source, retractedAt: now, disprovedBy: r.disprovedBy },
     ],
   };
 }
