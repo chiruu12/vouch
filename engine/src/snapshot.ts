@@ -28,6 +28,7 @@ import { normaliseEbay } from "./sources/ebay.js";
 import { TRADEWELL_CONTRACT } from "./sources/tradewell.js";
 import type { Incident, SourceState } from "./runner.js";
 import type { RecallRecord, RecordState, RiskLevel, SourceId } from "./types.js";
+import { buildAgentView } from "./agentview.js";
 
 // --- the published shape ---------------------------------------------------
 
@@ -177,6 +178,10 @@ export interface PubStudy {
 
 export interface Snapshot {
   generatedAt: string;
+  /** What an agent gets, produced by the engine so the page can only render it.
+   *  Optional because it is attached after the base snapshot exists: `buildAgentView`
+   *  asks `recallContext` questions OF a snapshot, so there has to be one first. */
+  agents?: import("./agentview.js").PubAgentView;
   caveat: string;
   publishThreshold: number;
   sources: PubSource[];
@@ -666,7 +671,10 @@ function isMain(): boolean {
 }
 
 if (isMain()) {
-  const snap = buildSnapshot();
+  const base = buildSnapshot();
+  // Attached rather than built in, because the agent view is answers TO this snapshot
+  // and cannot exist until it does.
+  const snap: Snapshot = { ...base, agents: buildAgentView(base, new Date()) };
   const out = join(ROOT, "web", "public", "snapshot.json");
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, JSON.stringify(snap, null, 2) + "\n");

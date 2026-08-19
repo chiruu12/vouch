@@ -100,6 +100,7 @@ const page = (route) => {
 const FEED = "index.html";
 const LOG = "incidents.html";
 const METHOD = "method.html";
+const AGENTS = "agents.html";
 
 // --- what has to be where -----------------------------------------------------
 //
@@ -109,10 +110,25 @@ const METHOD = "method.html";
 // hierarchy argument, and a regression removing it went green. A string now names the
 // pages that must carry it, and each of them is held to the whole of it.
 
-/** @type {{where: string, text: string, on: string[]}[]} */
+/** @type {{where: string, text: string, on: string[], composite?: boolean}[]} */
 const required = [];
-const need = (where, text, on) => {
-  if (typeof text === "string" && text.trim() !== "") required.push({ where, text, on });
+
+/** `composite` marks a string the engine ASSEMBLED from other published text rather
+ *  than wrote as one sentence. The agent digests are the whole category: each one
+ *  quotes a recall's title, hazard and action, so every page that publishes that recall
+ *  shares forty-character windows with it by construction.
+ *
+ *  That matters only for the stray-fragment sweep below, which asks whether some other
+ *  page looks like it attempted this string and got it wrong. For a composite the
+ *  question is undecidable by window matching: an incidental quote of a title and a
+ *  mangled digest are the same evidence. The residue trick already handles nesting for
+ *  strings that are themselves required, and a recall title is not.
+ *
+ *  Nothing else relaxes. The owed-copies count still holds the naming page to the whole
+ *  string, so a page that paraphrases its own digest still fails, which is the property
+ *  this page needed in the first place. */
+const need = (where, text, on, composite = false) => {
+  if (typeof text === "string" && text.trim() !== "") required.push({ where, text, on, composite });
 };
 
 for (const i of snap.incidents) {
@@ -145,6 +161,18 @@ for (const r of snap.recalls) {
 }
 
 need("match caveat", snap.caveat, [FEED, METHOD]);
+
+// The agent page is four blocks of machine text and a tool list, and every one of them
+// was produced by the engine. That is the only reason the page is allowed to claim it
+// shows what an agent receives, so it is the thing that has to be held to the byte: a
+// page free to paraphrase its own refusal would be the failure this project is about.
+if (snap.agents !== undefined) {
+  need("agent simulated breach", snap.agents.simulatedBreach, [AGENTS]);
+  snap.agents.beats.forEach((b, n) =>
+    need(`agent beat[${n}] ${b.world} "${b.query}"`, b.digest, [AGENTS], true)
+  );
+  snap.agents.tools.forEach((t) => need(`agent tool ${t.name}`, t.description, [AGENTS]));
+}
 
 // --- 1. verbatim, on the pages that owe it ------------------------------------
 
@@ -253,7 +281,8 @@ for (const p of pages) {
   p.residue = wholes.reduce((t, w) => t.split(w).join(" "), p.text);
 }
 
-for (const { where, text, on } of required) {
+for (const { where, text, on, composite } of required) {
+  if (composite === true) continue;
   const want = flat(text);
   for (const p of pages) {
     if (on.includes(p.route) || p.route === "404.html") continue;

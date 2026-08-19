@@ -1245,3 +1245,82 @@ footer.foot p {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* --- the agent page ------------------------------------------------------
+ *
+ * Two columns that are the same question in two worlds, so they have to sit
+ * side by side to make their point. They stack below the breakpoint the rest
+ * of the site uses, and the argument survives stacking because each column
+ * keeps its own heading. */
+.agent-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.4rem;
+  margin-top: 0.9rem;
+}
+
+@media (max-width: 46rem) {
+  .agent-cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.agent-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.agent-world {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+}
+
+.agent-sim {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--clay);
+  border: 1px solid var(--clay);
+  border-radius: 2px;
+  padding: 0.05rem 0.3rem;
+  margin-left: 0.35rem;
+  vertical-align: 0.1em;
+}
+
+.agent-breach {
+  margin: -0.4rem 0 0;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--ink-3);
+}
+
+.agent-beat {
+  min-width: 0;
+}
+
+.agent-tools {
+  margin: 1rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.agent-tool dt {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.agent-tool dd {
+  margin: 0.2rem 0 0;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}

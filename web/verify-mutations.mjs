@@ -56,6 +56,22 @@ const MUTATIONS = [
     to: "{true ? null : (",
   },
   {
+    name: "paraphrase an agent digest instead of rendering it",
+    breaks:
+      "the agent page claims to show what an agent receives while showing something a template wrote",
+    file: "app/agents/page.tsx",
+    from: "<Machine label={`ask \"${b.query}\"`}>{b.digest}</Machine>",
+    to: "<Machine label={`ask \"${b.query}\"`}>{b.digest.slice(0, 60) + \" ...\"}</Machine>",
+  },
+  {
+    name: "quietly drop the refusal from the failing column",
+    breaks:
+      "the page keeps the answers that flatter the service and loses the refusal, which is the argument",
+    file: "app/agents/page.tsx",
+    from: "{failing.map((b) => (",
+    to: "{failing.filter((b) => !b.refused).map((b) => (",
+  },
+  {
     name: "hide a refusal behind a disclosure",
     breaks: "nothing is folded away",
     file: "components/parts.tsx",

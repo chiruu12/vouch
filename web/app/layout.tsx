@@ -109,6 +109,9 @@ function Masthead() {
               <a href="/method">
                 Method<span className="count">measured</span>
               </a>
+              <a href="/agents">
+                For agents
+              </a>
             </nav>
             <ThemeControl />
           </div>
