@@ -9,7 +9,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { recallContext, quarantinedFor, vouchReport } from "./context.js";
+import { recallContext, quarantinedFor, vouchReport, breakageReport } from "./context.js";
 import type { PubRecall, PubSource, Snapshot } from "./snapshot.js";
 import { MATCH_CAVEAT, PUBLISH_THRESHOLD } from "./match.js";
 import type { RecordState } from "./types.js";
@@ -242,4 +242,74 @@ test("a query too short to match anything is refused rather than answered emptil
   const a = recallContext(snapshot(), "ab", NOW);
   assert.notEqual(a.refusal, null);
   assert.equal(a.asserted.length, 0);
+});
+
+/** A source whose last cycle was refused at the door, still serving its last-good rows.
+ *
+ *  This state is reachable and it is the reason these tests exist. `deriveTrust` reads
+ *  the rows a source is serving, and a blocked source serves the rows it read last time,
+ *  which satisfy the contract because they are the same rows that satisfied it before.
+ *  So trust stays `verified` and `contractPassed` stays true while the incident saying
+ *  we were refused is still open. */
+function blockedCpsc(): Snapshot {
+  return snapshot({
+    incidents: [
+      {
+        id: "I-blocked",
+        sourceId: "cpsc",
+        sourceLabel: "US CPSC",
+        openedAt: "2026-08-19T07:00:00Z",
+        closedAt: null,
+        cause: "blocked",
+        healable: false,
+        evidence: ['listing returned HTTP 200 with block signature "checking your browser"'],
+        refusal: "the source refused the request; healing cannot clear a block",
+        healAttempted: false,
+        healDeferred: false,
+        healDurationMs: null,
+        prompt: null,
+        verified: false,
+        mttrMs: null,
+        withdrawnRefs: [],
+        resurrectedRefs: [],
+      },
+    ] as never,
+  });
+}
+
+test("an open block stops the service reporting absence, even while trust survives", () => {
+  // The hole this closes. `unvouchedSources` read `trust` alone, and a blocked source
+  // keeps `verified` trust because the rows it is still serving are the last ones that
+  // passed. So the feed's own breakage report said the source was unhealthy while the
+  // context service went on licensing "no recall matched" from it, which is precisely
+  // the claim a stale source may not make. Presence survives a block; absence does not.
+  const a = recallContext(blockedCpsc(), "Some Product Nobody Recalled", NOW);
+  assert.equal(a.refusalCode, "absence_unverifiable");
+  assert.match(a.refusal ?? "", /US CPSC/);
+});
+
+test("breakage health and the licence to report absence cannot disagree", () => {
+  // These were computed two different ways: `healthy` looked at open incidents and
+  // `canReportAbsence` looked at trust. One report contradicting itself in the same
+  // object is worse than either answer alone, because a caller reading the reassuring
+  // field has no reason to look at the other one.
+  const b = breakageReport(blockedCpsc(), NOW);
+  assert.equal(b.healthy, false);
+  assert.equal(b.canReportAbsence, false);
+});
+
+test("a withdrawal does not stop the service reporting absence", () => {
+  // The other direction, and it has to keep working. A `gone` incident is the system
+  // behaving correctly: the record was removed at source, we established it, we kept
+  // the last-good copy and refused to heal. Nothing about that says we lost rows, so
+  // treating it as breakage would make the service refuse every time a notice was
+  // withdrawn, which is an ordinary event and not a failure.
+  const withGone = snapshot({
+    incidents: [
+      { ...(blockedCpsc().incidents[0] as never as Record<string, unknown>), id: "I-gone", cause: "gone" },
+    ] as never,
+  });
+  const a = recallContext(withGone, "Some Product Nobody Recalled", NOW);
+  assert.equal(a.refusalCode, null);
+  assert.equal(breakageReport(withGone, NOW).canReportAbsence, true);
 });

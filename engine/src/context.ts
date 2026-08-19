@@ -204,14 +204,50 @@ function unvouchedSources(snapshot: Snapshot): { id: SourceId; label: string; wh
       out.push({ id, label: id, why: "the source is missing from this snapshot entirely" });
       continue;
     }
-    if (CURRENT.includes(s.trust)) continue;
-    out.push({
-      id,
-      label: s.label,
-      why: s.breaches.length > 0 ? s.breaches.join("; ") : `serving ${s.rows} row(s) as ${s.trust}`,
-    });
+    if (!CURRENT.includes(s.trust)) {
+      out.push({
+        id,
+        label: s.label,
+        why: s.breaches.length > 0 ? s.breaches.join("; ") : `serving ${s.rows} row(s) as ${s.trust}`,
+      });
+      continue;
+    }
+    // Trust alone was not enough, and the gap had a shape worth naming. `deriveTrust`
+    // reads the rows a source is serving, and a source refused at the door serves the
+    // rows it read last time, which pass the contract because they are the same rows
+    // that passed it before. So a blocked source kept `verified` trust with a block
+    // incident still open, and this function waved it through: the feed's own breakage
+    // report called the source unhealthy while the context service went on licensing
+    // "no recall matched" from it. Presence survives that. Absence does not, because
+    // being refused is exactly the state in which a new notice would be invisible to us.
+    const open = openBreakage(snapshot, id);
+    if (open !== null) {
+      out.push({
+        id,
+        label: s.label,
+        why: open.evidence.length > 0 ? open.evidence.join("; ") : `an unresolved ${open.cause} incident`,
+      });
+    }
   }
   return out;
+}
+
+/** Causes that mean the source is not currently showing us everything it has.
+ *
+ *  `gone` is deliberately absent, and so are `healthy` and `resurrected`. A withdrawal
+ *  is the system working: the record was removed at source, we established it, we kept
+ *  the last-good copy and refused to heal. Nothing about it suggests we lost rows we
+ *  should have seen, and counting it would make the service refuse to answer every time
+ *  a notice was withdrawn, which is an ordinary event on a recall feed rather than a
+ *  failure. A resurrection is not breakage either: the contract passed. */
+const BREAKAGE: readonly IncidentCause[] = ["drift", "pagination", "blocked"];
+
+function openBreakage(snapshot: Snapshot, id: SourceId): PubIncident | null {
+  return (
+    snapshot.incidents.find(
+      (i) => i.sourceId === id && i.closedAt === null && BREAKAGE.includes(i.cause)
+    ) ?? null
+  );
 }
 
 /**
