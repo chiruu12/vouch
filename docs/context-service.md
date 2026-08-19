@@ -105,6 +105,7 @@ diff and total in effect.
 | --- | --- | --- |
 | `recall_context` | recalls we will assert, with confidence and matched tokens, or a refusal | that a product is safe, when `refusal` is non-null |
 | `vouch_report` | every source, its state, and `canReportAbsence` | that absence is reportable, when that flag is false |
+| `breakage_report` | every source's open cause, and whether a retry is worth making | that a quiet source is a working one, when `healthy` is false |
 | `quarantined_for` | near misses with the reason each was held back | that a near miss is a recall of this product |
 
 Each description says what the result does not license, because the description is the

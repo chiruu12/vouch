@@ -163,11 +163,11 @@ timings are in [`runs/timing.log`](runs/timing.log).
 | --- | --- |
 | Healthy cycle, Arcadia | 12 rows, contract passed, served verified, 5.6s |
 | Healthy cycle, Tradewell | 14 rows, contract passed, served verified, 6.0s |
-| Three listings delisted | Contract failed on a 21.4% row-count cliff. Diagnosed `gone`, refused to repair, served the remaining 11 as verified, withdrew the three. 5.0s |
+| Three listings delisted | Contract failed on a 21.4% row-count cliff. Diagnosed `gone`, refused to repair, served the remaining 11 as verified, withdrew the three. 4.4s |
 | Anti-bot interstitial at HTTP 200 | Diagnosed `blocked` from the body signature, refused to repair, served last-good as unverified. 38.7s |
 | Page redesign that broke paging | Returned 7 rows against a baseline of 14, and all 7 missing records still returned 200 at their own URLs. Diagnosed `pagination`, repaired in 330.6s, re-measured, contract passed, served as `healed`. **MTTR 347.6s** |
 | Repair that reported success and returned nothing | Contract still failed after the repair, result rejected, last-good served as unverified |
-| Repair that could not start | Diagnosed `pagination` and was ready to repair, but a repair was already running on that collector and the API returned HTTP 409. Recorded as deferred, not as a repair that failed. Nothing was attempted and the collector was left unchanged. Served last-good 14 rows as unverified. 9.1s |
+| Repair that could not start | Diagnosed `pagination` and was ready to repair, but a repair was already running on that collector and the API returned HTTP 409. Recorded as deferred, not as a repair that failed. Nothing was attempted and the collector was left unchanged. Served last-good 14 rows as unverified. 6.2s |
 | A withdrawn record back on sale | The marketplace relisted one of three delisted products and its permalink resolved again. 12 rows against a baseline of 11, contract passed, nothing broken. Reported as a `resurrected` incident, dropped from the withdrawn list, served 12 rows verified. 8.3s |
 
 The last of those is the only event here that is not about the scraper at all, and it is
@@ -196,7 +196,7 @@ recalled portable fuel container. Nothing was broken, the contract passed, and b
 this existed the feed would have served it again in silence, because a supervisor that
 only watches for failures has nothing to say about a source that changes its mind.
 
-Ten of those tests are properties over generated input rather than examples:
+Eleven of those tests are properties over generated input rather than examples:
 `classify.fuzz.test.ts` runs 3000 inputs through the classifier and
 `runner.fuzz.test.ts` drives 2000 cycles of the state machine, checking invariants like
 "a repair is never authorised while any missing record is unaccounted for" and "a
@@ -269,15 +269,15 @@ got past the version before.
 4. It asked whether a page contained a string, not how many times. Four sentences render
    twice on the method page, and truncating one left the other to answer for it.
 
-`npm run mutations` re-derives that claim. It applies ten edits that each break a stated
+`npm run mutations` re-derives that claim. It applies twelve edits that each break a stated
 guarantee, rebuilds, and requires the verifier to reject every one. The harness asserts
 its own edits landed, because an earlier version of it lost a mutation to shell quoting,
 built unmodified source, and reported the hole it had failed to create. A check that
 reports success without establishing the property is worse than no check, and that
 applies to the check on the check.
 
-The engine has no network calls of its own. Everything that touches the outside world
-goes through `CycleDeps`, injected at the entry point, which is why the classifier,
+The cycle has no network calls of its own. Everything the runner touches the outside
+world with goes through `CycleDeps`, injected at the entry point, which is why the classifier,
 contract and refusal logic are testable without a network at all.
 
 ## Layout
