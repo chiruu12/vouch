@@ -199,11 +199,16 @@ function tally(reasons: string[]): Withholding[] {
 function unvouchedSources(snapshot: Snapshot): { id: SourceId; label: string; why: string }[] {
   const out: { id: SourceId; label: string; why: string }[] = [];
   for (const id of RECALL_SOURCES) {
-    const s = snapshot.sources.find((x) => x.id === id);
-    if (s === undefined) {
+    // Every row wearing this id, not the first one. `find` let a healthy copy answer for
+    // a broken one in a snapshot that carried the same source twice, which is the same
+    // mistake as trusting a source's own report of itself: the reassuring row is not
+    // evidence about the other one.
+    const rows = snapshot.sources.filter((x) => x.id === id);
+    if (rows.length === 0) {
       out.push({ id, label: id, why: "the source is missing from this snapshot entirely" });
       continue;
     }
+    const s = rows.find((x) => !CURRENT.includes(x.trust)) ?? rows[0]!;
     if (!CURRENT.includes(s.trust)) {
       out.push({
         id,
@@ -263,7 +268,11 @@ export function recallContext(
 ): ContextAnswer {
   const askedAt = now.toISOString();
   const base = { query, askedAt, caveat: MATCH_CAVEAT };
-  const trimmed = query.trim();
+  // Strip what a reader cannot see before measuring, for the reason `html.ts` strips it
+  // out of page text: a character that renders as nothing is not part of what was said.
+  // Three zero-width spaces have length 3 and survive `trim`, so they cleared this gate
+  // and came back as a vouched "we looked and found nothing". Nothing was looked for.
+  const trimmed = query.replace(/[\u200B-\u200D\uFEFF\u00AD]/g, "").trim();
 
   if (trimmed.length < 3) {
     return {
@@ -589,7 +598,10 @@ export function breakageReport(snapshot: Snapshot, now: Date = new Date()): Brea
 
   return {
     at: now.toISOString(),
-    healthy: sources.every((x) => x.cause === null && CURRENT.includes(x.state)),
+    // `every` is vacuously true on an empty list, and a build that lost every source
+    // reported perfect health. Being vacuous in the reassuring direction is the failure
+    // mode that matters: a caller reading `healthy` has no reason to look further.
+    healthy: sources.length > 0 && sources.every((x) => x.cause === null && CURRENT.includes(x.state)),
     canReportAbsence: unvouchedSources(snapshot).length === 0,
     sources,
   };

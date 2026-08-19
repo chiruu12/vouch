@@ -313,3 +313,38 @@ test("a withdrawal does not stop the service reporting absence", () => {
   assert.equal(a.refusalCode, null);
   assert.equal(breakageReport(withGone, NOW).canReportAbsence, true);
 });
+
+test("a snapshot with no sources at all is not healthy", () => {
+  // `every` on an empty list is true, so a build that lost every source reported perfect
+  // health. The reassuring direction is the wrong one to be vacuous in: a caller reading
+  // `healthy` has no reason to look further, and there was nothing there to look at.
+  const b = breakageReport(snapshot({ sources: [] }), NOW);
+  assert.equal(b.healthy, false);
+  assert.equal(b.canReportAbsence, false);
+});
+
+test("a query of characters nobody can see is too short, not a miss", () => {
+  // Three zero-width spaces have length 3 and survive `trim`, so this cleared the
+  // minimum-length gate and came back as a vouched NONE: we looked, we found nothing.
+  // We did not look for anything. The same characters are stripped out of page text for
+  // the same reason, that a character rendering as nothing is not part of what was said.
+  const a = recallContext(snapshot(), "​​​", NOW);
+  assert.equal(a.refusalCode, "query_too_short");
+  assert.equal(a.asserted.length, 0);
+});
+
+test("a duplicate source id cannot be vouched for by its healthy twin", () => {
+  // `find` stops at the first row with a matching id, so a snapshot carrying the same
+  // source twice was judged on whichever copy came first. Presence is the claim that
+  // costs something here: one row saying a source is fine does not answer for another
+  // row saying it is not.
+  const twice = snapshot({
+    sources: [
+      source("cpsc", "verified"),
+      source("cpsc", "unverified", { contractPassed: false, breaches: ["row count fell 33.3%"] }),
+      source("arcadia", "verified"),
+    ],
+  });
+  const a = recallContext(twice, "Some Product Nobody Recalled", NOW);
+  assert.equal(a.refusalCode, "absence_unverifiable");
+});
