@@ -11,7 +11,8 @@
     "demo": "node --import tsx src/demo.ts",
     "evolve": "node --import tsx src/evolve.ts",
     "mutations": "node verify-mutations.mjs",
-    "mcp": "node --import tsx src/mcp.ts"
+    "mcp": "node --import tsx src/mcp.ts",
+    "ask": "node --import tsx src/ask.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
