@@ -87,6 +87,27 @@ const MUTATIONS = [
     to: "  if (false) {",
   },
   {
+    name: "an open block stops counting against a source",
+    breaks: "a source we were refused by keeps licensing \"no recall matched\", because the rows it is still serving are the last good ones",
+    file: "src/context.ts",
+    from: '    const open = openBreakage(snapshot, id);',
+    to: '    const open = null;',
+  },
+  {
+    name: "a withdrawal counts as breakage",
+    breaks: "the service refuses to answer every time a notice is withdrawn, which is an ordinary event and not a failure",
+    file: "src/context.ts",
+    from: 'const BREAKAGE: readonly IncidentCause[] = ["drift", "pagination", "blocked"];',
+    to: 'const BREAKAGE: readonly IncidentCause[] = ["drift", "pagination", "blocked", "gone"];',
+  },
+  {
+    name: "the page oracle stops decoding numeric entities",
+    breaks: "a withdrawal written with &#160; instead of &nbsp; reads as merely missing, and missing is what authorises a repair",
+    file: "src/html.ts",
+    from: '    .replace(/&#(\\d+);/g, (m, d: string) => codePoint(Number(d), m))',
+    to: '',
+  },
+  {
     name: "the vouch check walks the snapshot instead of the declared source list",
     breaks: "a recall source missing from the build stops being checked exactly when it matters",
     file: "src/context.ts",
@@ -306,6 +327,30 @@ function failuresUnderTest() {
 const argv = process.argv.slice(2).map(Number).filter((n) => Number.isFinite(n));
 const chosen = argv.length > 0 ? argv : MUTATIONS.map((_, i) => i + 1);
 
+// A `finally` does not run when the process is killed, and this harness spends most of
+// its wall time with a safety invariant deleted from a tracked file. A Ctrl+C at the
+// wrong moment left `NEVER_LEARN_INTO` emptied in the working tree: the lock that keeps
+// the learner away from seller fields, removed, silently, in a file that still looked
+// like the committed one at a glance. Whatever happens to this process, the tree it was
+// handed goes back.
+let inFlight = null;
+function restoreInFlight() {
+  if (inFlight === null) return;
+  writeFileSync(inFlight.file, inFlight.before);
+  inFlight = null;
+}
+for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"]) {
+  process.on(sig, () => {
+    restoreInFlight();
+    console.error(`\n${sig}: restored ${"the mutated file"} before exiting.`);
+    process.exit(130);
+  });
+}
+process.on("uncaughtException", (err) => {
+  restoreInFlight();
+  throw err;
+});
+
 const results = [];
 for (const n of chosen) {
   const m = MUTATIONS[n - 1];
@@ -347,12 +392,13 @@ for (const n of chosen) {
     process.exit(2);
   }
 
+  inFlight = { file: m.file, before };
   writeFileSync(m.file, after);
   let failures;
   try {
     failures = failuresUnderTest();
   } finally {
-    writeFileSync(m.file, before);
+    restoreInFlight();
   }
 
   const caught = failures !== null && failures > 0;
