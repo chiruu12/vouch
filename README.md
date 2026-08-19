@@ -206,7 +206,7 @@ them found a live defect within seconds of being written, which is described in
 never reaches the interesting branch passes without checking anything.
 
 The refusal is enforced in code rather than by convention, and that claim is measured
-rather than asserted. `engine/verify-mutations.mjs` breaks twenty-three safety invariants one at
+rather than asserted. `engine/verify-mutations.mjs` breaks every safety invariant this project states, one at
 a time and requires the suite to go red for each. Flipping the `gone` branch to healable
 `drift` fails ten tests: the classifier's verdict, including the soft-404 case where the
 record says it is gone in the body rather than the status, and what the cycle then does,
@@ -231,7 +231,7 @@ cd engine
 npm install
 npm run demo                              # watch all four causes decided, no API key
 npm run evolve -- --dry                   # what the supervisor would teach itself
-npm test                                  # 247 tests, no network
+npm test                                  # the whole suite, no network
 node --import tsx src/cycle.ts arcadia    # one supervision cycle, needs BRIGHTDATA_API_KEY
 node --import tsx src/snapshot.ts         # publish web/public/snapshot.json
 
