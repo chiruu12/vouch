@@ -108,6 +108,27 @@ const MUTATIONS = [
     to: '',
   },
   {
+    name: "a tool answers before the client has been told what it is reading",
+    breaks: "an asserted recall reaches a caller that never received the product-line caveat, and reads as a claim about the unit",
+    file: "src/mcp.ts",
+    from: "      if (!handshaken) {",
+    to: "      if (false) {",
+  },
+  {
+    name: "health is vacuously true when there are no sources",
+    breaks: "a build that lost every source reports perfect health to a caller with no reason to look further",
+    file: "src/context.ts",
+    from: "    healthy: sources.length > 0 && sources.every((x) => x.cause === null && CURRENT.includes(x.state)),",
+    to: "    healthy: sources.every((x) => x.cause === null && CURRENT.includes(x.state)),",
+  },
+  {
+    name: "a healthy copy of a source answers for a broken one",
+    breaks: "a duplicated source id is judged on whichever row comes first in the snapshot",
+    file: "src/context.ts",
+    from: "    const s = rows.find((x) => !CURRENT.includes(x.trust)) ?? rows[0]!;",
+    to: "    const s = rows[0]!;",
+  },
+  {
     name: "the vouch check walks the snapshot instead of the declared source list",
     breaks: "a recall source missing from the build stops being checked exactly when it matters",
     file: "src/context.ts",
