@@ -198,6 +198,20 @@ describe("a permalink we are willing to publish", () => {
     assert.equal(samePlaceWeScraped("https://example.invalid/item/TW-1.html", SRC), null);
   });
 
+  it("rejects a downgrade to http on the very same host", () => {
+    // The host check cannot see this one: the host is identical, which is exactly what
+    // makes it worth its own refusal. Publishing it would hand a reader an unencrypted
+    // link under a label saying we verified where it goes.
+    assert.equal(samePlaceWeScraped("http://tradewell-market.vercel.app/item/TW-33887.html", SRC), null);
+  });
+
+  it("keeps an upgrade to https from a source served over http", () => {
+    // The other direction is not a downgrade, and refusing it would throw away a better
+    // link than the one we hold.
+    const up = "https://plain-market.example/item/1.html";
+    assert.equal(samePlaceWeScraped(up, "http://plain-market.example/"), up);
+  });
+
   it("rejects a scheme that is not web traffic, without relying on the framework", () => {
     assert.equal(samePlaceWeScraped("javascript:alert(document.domain)", SRC), null);
     assert.equal(samePlaceWeScraped("data:text/html,<h1>hi</h1>", SRC), null);

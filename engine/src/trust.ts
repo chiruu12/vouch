@@ -84,7 +84,17 @@ export function samePlaceWeScraped(permalink: string | null, sourceUrl: string):
     // them. React happens to block javascript: hrefs; that is React protecting us,
     // which is not the same as this project being careful.
     if (link.protocol !== "https:" && link.protocol !== "http:") return null;
-    return link.host === new URL(sourceUrl).host ? permalink : null;
+    const source = new URL(sourceUrl);
+    if (link.host !== source.host) return null;
+    // Same host is not the same place if one of them is not encrypted. A record scraped
+    // over https and published with an http link hands the reader a downgrade we did not
+    // take ourselves, on a page that says the link was verified. The host check cannot
+    // see it, because the host is identical and that is exactly what makes it worth a
+    // separate refusal. Never the other way round: a source served over http whose
+    // notices are linked over https is an upgrade, and refusing that would throw away a
+    // better link than the one we have.
+    if (source.protocol === "https:" && link.protocol === "http:") return null;
+    return permalink;
   } catch {
     return null;
   }

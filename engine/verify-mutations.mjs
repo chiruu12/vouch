@@ -108,6 +108,13 @@ const MUTATIONS = [
     to: "  return [JSON.stringify(payload, null, 2), ...head].join(\"\\n\\n\");",
   },
   {
+    name: "a published link may downgrade to http on the same host",
+    breaks: "a reader is handed an unencrypted link under a label saying we verified where it goes",
+    file: "src/trust.ts",
+    from: 'if (source.protocol === "https:" && link.protocol === "http:") return null;',
+    to: "if (false) return null;",
+  },
+  {
     name: "the fallback serves records known to be withdrawn",
     breaks: "a refused cycle republishes a record we already proved was taken down, labelled unverified",
     file: "src/runner.ts",
@@ -159,8 +166,8 @@ const MUTATIONS = [
     name: "a scraped permalink is published unchecked",
     breaks: "a lookalike host is rendered as a trusted link under a verified pill",
     file: "src/trust.ts",
-    from: "return link.host === new URL(sourceUrl).host ? permalink : null;",
-    to: "return permalink;",
+    from: "if (link.host !== source.host) return null;",
+    to: "if (false) return null;",
   },
   {
     name: "a disproved withdrawal phrase is kept",
