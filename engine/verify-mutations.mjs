@@ -129,6 +129,13 @@ const MUTATIONS = [
     to: "    const s = rows[0]!;",
   },
   {
+    name: "the runner's generator stops producing blocks",
+    breaks: "the sequence properties keep passing while never visiting a branch they constrain, which is a green suite that checked nothing",
+    file: "src/runner.fuzz.test.ts",
+    from: "    blocked: r() < 0.15,",
+    to: "    blocked: false,",
+  },
+  {
     name: "the vouch check walks the snapshot instead of the declared source list",
     breaks: "a recall source missing from the build stops being checked exactly when it matters",
     file: "src/context.ts",

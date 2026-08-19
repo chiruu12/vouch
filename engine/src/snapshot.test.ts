@@ -225,3 +225,24 @@ describe("a permalink we are willing to publish", () => {
     assert.equal(samePlaceWeScraped(null, SRC), null);
   });
 });
+
+// The study numbers the README and the method page publish.
+//
+// These are the most quotable figures in the project: 17 publishable matches out of 193
+// real eBay listings, with 168 quarantined. They were computed from two committed
+// captures and then written into prose by hand, where nothing checked them again. A
+// matcher tweak, a threshold change or an edited capture moves them silently, and the
+// first place anyone would notice is a judge reading a number that is no longer true.
+//
+// Asserted against the shipped snapshot rather than a re-run of the matcher, because a
+// re-run is a second implementation and can agree with itself while the published figure
+// drifts. If these change on purpose, change them here and in the two documents together.
+test("the published study still says what the documents say it says", () => {
+  const study = buildSnapshot(new Date("2026-08-19T08:00:00Z")).study;
+  assert.equal(study.listings, 193, "listings in the eBay capture");
+  assert.equal(study.publishable, 17, "matches at or above the publish threshold");
+  assert.equal(study.quarantined, 168, "matches held back below the threshold");
+  assert.equal(study.unmatched, 8, "listings that matched no recall at all");
+  assert.equal(study.publishable + study.quarantined, study.matched);
+  assert.equal(study.matched + study.unmatched, study.listings);
+});

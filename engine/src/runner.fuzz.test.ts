@@ -307,4 +307,52 @@ describe("state invariants across a sequence of cycles", async () => {
       }
     }
   });
+
+  it("actually reaches the states it claims to test", () => {
+    // The five properties above are only worth their runtime if the generator visits the
+    // branches they constrain. `classify.fuzz.test.ts` carries the same assertion for the
+    // same reason: an earlier balance there sent most inputs down one short-circuiting
+    // path and reached another branch once in three thousand runs, which is four green
+    // properties that had checked almost nothing.
+    //
+    // This one counts the shape of the generator rather than the runner's verdicts, so it
+    // stays cheap and cannot be satisfied by the runner changing its mind. Tuning `step`
+    // to make a suite pass now has to get past these floors.
+    let blocked = 0;
+    let healOk = 0;
+    let healFailed = 0;
+    let someMissing = 0;
+    let someLive = 0;
+    let allPresent = 0;
+    let partialAfterHeal = 0;
+    const total = SEEDS * CYCLES;
+
+    for (let seed = 1; seed <= SEEDS; seed++) {
+      const r = rng(seed);
+      for (let c = 0; c < CYCLES; c++) {
+        const s = step(r);
+        if (s.blocked) blocked++;
+        if (s.healOk) healOk++;
+        else healFailed++;
+        if (s.present.length < CATALOGUE.length) someMissing++;
+        else allPresent++;
+        if (s.live.length > 0) someLive++;
+        if (s.afterHeal.length < CATALOGUE.length) partialAfterHeal++;
+      }
+    }
+
+    // Floors, not exact counts: the generator is allowed to be retuned, it is not allowed
+    // to stop producing a case. Each of these is the precondition of at least one property
+    // above, and a zero here would make that property vacuous rather than false.
+    const floor = (name: string, n: number, min: number): void => {
+      assert.ok(n >= min, `${name} reached ${n} times in ${total} steps, needs at least ${min}`);
+    };
+    floor("blocked", blocked, total * 0.05);
+    floor("heal reported done", healOk, total * 0.2);
+    floor("heal reported a failure", healFailed, total * 0.2);
+    floor("rows missing from the listing", someMissing, total * 0.5);
+    floor("every row present", allPresent, total * 0.001);
+    floor("a missing ref still answering at its permalink", someLive, total * 0.2);
+    floor("a heal that returns less than the catalogue", partialAfterHeal, total * 0.2);
+  });
 });
