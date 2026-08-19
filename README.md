@@ -286,11 +286,16 @@ engine/src/
   runner.ts       one supervision cycle, pure, fully injected
   cycle.ts        the live entry point that supplies the real dependencies
   match.ts        recall to listing, with the basis and the contradictions
+  oracles.ts      the two questions we ask a page body, and why they are asked differently
   snapshot.ts     what the feed is allowed to publish
+  context.ts      what we are entitled to claim when something else is asking
+  wire.ts         how cheaply that is spelled. Never what it says
+  mcp.ts          the same three answers over MCP, on stdio
   sources/        one adapter per collector. Not ceremony: see docs/decisions.md
 web/              the feed, rendering a published snapshot rather than scraping
 fixtures/         the synthetic sites, with their drift, delisted and blocked variants
-docs/             decisions.md, scraper-studio.md, ai-assistance.md, example-output.md
+docs/             decisions.md, scraper-studio.md, context-service.md, ai-assistance.md,
+                  example-output.md
 runs/timing.log   every measurement, written when it was taken
 ```
 
@@ -299,6 +304,8 @@ runs/timing.log   every measurement, written when it was taken
 - [Example structured output](docs/example-output.md): real records from the published
   snapshot, annotated with why each field is shaped the way it is
 - [Decisions](docs/decisions.md): the choices that shaped this, and what forced them
+- [The context service](docs/context-service.md): the same feed answered for an agent,
+  and why a stale source may report a recall but not report finding nothing
 - [Working with Scraper Studio](docs/scraper-studio.md): what the tool does well, where
   it surprised us, and the workarounds
 - [AI assistance](docs/ai-assistance.md): what was AI-assisted and what was not
