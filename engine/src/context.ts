@@ -33,8 +33,15 @@
 // rule in this file follows from it.
 
 import { PUBLISH_THRESHOLD, MATCH_CAVEAT, scoreMatch, type Listing, type MatchBasis } from "./match.js";
-import type { PubRecall, Snapshot } from "./snapshot.js";
-import { RECALL_SOURCES, type RecallRecord, type RecordState, type RiskLevel, type SourceId } from "./types.js";
+import type { PubIncident, PubRecall, Snapshot } from "./snapshot.js";
+import { BASE_COOLDOWN_MS, MAX_COOLDOWN_MS } from "./backoff.js";
+import {
+  RECALL_SOURCES,
+  type RecallRecord,
+  type RecordState,
+  type RiskLevel,
+  type SourceId,
+} from "./types.js";
 
 /** What we are willing to say about one recall, and where the claim came from.
  *
@@ -95,11 +102,29 @@ export interface ContextAnswer {
   withheld: Withholding[];
   /** Non-null when we will not answer at all. Written to be quoted verbatim. */
   refusal: string | null;
+  /** The same refusal as something to branch on.
+   *
+   *  The sentence is for the person the caller is talking to. This is for the caller.
+   *  An agent cannot reliably switch on prose, and one that tries will do it by
+   *  substring, which breaks the first time the wording improves. Null exactly when
+   *  `refusal` is null, and there is a test for the pairing. */
+  refusalCode: RefusalCode | null;
   /** Non-null when we answered, but from at least one source we cannot currently
    *  vouch for. Present alongside an answer rather than instead of it. */
   caution: string | null;
   caveat: string;
 }
+
+/** Every reason this service declines to answer. A closed set on purpose: a caller is
+ *  entitled to enumerate the cases it handles and to fail loudly on one it has not seen,
+ *  which is impossible against a free-text field. */
+export type RefusalCode =
+  /** A recall source is not currently passing its contract, so "nothing found" is not a
+   *  claim this data supports. Retry once the source recovers; `breakageReport` says
+   *  whether it is expected to and roughly when. */
+  | "absence_unverifiable"
+  /** The query was too short to match on. Retrying it unchanged will fail again. */
+  | "query_too_short";
 
 /** A source we can currently vouch for. `withdrawn` is not in this set: a withdrawn
  *  notice is retained for the record and never presented as an active recall. */
@@ -211,6 +236,7 @@ export function recallContext(
       withheld: [],
       caution: null,
       refusal: "a product query needs at least three characters to match on",
+      refusalCode: "query_too_short",
     };
   }
 
@@ -272,7 +298,7 @@ export function recallContext(
           `currently vouch for (${[...new Set(staleHits.map((a) => a.vouch.sourceLabel))].join(", ")}). ` +
           "The notice itself does not expire, so it is reported with the time it was last " +
           "confirmed rather than withheld.";
-    return { ...base, asserted, withheld, caution, refusal: null };
+    return { ...base, asserted, withheld, caution, refusal: null, refusalCode: null };
   }
 
   if (broken.length > 0) {
@@ -295,10 +321,11 @@ export function recallContext(
           ? ", and the commonest way to fail one is to return fewer records than the baseline"
           : "") +
         ".",
+      refusalCode: "absence_unverifiable",
     };
   }
 
-  return { ...base, asserted: [], withheld, caution: null, refusal: null };
+  return { ...base, asserted: [], withheld, caution: null, refusal: null, refusalCode: null };
 }
 
 /** The near-misses, by request.
@@ -367,5 +394,167 @@ export function vouchReport(snapshot: Snapshot, now: Date = new Date()): VouchRe
       breaches: s.breaches,
       synthetic: s.synthetic,
     })),
+  };
+}
+
+
+// --- breakage, for something that has to decide whether to call again -------
+//
+// A refusal without a retry policy is an invitation to hammer. An agent told "I cannot
+// answer" and nothing else will try again immediately, and again, because trying again
+// is the only move it has. So the service says which of the four causes is open, whether
+// that cause is one a repair can fix at all, and how long to wait before the answer could
+// possibly have changed.
+//
+// The waits are not invented. A repairable cause waits for the time repairs on THAT
+// source have actually taken, taken from the incidents that recorded them. A blocked
+// source waits the backoff the engine itself uses. A withdrawal waits forever, because
+// nothing is broken and there is nothing to come back.
+
+/** Everything an incident can be about, failures and the two events that are not. */
+export type IncidentCause = PubIncident["cause"];
+
+export type RetryAdvice =
+  | { retry: false; why: string }
+  | { retry: true; afterMs: number; why: string };
+
+export interface SourceBreakage {
+  id: SourceId;
+  label: string;
+  state: RecordState;
+  /** The open incident's cause, or null when nothing is open. Wider than the four
+   *  failures on purpose: `resurrected` is an open incident and is not a breakage, and a
+   *  report that flattened it into one would tell a caller to wait for a repair that is
+   *  never coming. */
+  cause: IncidentCause | null;
+  /** Whether a repair is even permitted for this cause. Two of the four are never
+   *  repairable, and that is the project's central claim rather than a tuning choice. */
+  healable: boolean;
+  openedAt: string | null;
+  /** A repair could not start because one was already running on this collector. The
+   *  work is happening, it is just not ours. */
+  repairDeferred: boolean;
+  breaches: string[];
+  advice: RetryAdvice;
+}
+
+export interface BreakageReport {
+  at: string;
+  /** True when every source is passing its contract and nothing is open. */
+  healthy: boolean;
+  /** The one flag a caller must read before saying a product is not recalled. */
+  canReportAbsence: boolean;
+  sources: SourceBreakage[];
+}
+
+/** How long repairs on this source have actually taken, from the incidents that verified
+ *  one. The median rather than the mean: a single 900-second outlier should not tell a
+ *  caller to wait a quarter of an hour. Null when this source has never had a repair
+ *  verified, in which case we have measured nothing and say so instead of guessing. */
+export function measuredRepairMs(incidents: readonly PubIncident[], sourceId: SourceId): number | null {
+  const times = incidents
+    .filter((i) => i.sourceId === sourceId && i.verified && i.mttrMs !== null)
+    .map((i) => i.mttrMs as number)
+    .sort((a, b) => a - b);
+  if (times.length === 0) return null;
+  return times[Math.floor(times.length / 2)] ?? null;
+}
+
+/** What a caller should do about one source, given what is open on it. */
+export function adviseRetry(
+  cause: IncidentCause | null,
+  healable: boolean,
+  repairDeferred: boolean,
+  measuredMs: number | null
+): RetryAdvice {
+  if (cause === null) return { retry: false, why: "nothing is open on this source" };
+
+  if (cause === "healthy" || cause === "resurrected") {
+    // Neither of these is a failure. A resurrection is a withdrawn record back on sale,
+    // which is the most actionable thing this feed reports and the least like breakage:
+    // the data is current, the answer already reflects it, and there is nothing to wait
+    // for.
+    return {
+      retry: false,
+      why:
+        cause === "resurrected"
+          ? "a withdrawn record is on sale again. The feed already reflects it and nothing is broken"
+          : "nothing is wrong with this source",
+    };
+  }
+
+  if (cause === "gone") {
+    // Not a failure. The publisher withdrew the records and the feed agrees with it.
+    // Telling a caller to retry would suggest something is coming back.
+    return {
+      retry: false,
+      why: "the records were withdrawn by the publisher, which is not a failure and will not reverse on its own",
+    };
+  }
+
+  if (cause === "blocked") {
+    return {
+      retry: true,
+      afterMs: BASE_COOLDOWN_MS,
+      why:
+        `we were served a wall rather than the page. A repair cannot fix being refused, so ` +
+        `the source is left alone and the wait doubles each time up to ` +
+        `${Math.round(MAX_COOLDOWN_MS / 60_000)} minutes`,
+    };
+  }
+
+  // drift and pagination: repairable, and the wait is however long a repair here takes.
+  if (!healable) {
+    return { retry: false, why: `${cause} was diagnosed but the repair was refused, so nothing is in progress` };
+  }
+  if (repairDeferred) {
+    return {
+      retry: true,
+      afterMs: measuredMs ?? BASE_COOLDOWN_MS,
+      why: "a repair was already running on this collector, so ours did not start. The work is in progress",
+    };
+  }
+  return measuredMs === null
+    ? {
+        retry: true,
+        afterMs: BASE_COOLDOWN_MS,
+        why: `${cause} is repairable, but no repair on this source has been verified yet, so there is no measured time to quote`,
+      }
+    : {
+        retry: true,
+        afterMs: measuredMs,
+        why: `${cause} is repairable, and repairs on this source have taken ${Math.round(measuredMs / 1000)}s`,
+      };
+}
+
+export function breakageReport(snapshot: Snapshot, now: Date = new Date()): BreakageReport {
+  const sources = snapshot.sources.map((s): SourceBreakage => {
+    // The newest incident still open on this source. Incidents are never edited, so the
+    // open one is the current state and the closed ones are the measurement history.
+    const open = snapshot.incidents
+      .filter((i) => i.sourceId === s.id && i.closedAt === null)
+      .sort((a, b) => b.openedAt.localeCompare(a.openedAt))[0];
+
+    const cause = open?.cause ?? null;
+    const healable = open?.healable ?? false;
+    const repairDeferred = open?.healDeferred ?? false;
+    return {
+      id: s.id,
+      label: s.label,
+      state: s.trust,
+      cause,
+      healable,
+      openedAt: open?.openedAt ?? null,
+      repairDeferred,
+      breaches: s.breaches,
+      advice: adviseRetry(cause, healable, repairDeferred, measuredRepairMs(snapshot.incidents, s.id)),
+    };
+  });
+
+  return {
+    at: now.toISOString(),
+    healthy: sources.every((x) => x.cause === null && CURRENT.includes(x.state)),
+    canReportAbsence: unvouchedSources(snapshot).length === 0,
+    sources,
   };
 }

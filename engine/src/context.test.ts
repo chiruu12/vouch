@@ -168,6 +168,31 @@ test("a refusal and an assertion never appear together", () => {
   }
 });
 
+test("a refusal always carries a code, and an answer never does", () => {
+  // The pairing a caller builds its control flow on. A sentence without a code cannot be
+  // branched on; a code without a sentence cannot be relayed to a person.
+  const cases: [Snapshot, string][] = [
+    [snapshot(), "Breville Smart Kettle"],
+    [snapshot(), "bluetooth headphones"],
+    [snapshot(), "ab"],
+    [unverifiedCpsc(), "bluetooth headphones"],
+    [unverifiedCpsc(), "Breville Smart Kettle"],
+    [snapshot({ sources: [] }), "anything at all"],
+  ];
+  const seen = new Set<string>();
+  for (const [snap, q] of cases) {
+    const a = recallContext(snap, q, NOW);
+    assert.equal(
+      a.refusal === null,
+      a.refusalCode === null,
+      `refusal and code disagree for ${JSON.stringify(q)}`
+    );
+    if (a.refusalCode !== null) seen.add(a.refusalCode);
+  }
+  // Both codes are reachable. A closed set nobody can reach half of is not a contract.
+  assert.deepEqual([...seen].sort(), ["absence_unverifiable", "query_too_short"]);
+});
+
 test("a near miss is counted and its content is withheld", () => {
   const near = recall({ ref: "R-2", title: "Generic Electric Kettle Recalled Due to Burn Hazard", brand: "Nobody" });
   const a = recallContext(snapshot({ recalls: [near] }), "Breville Smart Electric Kettle", NOW);

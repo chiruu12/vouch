@@ -4,7 +4,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { TOOLS, handle, renderResult } from "./mcp.js";
+import { TOOLS, handle } from "./mcp.js";
 
 const call = (method: string, params?: Record<string, unknown>, id: number | null = 1) =>
   handle({ jsonrpc: "2.0", id, method, ...(params ? { params } : {}) }) as
@@ -23,7 +23,7 @@ test("initialize falls back rather than echoing a version we do not speak", () =
 
 test("initialize tells the client what it must not do with an empty result", () => {
   const i = (call("initialize", {})!.result as { instructions: string }).instructions;
-  assert.match(i, /never/i);
+  assert.match(i, /never|do not/i);
   assert.match(i, /unrecalled|not recalled|safe/i);
 });
 
@@ -63,29 +63,54 @@ test("an unknown method is a JSON-RPC error", () => {
   assert.equal(call("tools/nonsense")!.error?.code, -32601);
 });
 
-test("the refusal is the first thing in a rendered result", () => {
-  const text = renderResult({ refusal: "cannot report absence", asserted: [], withheld: [] });
-  assert.ok(text.startsWith("REFUSED: cannot report absence"), text.slice(0, 60));
+test("the session instructions carry the constant facts, so answers do not", () => {
+  // The caveat about product lines versus units used to ride on every answer. It never
+  // changes, so it is billed once per session here instead of once per query.
+  const i = (call("initialize", {})!.result as { instructions: string }).instructions;
+  assert.match(i, /PRODUCT LINE/);
+  assert.match(i, /REFUSED/);
+  assert.match(i, /breakage_report/);
 });
 
-test("a caution rides above the payload too, without being a refusal", () => {
-  const text = renderResult({ refusal: null, caution: "one source is stale", asserted: [{ ref: "R-1" }] });
-  assert.ok(text.startsWith("CAUTION: one source is stale"));
-  assert.ok(text.includes("R-1"), "an answer with a caution still carries the answer");
-});
+const textOf = (r: { result?: unknown }): string =>
+  (r.result as { content: { text: string }[] }).content[0]!.text;
 
-test("a plain answer renders without either banner", () => {
-  const text = renderResult({ refusal: null, caution: null, asserted: [] });
-  assert.ok(!text.includes("REFUSED"));
-  assert.ok(!text.includes("CAUTION"));
-});
-
-test("a live tools/call answers from the published snapshot", () => {
+test("a live tools/call answers from the published snapshot, in both formats", () => {
   // Integration, on purpose: the unit tests all take a snapshot they built themselves,
   // so nothing else would notice the server reading the wrong file or the wrong shape.
-  const r = call("tools/call", { name: "vouch_report", arguments: {} })!;
-  const text = (r.result as { content: { text: string }[] }).content[0]!.text;
-  const report = JSON.parse(text) as { canReportAbsence: boolean; sources: { id: string }[] };
+  const asJson = textOf(call("tools/call", { name: "vouch_report", arguments: { format: "json" } })!);
+  const report = JSON.parse(asJson) as { canReportAbsence: boolean; sources: { id: string }[] };
   assert.equal(typeof report.canReportAbsence, "boolean");
   assert.ok(report.sources.length > 0);
+
+  // The digest is the default, and it has to say the same thing in fewer tokens rather
+  // than a different thing.
+  const asDigest = textOf(call("tools/call", { name: "vouch_report", arguments: {} })!);
+  assert.match(asDigest, /^CAN_REPORT_ABSENCE (true|false)/);
+  assert.equal(asDigest.includes("CAN_REPORT_ABSENCE true"), report.canReportAbsence);
+  assert.ok(asDigest.length < asJson.length, "the digest must be the cheaper of the two");
+});
+
+test("every tool answers in both formats", () => {
+  for (const t of TOOLS) {
+    const args = t.inputSchema as { required?: string[] };
+    const base = args.required?.includes("product") === true ? { product: "kettle" } : {};
+    for (const format of ["digest", "json"]) {
+      const r = call("tools/call", { name: t.name, arguments: { ...base, format } })!;
+      assert.equal(r.error, undefined, `${t.name} failed in ${format}`);
+      assert.ok(textOf(r).length > 0, `${t.name} returned nothing in ${format}`);
+    }
+  }
+});
+
+test("breakage_report tells a caller whether retrying is pointless", () => {
+  // The reason this tool exists. An agent told only "I cannot answer" retries, because
+  // retrying is the only move it has, and two of the four causes never recover from it.
+  const text = textOf(call("tools/call", { name: "breakage_report", arguments: {} })!);
+  assert.match(text, /^HEALTHY (true|false)\s+CAN_REPORT_ABSENCE (true|false)/);
+  for (const line of text.split("\n")) {
+    if (line.startsWith("BROKEN")) {
+      assert.match(line, /healable=(true|false)/, "a broken source must say whether a repair is even allowed");
+    }
+  }
 });

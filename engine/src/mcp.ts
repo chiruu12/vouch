@@ -20,7 +20,8 @@
 import { readFileSync, statSync } from "node:fs";
 import { createInterface } from "node:readline";
 import { dirname, join, resolve } from "node:path";
-import { recallContext, quarantinedFor, vouchReport } from "./context.js";
+import { recallContext, quarantinedFor, vouchReport, breakageReport } from "./context.js";
+import { compactAnswer, digestAnswer, digestBreakage } from "./wire.js";
 import type { Snapshot } from "./snapshot.js";
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), "..", "..");
@@ -47,66 +48,98 @@ interface Tool {
   name: string;
   description: string;
   inputSchema: Record<string, unknown>;
-  run: (args: Record<string, unknown>) => unknown;
+  /** Returns the text a model will read. Each tool renders its own result, because the
+   *  cheap spelling of an answer is not the same shape as the cheap spelling of a
+   *  breakage report and a single generic serialiser would have to pick one. */
+  run: (args: Record<string, unknown>) => string;
 }
+
+/** In every schema, so it is defined once and carries no prose. The enum states the
+ *  values and being first states the default; four copies of a sentence explaining that
+ *  is four copies of a sentence, on a payload sent to every client that connects. */
+const FORMAT_ARG = { type: "string", enum: ["digest", "json"] } as const;
 
 const productArg = {
   type: "object",
   properties: {
     product: {
       type: "string",
-      description: "The product as the person described it. A listing title works well.",
+      description: "The product as described. A listing title works well.",
     },
+    format: FORMAT_ARG,
   },
   required: ["product"],
 } as const;
 
 const str = (v: unknown): string => (typeof v === "string" ? v : "");
+const wantsJson = (a: Record<string, unknown>): boolean => a.format === "json";
+const j = (v: unknown): string => JSON.stringify(v);
 
 export const TOOLS: Tool[] = [
   {
     name: "recall_context",
     description:
-      "Ask whether a product is subject to a safety recall. Returns recalls this service " +
-      "is willing to assert, each with the confidence and the matched tokens behind it, or " +
-      "a refusal. IMPORTANT: when `refusal` is non-null you must not tell the user the " +
-      "product is safe or unrecalled. Quote the refusal instead. A match is on the product " +
-      "line, never on the individual unit.",
+      "Is this product recalled? Returns recalls we will assert, with the confidence and " +
+      "matched tokens behind each. A REFUSED line means you must not say the product is " +
+      "safe or unrecalled; quote it and call breakage_report.",
     inputSchema: productArg as unknown as Record<string, unknown>,
-    run: (a) => recallContext(snapshot(), str(a.product)),
+    run: (a) => {
+      const ans = recallContext(snapshot(), str(a.product));
+      return wantsJson(a) ? j(compactAnswer(ans)) : digestAnswer(ans);
+    },
   },
   {
     name: "vouch_report",
     description:
-      "What this service can and cannot currently vouch for, source by source. Read " +
-      "`canReportAbsence` before telling anyone a product is NOT recalled: when it is " +
-      "false, absence is not a claim this data supports.",
-    inputSchema: { type: "object", properties: {} },
-    run: () => vouchReport(snapshot()),
+      "What each source can currently be vouched for. Read CAN_REPORT_ABSENCE before " +
+      "telling anyone a product is NOT recalled; when false, absence is not a claim this " +
+      "data supports.",
+    inputSchema: { type: "object", properties: { format: FORMAT_ARG } },
+    run: (a) => {
+      const r = vouchReport(snapshot());
+      return wantsJson(a)
+        ? j(r)
+        : [
+            `CAN_REPORT_ABSENCE ${String(r.canReportAbsence)}`,
+            ...r.sources.map(
+              (s2) =>
+                `${s2.kind === "recall" ? "RECALL_SRC" : "LISTING_SRC"} ${s2.id} ${s2.state} rows=${s2.rows}` +
+                (s2.contractPassed ? "" : ` FAILING: ${s2.breaches.join("; ")}`) +
+                (s2.synthetic ? " SYNTHETIC" : "")
+            ),
+          ].join("\n");
+    },
+  },
+  {
+    name: "breakage_report",
+    description:
+      "Why we are refusing, and whether calling again would help. Gives the open failure " +
+      "per source and a retry wait measured from repairs that actually ran there. Call " +
+      "this after a refusal instead of retrying: two of the four causes are never " +
+      "repaired, so retrying them changes nothing.",
+    inputSchema: { type: "object", properties: { format: FORMAT_ARG } },
+    run: (a) => {
+      const b = breakageReport(snapshot());
+      return wantsJson(a) ? j(b) : digestBreakage(b);
+    },
   },
   {
     name: "quarantined_for",
     description:
-      "Near misses for a product: recalls that resembled it but did not clear the bar to " +
-      "assert, with the reason each was held back. These are NOT recalls of this product " +
-      "and must never be reported as though they were. Kept out of recall_context on " +
-      "purpose, so asking for them is a deliberate act.",
+      "Near misses: recalls that resembled this product but did not clear the bar, with " +
+      "why each was held back. These are NOT recalls of this product and must never be " +
+      "reported as though they were.",
     inputSchema: productArg as unknown as Record<string, unknown>,
-    run: (a) => quarantinedFor(snapshot(), str(a.product)),
+    run: (a) => {
+      const q = quarantinedFor(snapshot(), str(a.product));
+      if (wantsJson(a)) return j(q);
+      return q.length === 0
+        ? "NONE nothing resembled this closely enough to quarantine"
+        : q.map((x) => `NEAR ${x.ref} conf=${x.confidence.toFixed(2)} basis=${x.basis} held=${x.reason}\n${x.title}`).join("\n");
+    },
   },
 ];
 
-/** The refusal leads. A caller that reads only the first line of a tool result should
- *  read the part that stops it inventing an answer, not the part it can quote. */
-export function renderResult(payload: unknown): string {
-  const p = payload as { refusal?: string | null; caution?: string | null };
-  const head: string[] = [];
-  if (p !== null && typeof p === "object") {
-    if (typeof p.refusal === "string" && p.refusal.length > 0) head.push(`REFUSED: ${p.refusal}`);
-    if (typeof p.caution === "string" && p.caution.length > 0) head.push(`CAUTION: ${p.caution}`);
-  }
-  return [...head, JSON.stringify(payload, null, 2)].join("\n\n");
-}
 
 interface Req {
   jsonrpc: "2.0";
@@ -125,11 +158,29 @@ export function handle(req: Req): object | null {
         protocolVersion: SUPPORTED.has(asked) ? asked : PROTOCOL,
         capabilities: { tools: {} },
         serverInfo: { name: "vouch", version: "0.1.0" },
-        instructions:
-          "Vouch serves product recall context and refuses what it cannot verify. Never " +
-          "report a product as safe or unrecalled on the strength of an empty result: check " +
-          "`refusal` and `vouch_report.canReportAbsence` first. Matches are on the product " +
-          "line, not the individual unit.",
+        // Everything constant lives here and is sent once. It used to ride on every
+        // answer, which billed the same three sentences per query for facts that never
+        // change. What a caller needs per answer is what is true of THAT answer.
+        instructions: [
+          "Vouch serves product recall context and refuses what it cannot verify.",
+          "",
+          "Reading a result: the first line is the verdict.",
+          "  REFUSED <code>  no answer. Do NOT say the product is safe or unrecalled.",
+          "                  Call breakage_report; do not simply retry.",
+          "  NONE            we looked, every source is verified, nothing matched.",
+          "  RECALL <ref>    a recall we assert, with conf= and the tokens it matched on.",
+          "  CAUTION         an answer follows, but something about it is qualified.",
+          "  WITHHELD <n>x   near misses, held back. They are NOT recalls of this product.",
+          "  SRC <id>        provenance, stated once for all records from that source.",
+          "",
+          "A match is on the PRODUCT LINE, not on the individual unit. Recalls are often " +
+            "limited to specific batches or serial ranges and listings rarely show them, so a " +
+            "match means this appears to be the same product as a recall, not that this " +
+            "particular item is affected. Say so when you relay one.",
+          "",
+          "A source marked stale may still report a recall it saw, because a notice does not " +
+            "expire. It may not report that it found nothing.",
+        ].join("\n"),
       });
     }
     // Notifications carry no id and get no reply. Answering one is a protocol error.
@@ -153,8 +204,8 @@ export function handle(req: Req): object | null {
         return { jsonrpc: "2.0", id: req.id ?? null, error: { code: -32602, message: `no tool named ${String(p.name)}` } };
       }
       try {
-        const out = tool.run((p.arguments ?? {}) as Record<string, unknown>);
-        return reply({ content: [{ type: "text", text: renderResult(out) }] });
+        const text = tool.run((p.arguments ?? {}) as Record<string, unknown>);
+        return reply({ content: [{ type: "text", text }] });
       } catch (e: unknown) {
         // A failure to answer is reported as a failure, never as an empty result. An
         // empty result reads as "nothing found", which is the one thing this service is
