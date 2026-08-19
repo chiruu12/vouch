@@ -65,9 +65,6 @@ describe("what may be applied with nobody watching", () => {
     assert.match(mayApplyUnattended(marker).because, /removes live recalls/);
   });
 
-  it("never applies a repair-prompt change, because a wedged collector does not come back", () => {
-  });
-
   it("sorts a mixed batch into the two lanes", () => {
     const { auto, proposed } = partition([alias, marker]);
     assert.deepEqual(auto.map((c) => c.kind), ["alias"]);
