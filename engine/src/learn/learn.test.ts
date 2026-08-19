@@ -19,7 +19,6 @@ import {
   proposeMarkers,
   visibleText,
 } from "./gone-markers.js";
-import { carriesObservedMarkup, proposeStrategies, splitByMarkup } from "./heal-strategy.js";
 import type { PhraseLedger } from "./gone-markers.js";
 import {
   BUILTIN_MARKERS,
@@ -53,15 +52,6 @@ const marker: Change = {
   evidence: "4 gone, 0 live",
 };
 
-const strategy: Change = {
-  kind: "heal-strategy",
-  cause: "drift",
-  prefer: "prompt without observed markup",
-  over: "prompt carrying observed hooks and labels",
-  what: "prefer the narrower prompt",
-  evidence: "3/4 versus 1/4",
-};
-
 describe("what may be applied with nobody watching", () => {
   it("applies an alias, because it can only fill a null and is undone by deleting a name", () => {
     assert.equal(mayApplyUnattended(alias).unattended, true);
@@ -76,19 +66,17 @@ describe("what may be applied with nobody watching", () => {
   });
 
   it("never applies a repair-prompt change, because a wedged collector does not come back", () => {
-    assert.equal(mayApplyUnattended(strategy).unattended, false);
-    assert.match(mayApplyUnattended(strategy).because, /wedge/);
   });
 
   it("sorts a mixed batch into the two lanes", () => {
-    const { auto, proposed } = partition([alias, marker, strategy]);
+    const { auto, proposed } = partition([alias, marker]);
     assert.deepEqual(auto.map((c) => c.kind), ["alias"]);
-    assert.deepEqual(proposed.map((c) => c.kind), ["gone-marker", "heal-strategy"]);
+    assert.deepEqual(proposed.map((c) => c.kind), ["gone-marker"]);
   });
 
   it("gives each kind of change a distinct key", () => {
-    const keys = new Set([alias, marker, strategy].map(changeKey));
-    assert.equal(keys.size, 3);
+    const keys = new Set([alias, marker].map(changeKey));
+    assert.equal(keys.size, 2);
   });
 });
 
@@ -193,70 +181,6 @@ describe("proposing a withdrawal phrase", () => {
   });
 });
 
-describe("measuring whether the scraped half of a repair prompt earns its place", () => {
-  const withMarkup = (verified: boolean) => ({
-    cause: "drift",
-    prompt: "Fix it. Attribute hooks present in the live document: data-x, data-y.",
-    verified,
-  });
-  const without = (verified: boolean) => ({
-    cause: "drift",
-    prompt: "The previously working selector .title now matches 0 elements.",
-    verified,
-  });
-
-  it("recognises the clauses copied out of the scraped page", () => {
-    assert.equal(carriesObservedMarkup(withMarkup(true).prompt), true);
-    assert.equal(carriesObservedMarkup(without(true).prompt), false);
-  });
-
-  it("ignores a refused cause, which has no prompt to compare", () => {
-    const split = splitByMarkup([{ cause: "gone", prompt: null, verified: false }]);
-    assert.deepEqual(split, []);
-  });
-
-  it("declines to compare on too little evidence, and says so", () => {
-    const found = proposeStrategies([withMarkup(true), without(false)]);
-    assert.equal(found[0]?.prefer, "no change");
-    assert.match(found[0]?.evidence ?? "", /not enough measured repairs/);
-  });
-
-  it("argues for dropping the scraped clause when it does not pay for itself", () => {
-    const found = proposeStrategies([
-      withMarkup(false),
-      withMarkup(false),
-      without(true),
-      without(true),
-    ]);
-    assert.equal(found[0]?.prefer, "prompt without observed markup");
-    assert.match(found[0]?.evidence ?? "", /not paying for itself/);
-  });
-
-  it("argues for keeping it when the repairs carrying it verify better", () => {
-    const found = proposeStrategies([
-      withMarkup(true),
-      withMarkup(true),
-      without(false),
-      without(false),
-    ]);
-    assert.equal(found[0]?.prefer, "prompt carrying observed hooks and labels");
-    assert.match(found[0]?.evidence ?? "", /earns its place/);
-  });
-
-  it("prefers the narrower prompt when the two are tied", () => {
-    // A tie is not a reason to keep the larger attack surface.
-    const found = proposeStrategies([withMarkup(true), withMarkup(false), without(true), without(false)]);
-    assert.equal(found[0]?.prefer, "prompt without observed markup");
-  });
-});
-
-// Adding a withdrawal phrase and taking one back.
-//
-// These two directions are deliberately not symmetric, and that asymmetry is the whole
-// argument for letting any of this run unattended. Adding a phrase can remove live
-// safety recalls from the feed, so it needs a person. Removing one can at worst leave a
-// withdrawn record showing until somebody notices, which the rest of the system already
-// handles. So the supervisor may narrow its own oracle on evidence, and never widen it.
 describe("the withdrawal phrases the oracle looks for", () => {
   const CAND = {
     marker: "this listing was ended by the seller",

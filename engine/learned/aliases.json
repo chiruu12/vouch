@@ -3,28 +3,47 @@
   "version": 1,
   "sources": {
     "tradewell": {
-      "id": ["item_id", "id", "listing_id", "sku"],
-      "permalink": ["url", "permalink", "item_url", "listing_url", "product_page_url"],
-      "title": ["title"],
-      "brand": ["brand"],
-      "price": ["price"],
-      "currency": ["currency"],
-      "condition": ["condition"],
-      "location": ["location"],
-      "listedOn": ["listed", "listed_on", "listed_date", "date_listed"],
-      "seller": ["seller", "seller_name"]
-    },
-    "arcadia": {
-      "ref": ["ref", "notice_ref", "reference"],
-      "permalink": ["url", "permalink", "notice_url"],
-      "title": ["title"],
-      "brand": ["brand"],
-      "hazard": ["hazard", "risk_description"],
-      "risk": ["risk", "risk_level"],
-      "category": ["category"],
-      "affectedUnits": ["affected_units", "batch_codes", "affectedUnits"],
-      "published": ["published", "published_on", "date_published"],
-      "action": ["action", "remedy", "what_to_do"]
+      "id": [
+        "item_id",
+        "id",
+        "listing_id",
+        "sku"
+      ],
+      "permalink": [
+        "url",
+        "permalink",
+        "item_url",
+        "listing_url",
+        "product_page_url"
+      ],
+      "title": [
+        "title"
+      ],
+      "brand": [
+        "brand"
+      ],
+      "price": [
+        "price"
+      ],
+      "currency": [
+        "currency"
+      ],
+      "condition": [
+        "condition"
+      ],
+      "location": [
+        "location"
+      ],
+      "listedOn": [
+        "listed",
+        "listed_on",
+        "listed_date",
+        "date_listed"
+      ],
+      "seller": [
+        "seller",
+        "seller_name"
+      ]
     }
   },
   "log": [

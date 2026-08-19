@@ -184,6 +184,13 @@ const MUTATIONS = [
     to: "  if (false) return store;",
   },
   {
+    name: "a learned alias is written where nothing reads it",
+    breaks: "the only unattended change in the system, which would report an adaptation it did not make",
+    file: "src/aliases.ts",
+    from: 'export const ALIAS_DRIVEN_SOURCES: ReadonlySet<string> = new Set(["tradewell"]);',
+    to: 'export const ALIAS_DRIVEN_SOURCES: ReadonlySet<string> = new Set(["tradewell", "arcadia", "ebay"]);',
+  },
+  {
     name: "a block only the collector saw is healed",
     breaks: "the flagship refusal, whenever the wall is on the scraper's path and not the operator's",
     file: "src/classify.ts",

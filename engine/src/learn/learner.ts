@@ -14,7 +14,6 @@
 
 import type { Change } from "./change.js";
 import type { PhraseLedger } from "./gone-markers.js";
-import type { HealRecord } from "./heal-strategy.js";
 
 /** One collector output, already flattened to rows. */
 export interface Capture {
@@ -27,10 +26,8 @@ export interface Capture {
  *  one place and a learner cannot reach past what it was given. */
 export interface Evidence {
   captures: readonly Capture[];
-  heals: readonly HealRecord[];
   /** Phrase counts accumulated by the oracle. Never contains page text. */
   ledger: PhraseLedger;
-  /** The withdrawal phrases the oracle already looks for. */
   /** What the oracle already looks for on a given source. Scoped: see proposeMarkers. */
   knownMarkersFor: (source: string) => readonly string[];
   /** Refs the source is known to have published, used to check an identifier candidate

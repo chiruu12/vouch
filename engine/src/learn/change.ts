@@ -38,17 +38,7 @@ export interface GoneMarkerChange {
 }
 
 /** An observation about which repair instructions actually survive measurement. */
-export interface HealStrategyChange {
-  kind: "heal-strategy";
-  cause: string;
-  /** The shape being recommended, and the one being recommended against. */
-  prefer: string;
-  over: string;
-  what: string;
-  evidence: string;
-}
-
-export type Change = AliasChange | GoneMarkerChange | HealStrategyChange;
+export type Change = AliasChange | GoneMarkerChange;
 
 export type Kind = Change["kind"];
 
@@ -59,7 +49,5 @@ export function changeKey(c: Change): string {
       return `alias|${c.source}|${c.canonical}|${c.raw}`;
     case "gone-marker":
       return `gone-marker|${c.source}|${c.marker}`;
-    case "heal-strategy":
-      return `heal-strategy|${c.cause}|${c.prefer}|${c.over}`;
   }
 }

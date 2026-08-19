@@ -31,7 +31,7 @@
 
 import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import { aliasStore, knownRawFields, canonicalFields, pick, type AliasStore } from "./aliases.js";
+import { aliasStore, knownRawFields, canonicalFields, pick, readsAliasStore, type AliasStore } from "./aliases.js";
 import type { AliasChange, Change as AnyChange } from "./learn/change.js";
 import { changeKey } from "./learn/change.js";
 import { partition, mayApplyUnattended } from "./learn/policy.js";
@@ -39,7 +39,6 @@ import { LEARNERS } from "./learn/registry.js";
 import type { Capture as LearnerCapture, Evidence } from "./learn/learner.js";
 import { emptyLedger, type PhraseLedger } from "./learn/gone-markers.js";
 import { acceptMarker, activeMarkers, loadMarkers, saveMarkers } from "./learn/markers.js";
-import type { HealRecord } from "./learn/heal-strategy.js";
 
 const ROOT = new URL("../..", import.meta.url).pathname;
 const STORE_PATH = new URL("../learned/aliases.json", import.meta.url).pathname;
@@ -167,6 +166,10 @@ export function inferAliases(
   const known = knownRawFields(cap.source, store);
   const out: AliasChange[] = [];
   if (cap.rows.length === 0) return out;
+  // Nothing to learn for a source that does not read the store. Proposing here would end
+  // in an unattended write to a block no adapter consults, which reports an adaptation
+  // that did not happen. See ALIAS_DRIVEN_SOURCES.
+  if (!readsAliasStore(cap.source)) return out;
 
   const rawNames = new Set<string>();
   for (const row of cap.rows) for (const k of Object.keys(row)) rawNames.add(k);
@@ -226,6 +229,14 @@ export function applyAlias(store: AliasStore, c: AliasChange, now: string): Alia
   // The runtime guard that used to stand here checked that this was an alias change
   // carrying a canonical field and a raw name. The type says so now, so a change that
   // does not is not constructible and the check had nothing left to catch.
+  //
+  // This one the type cannot express. A source name is a string, and writing a learned
+  // alias into a block no adapter reads is the one way this unattended path can claim an
+  // adaptation it did not make. The learner already declines to propose these, so
+  // reaching here means the two disagree, and that is worth a crash rather than a write.
+  if (!readsAliasStore(c.source)) {
+    throw new Error(`${c.source} does not read the alias store, so writing one would do nothing`);
+  }
   const next: AliasStore = JSON.parse(JSON.stringify(store)) as AliasStore;
   const forSource = (next.sources[c.source] ??= {});
   const list = (forSource[c.canonical] ??= []);
@@ -267,20 +278,6 @@ function loadCaptures(): Capture[] {
   return out;
 }
 
-function loadIncidents(): { cause: string; evidence: string[]; prompt: string | null; verified: boolean }[] {
-  const dir = join(ROOT, "runs");
-  if (!existsSync(dir)) return [];
-  return readdirSync(dir)
-    .filter((f) => f.startsWith("incident-") && f.endsWith(".json"))
-    .map((f) => JSON.parse(readFileSync(join(dir, f), "utf8")) as { incident: Record<string, unknown> })
-    .map((d) => ({
-      cause: String(d.incident.cause ?? ""),
-      evidence: (d.incident.evidence as string[] | undefined) ?? [],
-      prompt: (d.incident.prompt as string | null | undefined) ?? null,
-      verified: Boolean(d.incident.verified) && Boolean(d.incident.healAttempted),
-    }));
-}
-
 function knownRefsFor(source: string): string[] {
   const p = join(ROOT, "runs", `state-${source}.json`);
   if (!existsSync(p)) return [];
@@ -298,16 +295,9 @@ function loadLedger(): PhraseLedger {
 }
 
 function gatherEvidence(): Evidence {
-  const incidents = loadIncidents();
   const captures: LearnerCapture[] = loadCaptures();
-  const heals: HealRecord[] = incidents.map((i) => ({
-    cause: i.cause,
-    prompt: i.prompt,
-    verified: i.verified,
-  }));
   return {
     captures,
-    heals,
     ledger: loadLedger(),
     knownMarkersFor: (source) => activeMarkers(source),
     knownRefsFor,
@@ -344,7 +334,7 @@ function main(): void {
 
   console.log("");
   console.log(
-    `  evidence: ${evidence.captures.length} capture(s), ${evidence.heals.length} incident(s), ` +
+    `  evidence: ${evidence.captures.length} capture(s), ` +
       `${Object.keys(evidence.ledger.sources).length} source(s) with observed page phrases`
   );
   for (const l of LEARNERS) console.log(`    ${l.id.padEnd(15)} ${l.learns}`);

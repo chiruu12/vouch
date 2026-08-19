@@ -50,16 +50,6 @@ export function mayApplyUnattended(c: Change): Verdict {
         unattended: false,
         because: "a wrong withdrawal phrase removes live recalls from the feed, so a person reads the evidence",
       };
-
-    case "heal-strategy":
-      // A repair instruction is the one input that can damage the collector itself. A
-      // bad prompt has permanently wedged a collector in this account, and two more were
-      // wedged by repairs that failed to trigger and kept their lock. A wedged collector
-      // cannot be un-wedged from the CLI, so this is not reversible in any useful sense.
-      return {
-        unattended: false,
-        because: "a repair prompt can permanently wedge a collector, which no later edit undoes",
-      };
   }
 }
 

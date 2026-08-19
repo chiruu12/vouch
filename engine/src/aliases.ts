@@ -52,6 +52,27 @@ export function aliasStore(): AliasStore {
  *  Takes an explicit store so the evolver can reason about a store other than the one
  *  currently on disk, which is how "would this have found what a person had to patch
  *  by hand?" becomes a test rather than a claim. */
+/** Sources whose adapter actually resolves field names through this store.
+ *
+ *  Named here rather than inferred, because the failure it prevents is a silent one.
+ *  `applyAlias` will create a block for any source string it is handed, and the alias
+ *  learner is the one change the policy clears to apply without a person watching. A
+ *  learned name written where nothing reads it is an unattended change that reports
+ *  success and does nothing, which is worse than a refusal: it looks like the system
+ *  adapted.
+ *
+ *  Why the others are absent. `arcadia`'s adapter holds its own name lists because its
+ *  own `pick` trims strings and coerces finite numbers, which this one does not, and the
+ *  block that used to sit in the store for it was a narrower and disagreeing subset of
+ *  what the adapter really reads. `ebay` has no adapter at all; its samples are evidence
+ *  about a real marketplace, not an extraction path. Both were being written to.
+ */
+export const ALIAS_DRIVEN_SOURCES: ReadonlySet<string> = new Set(["tradewell"]);
+
+export function readsAliasStore(source: string): boolean {
+  return ALIAS_DRIVEN_SOURCES.has(source);
+}
+
 export function aliasesFor(source: string, canonical: string, store: AliasStore = STORE): readonly string[] {
   return store.sources[source]?.[canonical] ?? [canonical];
 }

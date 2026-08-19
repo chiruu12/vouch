@@ -1,12 +1,23 @@
 {
-  "at": "2026-08-18T13:14:53.797Z",
+  "at": "2026-08-19T07:04:27.396Z",
   "proposals": [
     {
-      "kind": "heal-prompt",
-      "what": "revisit the pagination repair prompt",
-      "evidence": "1 of 2 repairs for pagination survived measurement",
-      "reversible": false,
-      "source": null
+      "kind": "gone-marker",
+      "source": "ebay",
+      "marker": "go to homepage",
+      "goneRefs": 2,
+      "liveRefs": 0,
+      "what": "ebay: treat \"go to homepage\" as a withdrawal phrase",
+      "evidence": "seen on 2 distinct records whose permalink proved gone, and on 0 records proved live. Read it before accepting: a phrase that is one listing's own wording rather than the site's would take live recalls off the feed"
+    },
+    {
+      "kind": "gone-marker",
+      "source": "ebay",
+      "marker": "we looked everywhere",
+      "goneRefs": 2,
+      "liveRefs": 0,
+      "what": "ebay: treat \"we looked everywhere\" as a withdrawal phrase",
+      "evidence": "seen on 2 distinct records whose permalink proved gone, and on 0 records proved live. Read it before accepting: a phrase that is one listing's own wording rather than the site's would take live recalls off the feed"
     }
   ]
 }

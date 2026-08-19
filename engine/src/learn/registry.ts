@@ -8,7 +8,6 @@
 import type { Learner } from "./learner.js";
 import { inferAliases } from "../evolve.js";
 import { proposeMarkers } from "./gone-markers.js";
-import { proposeStrategies } from "./heal-strategy.js";
 
 const aliasLearner: Learner = {
   id: "aliases",
@@ -37,20 +36,4 @@ const goneMarkerLearner: Learner = {
     })),
 };
 
-const healStrategyLearner: Learner = {
-  id: "heal-strategy",
-  learns: "whether the scraped part of a repair instruction improves repairs",
-  propose: (e) =>
-    proposeStrategies(e.heals)
-      .filter((f) => f.prefer !== "no change")
-      .map((f) => ({
-        kind: "heal-strategy" as const,
-        cause: f.cause,
-        prefer: f.prefer,
-        over: f.over,
-        what: `${f.cause}: prefer the ${f.prefer}`,
-        evidence: f.evidence,
-      })),
-};
-
-export const LEARNERS: readonly Learner[] = [aliasLearner, goneMarkerLearner, healStrategyLearner];
+export const LEARNERS: readonly Learner[] = [aliasLearner, goneMarkerLearner];

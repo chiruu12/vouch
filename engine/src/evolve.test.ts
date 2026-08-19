@@ -183,6 +183,45 @@ describe("applying a learned alias", () => {
   });
 });
 
+describe("a source nothing reads", () => {
+  // The alias learner is the only change this system applies without a person watching, so
+  // the one failure it must not have is a write that reports success and changes nothing.
+  // `applyAlias` will happily create a block for any source string, and two sources were
+  // getting them: arcadia holds its own name lists in its adapter, and ebay has no adapter
+  // at all. A learned name written into either is an adaptation that never happened.
+
+  it("is not proposed for", () => {
+    const cap = { label: "ebay-sample", source: "ebay", rows: [{ novel_id: "X1", title: "t" }] };
+    assert.deepEqual(inferAliases(cap, ["X1"]), []);
+    const arcadia = { label: "arcadia-sample", source: "arcadia", rows: [{ novel_ref: "A1", title: "t" }] };
+    assert.deepEqual(inferAliases(arcadia, ["A1"]), []);
+  });
+
+  it("is refused loudly if a proposal ever reaches the apply path", () => {
+    // The learner already declines, so arriving here means the two disagree. A crash is
+    // the right outcome: the alternative is a silent write nobody reads.
+    const rogue: AliasChange = {
+      kind: "alias",
+      what: "arcadia: read novel_ref as ref",
+      evidence: "test",
+      source: "arcadia",
+      canonical: "ref",
+      raw: "novel_ref",
+    };
+    assert.throws(
+      () => applyAlias(storeBeforeCollectorC(), rogue, "2026-08-18T00:00:00.000Z"),
+      /does not read the alias store/
+    );
+  });
+
+  it("has no leftover block in the committed store", () => {
+    const store = JSON.parse(readFileSync(new URL("../learned/aliases.json", import.meta.url), "utf8")) as {
+      sources: Record<string, unknown>;
+    };
+    assert.deepEqual(Object.keys(store.sources), ["tradewell"]);
+  });
+});
+
 describe("the committed alias store", () => {
   it("is what the adapters actually read", () => {
     // The store is data the engine depends on, so a malformed edit should fail here
