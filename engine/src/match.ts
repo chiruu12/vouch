@@ -96,9 +96,25 @@ const BOILERPLATE = new Set([
   "lb", "lbs", "kg", "quart", "quarts", "pint", "pints",
 ]);
 
+/** Case and accents folded away, in the one form everything here compares against.
+ *
+ *  There is a single function for this because there used to be two. `tokens` and
+ *  `brandsAgree` each lowercased and stripped in their own way, and neither decomposed,
+ *  so an accented letter was not folded to its base letter but deleted outright:
+ *  "Coolüli" tokenised to "cool" and "li" and folded to the brand key "coolli", and the
+ *  Cooluli recall stopped matching from both directions at once. The answer came back as
+ *  a clean "no recall matched", which is the one shape this project refuses to produce
+ *  without standing behind it. Marketplace titles carry accents routinely.
+ *
+ *  `html.ts` carries the same note for the same reason. Two normalisations that are
+ *  almost the same are worse than one, because the case where they disagree is the case
+ *  nobody tested. */
+function fold(s: string): string {
+  return s.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase();
+}
+
 function tokens(s: string): string[] {
-  return s
-    .toLowerCase()
+  return fold(s)
     .replace(/[^a-z0-9\s-]/g, " ")
     .split(/[\s-]+/)
     // Bare numbers match anything. The recall "10-Liter and 15-Liter Minifridges"
@@ -179,10 +195,10 @@ export function parseRecallTitle(title: string): { brandGuess: string | null; pr
 
 function brandsAgree(recallBrand: string | null, listingBrand: string | null, listingTitle: string): boolean {
   if (!recallBrand) return false;
-  const b = recallBrand.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const b = fold(recallBrand).replace(/[^a-z0-9]/g, "");
   if (b.length < 3) return false;
   const candidates = [listingBrand ?? "", listingTitle].map((s) =>
-    s.toLowerCase().replace(/[^a-z0-9]/g, "")
+    fold(s).replace(/[^a-z0-9]/g, "")
   );
   return candidates.some((c) => c.includes(b));
 }

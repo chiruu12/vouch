@@ -136,6 +136,13 @@ const MUTATIONS = [
     to: "    blocked: false,",
   },
   {
+    name: "the matcher stops folding accents to their base letter",
+    breaks: "an accented brand matches nothing and the caller is told no recall matched, which is a false absence",
+    file: "src/match.ts",
+    from: '  return s.normalize("NFKD").replace(/\\p{M}/gu, "").toLowerCase();',
+    to: '  return s.toLowerCase();',
+  },
+  {
     name: "the vouch check walks the snapshot instead of the declared source list",
     breaks: "a recall source missing from the build stops being checked exactly when it matters",
     file: "src/context.ts",

@@ -184,3 +184,19 @@ describe("contradiction reporting", () => {
     assert.equal(m.publishable, false);
   });
 });
+
+it("an accent on a brand does not hide the recall behind it", () => {
+  // The tokeniser dropped anything outside [a-z0-9] after lowercasing, so "Coolüli"
+  // became the tokens "cool" and "li" and stopped matching the Cooluli recall. The
+  // answer came back as a clean "no recall matched", which is the one shape this
+  // project refuses to produce without being able to stand behind it. Marketplace
+  // titles carry accented characters routinely, sometimes because a seller put them
+  // there on purpose, and case folding was already handled while this was not.
+  const cooluli = recalls.filter((r) => (r.brand ?? "").toLowerCase().includes("cooluli"));
+  assert.ok(cooluli.length > 0, "the capture no longer contains a Cooluli recall");
+  const plain = matchListings(cooluli, [listing({ id: "l1", title: "Cooluli Infinity 10L mini fridge" })]);
+  const accented = matchListings(cooluli, [listing({ id: "l2", title: "Coolüli Infinity 10L mini fridge" })]);
+  assert.equal(plain.length, 1);
+  assert.equal(accented.length, 1, "the accented title matched nothing at all");
+  assert.equal(accented[0]!.publishable, plain[0]!.publishable);
+});
