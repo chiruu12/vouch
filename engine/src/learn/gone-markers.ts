@@ -24,7 +24,7 @@
 //   the site's removal notice. Requiring distinct records is what separates the site's
 //   wording from one page's content.
 
-import { visibleText } from "../html.js";
+import { saidOnPage, visibleText } from "../html.js";
 
 /** What we remember about a phrase, which is only ever counts and which records. */
 export { visibleText };
@@ -63,8 +63,12 @@ const MAX_PHRASE = 80;
  *  hundreds of thousands of candidates, almost all of them fragments of navigation. */
 export function candidatePhrases(html: string): string[] {
   const out = new Set<string>();
-  for (const raw of visibleText(html).split(/[\n.!?|•]+/)) {
-    const phrase = raw.replace(/\s+/g, " ").trim().toLowerCase().replace(/[,;:]+$/, "");
+  // Split the SAME normalised text the oracle will later match against. Extracting a
+  // phrase from one treatment of whitespace and matching it against another is how a
+  // learned marker ends up unable to match the page it was learned from; `saidOnPage`
+  // in html.ts is the single definition both sides now share.
+  for (const raw of saidOnPage(html).split(/[\n.!?|•]+/)) {
+    const phrase = raw.trim().replace(/[,;:]+$/, "");
     if (phrase.length < MIN_PHRASE || phrase.length > MAX_PHRASE) continue;
     // Letters and ordinary spacing only. This drops prices, identifiers, dates and
     // anything carrying a handle, none of which are ever a site's removal wording.

@@ -54,9 +54,30 @@ const MUTATIONS = [
   {
     name: "the gone oracle reads script payloads",
     breaks: "a live listing whose page embeds the phrase in a UI string table is published as withdrawn",
-    file: "src/bdata.ts",
-    from: "const hay = visibleText(body).toLowerCase();",
+    file: "src/oracles.ts",
+    from: "const hay = saidOnPage(body);",
     to: "const hay = body.toLowerCase();",
+  },
+  {
+    name: "the oracle stops normalising whitespace, so a learned phrase cannot match",
+    breaks: "a marker learned from a page no longer fires on that page, and gone reads as repairable drift",
+    file: "src/html.ts",
+    from: "return normaliseSpacing(visibleText(html)).toLowerCase();",
+    to: "return visibleText(html).toLowerCase();",
+  },
+  {
+    name: "normalisation flattens newlines as well as spaces",
+    breaks: "two elements that separately say ordinary words add up to a withdrawal phrase neither said",
+    file: "src/html.ts",
+    from: "return s.replace(/[^\\S\\n]+/g, \" \");",
+    to: "return s.replace(/\\s+/g, \" \");",
+  },
+  {
+    name: "the block oracle reads visible text only, like the gone oracle",
+    breaks: "a wall that renders its message from script is served as an ordinary page and authorises a repair",
+    file: "src/oracles.ts",
+    from: "if (raw.includes(m) || said.includes(m)) return m;",
+    to: "if (said.includes(m)) return m;",
   },
   {
     name: "the fallback serves records known to be withdrawn",

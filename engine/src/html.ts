@@ -29,3 +29,32 @@ export function visibleText(html: string): string {
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">");
 }
+
+/** Collapse runs of horizontal whitespace, and only horizontal whitespace.
+ *
+ *  Newlines survive on purpose. `visibleText` turns every tag into one, so a newline is
+ *  the boundary between two things the page said separately, and flattening it would let
+ *  a phrase match across that boundary: `<li>listing</li><li>ended</li>` would read as
+ *  "listing ended", which is a marker, and neither element said it. That is the same
+ *  class of false positive this module was written to stop, one level down. Spaces and
+ *  tabs inside a single run of text carry no such meaning. */
+export function normaliseSpacing(s: string): string {
+  return s.replace(/[^\S\n]+/g, " ");
+}
+
+/** What the page said, in the one form every phrase oracle matches against.
+ *
+ *  There is a single function for this because there used to be two, and they disagreed.
+ *  The gone-marker learner collapsed whitespace when it extracted a candidate phrase and
+ *  the oracle did not when it matched one, so a phrase learned from a page failed to
+ *  match that same page the moment its wording carried an `&nbsp;`, a tab, or the double
+ *  space an empty template value leaves behind. The learner would offer a marker, a
+ *  person would accept it, and it would never fire.
+ *
+ *  That failure is not neutral. A withdrawal marker that does not fire leaves a removed
+ *  listing looking merely missing, and missing-while-the-permalink-answers is the one
+ *  verdict that authorises a repair. The bug turned "gone, refuse to heal" into "drift,
+ *  heal it", which is the exact inversion this project exists to prevent. */
+export function saidOnPage(html: string): string {
+  return normaliseSpacing(visibleText(html)).toLowerCase();
+}

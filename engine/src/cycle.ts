@@ -18,6 +18,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { healScraper, probePermalinks, probeUrl, runScraper, type PageObserver } from "./bdata.js";
 import { pageCollector } from "./learn/ledger-store.js";
+import { detectBlock } from "./oracles.js";
 import { ARCADIA_CONTRACT, type SourceContract } from "./contract.js";
 import type { ListingProbe } from "./classify.js";
 import type { MarkupObservation } from "./prompt.js";
@@ -83,25 +84,6 @@ const SOURCES: Partial<Record<SourceId, SourceWiring>> = {
 
 // --- live deps -------------------------------------------------------------
 
-/** Signatures that mean "we were served a wall, not the page". Checked on a 200,
- *  because the dangerous block is the one that does not announce itself with a 4xx.
- *  Our own blocked fixture returns 200 with an interstitial for exactly this reason. */
-const BLOCK_MARKERS = [
-  "verify you are a human",
-  "are you a robot",
-  "unusual traffic",
-  "access denied",
-  "enable javascript and cookies",
-  "checking your browser",
-];
-
-function detectBlock(body: string): string | null {
-  const hay = body.toLowerCase();
-  for (const m of BLOCK_MARKERS) {
-    if (hay.includes(m)) return m;
-  }
-  return null;
-}
 
 /** What the live page looks like now, in the terms the heal prompt speaks. Cheap
  *  string scanning, not a DOM: the prompt only needs hooks and labels to quote. */

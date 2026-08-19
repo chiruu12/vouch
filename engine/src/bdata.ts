@@ -30,8 +30,7 @@
 
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { visibleText } from "./html.js";
-import { activeMarkersCached } from "./learn/markers.js";
+import { detectGone } from "./oracles.js";
 
 const exec = promisify(execFile);
 
@@ -284,32 +283,6 @@ export function redirectedAway(requested: string, landed: string): string | null
   }
 }
 
-/** Phrases that mean "this record is gone" on a page that answered 200 anyway.
- *
- *  The mirror of BLOCK_MARKERS, and it exists for the same reason: the dangerous response
- *  is the one that does not announce itself in the status line. A site that serves a
- *  removed listing as a 200 "no longer available" page defeats a status-only oracle, and a
- *  status-only oracle then reports the record as merely lost, which is the one verdict
- *  that authorises a repair. Kept narrow on purpose: a false positive here marks a live
- *  record withdrawn. The phrases themselves live in learn/markers.ts, where the built-in
- *  list is the floor under a set a person can add to and the evidence can take away from. */
-export function detectGone(body: string, source: string): string | null {
-  // Visible text only, and this is not a refinement. Matching these phrases against raw
-  // HTML reads a site's embedded JSON string tables as if they were the page speaking: a
-  // live eBay listing ships "remove_success_message":"The item has been removed" inside a
-  // script tag, which contains this oracle's own marker. Every live listing on the site
-  // matched, and a match here marks a live safety recall withdrawn and takes it off the
-  // feed. The bug was unreachable only while a plain fetch was being refused with a 403,
-  // and probing through the Unlocker made it reachable on the first real page.
-  const hay = visibleText(body).toLowerCase();
-  // The active set for THIS source, not the built-in one and not every site's: a phrase a
-  // person accepted from the learner counts on the site it was learned from, and a phrase
-  // the evidence later disproved does not count anywhere.
-  for (const m of activeMarkersCached(source)) {
-    if (hay.includes(m)) return m;
-  }
-  return null;
-}
 
 /** Permalink liveness for a batch of refs. This is the withdrawal oracle.
  *

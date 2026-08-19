@@ -6,7 +6,8 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { detectGone, readUnlockerEnvelope, redirectedAway } from "./bdata.js";
+import { readUnlockerEnvelope, redirectedAway } from "./bdata.js";
+import { detectGone } from "./oracles.js";
 
 describe("the withdrawal oracle's body and redirect signals", () => {
   it("reads an ended-listing page that answered 200", () => {
