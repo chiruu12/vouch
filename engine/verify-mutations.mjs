@@ -122,6 +122,27 @@ const MUTATIONS = [
     to: '  return { breach: `row count fell ${((before - after) / before * 100).toFixed(1)}% against a baseline of ${before}, limit 20.0%`, before, after };',
   },
   {
+    name: "an event's zero counts as a measured repair time",
+    breaks: "a withdrawal and a resurrection close instantly and correctly, and their zeroes drag the median to 0, so the tool advises hammering a source it elsewhere says to back off from",
+    file: "src/context.ts",
+    from: 'const REPAIRED: readonly PubIncident["cause"][] = ["drift", "pagination"];',
+    to: 'const REPAIRED: readonly PubIncident["cause"][] = ["drift", "pagination", "gone", "resurrected"];',
+  },
+  {
+    name: "an unclosed incident is always the present tense",
+    breaks: "a repair deferred because the collector was busy leaves a record nothing ever revisits, so breakage_report keeps saying work is in progress on a source vouch_report calls healthy",
+    file: "src/context.ts",
+    from: "  if (!source.contractPassed) return true;",
+    to: "  return true;\n  if (!source.contractPassed) return true;",
+  },
+  {
+    name: "a source blocked since its last good cycle looks resolved",
+    breaks: "supersession stops checking the ordering, so a live block reads as an incident the source has been verified past, and absence stops being refused",
+    file: "src/context.ts",
+    from: "  return verifiedAt <= incident.openedAt;",
+    to: "  return false;",
+  },
+  {
     name: "a withdrawal counts as breakage",
     breaks: "the service refuses to answer every time a notice is withdrawn, which is an ordinary event and not a failure",
     file: "src/context.ts",

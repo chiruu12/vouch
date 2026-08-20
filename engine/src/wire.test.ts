@@ -151,8 +151,11 @@ test("a resurrection is not breakage", () => {
 });
 
 test("the measured repair time is the median, so one outlier cannot set the wait", () => {
+  // `cause` is part of the fixture because the filter reads it: only causes a repair
+  // actually ran for count toward the wait. It was omitted here while every verified
+  // incident counted, which is how a withdrawal's zero got into tradewell's median.
   const inc = (mttrMs: number | null, verified: boolean): PubIncident =>
-    ({ sourceId: "tradewell", verified, mttrMs } as unknown as PubIncident);
+    ({ sourceId: "tradewell", cause: "drift", verified, mttrMs } as unknown as PubIncident);
   const set = [inc(300_000, true), inc(310_000, true), inc(900_000, true)];
   assert.equal(measuredRepairMs(set, "tradewell"), 310_000);
   assert.equal(measuredRepairMs([inc(1, false)], "tradewell"), null, "an unverified repair is not a measurement");

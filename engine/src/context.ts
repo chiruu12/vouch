@@ -33,7 +33,7 @@
 // rule in this file follows from it.
 
 import { PUBLISH_THRESHOLD, MATCH_CAVEAT, scoreMatch, type Listing, type MatchBasis } from "./match.js";
-import type { PubIncident, PubRecall, Snapshot } from "./snapshot.js";
+import type { PubIncident, PubRecall, PubSource, Snapshot } from "./snapshot.js";
 import { BASE_COOLDOWN_MS, MAX_COOLDOWN_MS } from "./backoff.js";
 import {
   RECALL_SOURCES,
@@ -247,10 +247,36 @@ function unvouchedSources(snapshot: Snapshot): { id: SourceId; label: string; wh
  *  failure. A resurrection is not breakage either: the contract passed. */
 const BREAKAGE: readonly IncidentCause[] = ["drift", "pagination", "blocked"];
 
+/** Is this incident still describing the present?
+ *
+ *  `closedAt === null` used to be taken as "still broken", on the reasoning that
+ *  incidents are never edited so the open one is the current state. The reasoning has a
+ *  gap: an incident is written once, at the moment it is diagnosed, and nothing revisits
+ *  it. A repair that was deferred because another was already running on the collector
+ *  therefore leaves a record that stays open forever, and `breakage_report` went on
+ *  telling callers "the work is in progress" a day after the source had gone green,
+ *  while `vouch_report` reported the same source healthy at the same instant. Two tools
+ *  contradicting each other about one source is worse than either answer alone.
+ *
+ *  So an incident is superseded when the source has been verified since it opened and is
+ *  currently passing. That is evidence, not an edit: the file in `runs/` is untouched and
+ *  still says what it said. All three conditions are required, because dropping any one
+ *  of them would let a source that is currently broken look resolved. */
+function stillOpen(source: PubSource, incident: PubIncident): boolean {
+  if (incident.closedAt !== null) return false;
+  if (!source.contractPassed) return true;
+  if (!CURRENT.includes(source.trust)) return true;
+  const verifiedAt = source.lastVerifiedAt;
+  if (verifiedAt === null) return true;
+  return verifiedAt <= incident.openedAt;
+}
+
 function openBreakage(snapshot: Snapshot, id: SourceId): PubIncident | null {
+  const source = snapshot.sources.find((s) => s.id === id);
+  if (source === undefined) return null;
   return (
     snapshot.incidents.find(
-      (i) => i.sourceId === id && i.closedAt === null && BREAKAGE.includes(i.cause)
+      (i) => i.sourceId === id && BREAKAGE.includes(i.cause) && stillOpen(source, i)
     ) ?? null
   );
 }
@@ -492,13 +518,37 @@ export interface BreakageReport {
   sources: SourceBreakage[];
 }
 
-/** How long repairs on this source have actually taken, from the incidents that verified
- *  one. The median rather than the mean: a single 900-second outlier should not tell a
- *  caller to wait a quarter of an hour. Null when this source has never had a repair
- *  verified, in which case we have measured nothing and say so instead of guessing. */
+/** Causes whose resolution involved a repair running. Everything else that resolves is
+ *  an event, and an event resolving tells a caller nothing about how long to wait.
+ *
+ *  `gone` and `resurrected` are the two that matter here. Both close with `verified:
+ *  true` and `mttrMs: 0`, correctly: a withdrawal is the source working and needs no
+ *  repair, so no time elapsed between noticing and serving the truth again. Counting
+ *  those zeroes as repair durations is what this list exists to stop. */
+const REPAIRED: readonly PubIncident["cause"][] = ["drift", "pagination"];
+
+/** How long repairs on this source have actually taken, from the incidents where one
+ *  actually ran. The median rather than the mean: a single 900-second outlier should not
+ *  tell a caller to wait a quarter of an hour. Null when this source has never had a
+ *  repair verified, in which case we have measured nothing and say so instead of
+ *  guessing.
+ *
+ *  The cause filter and the `> 0` are both load-bearing, and their absence shipped. With
+ *  every verified incident counted, tradewell's real history of one 347.6-second repair
+ *  plus a withdrawal and a resurrection gave a median of zero, so `breakage_report`
+ *  advised `RETRY after=0s` while the rest of the engine was saying to back off. A tool
+ *  that promises a wait "measured from repairs that actually ran there" cannot answer
+ *  with the time a withdrawal took to not need repairing. */
 export function measuredRepairMs(incidents: readonly PubIncident[], sourceId: SourceId): number | null {
   const times = incidents
-    .filter((i) => i.sourceId === sourceId && i.verified && i.mttrMs !== null)
+    .filter(
+      (i) =>
+        i.sourceId === sourceId &&
+        i.verified &&
+        i.mttrMs !== null &&
+        i.mttrMs > 0 &&
+        REPAIRED.includes(i.cause)
+    )
     .map((i) => i.mttrMs as number)
     .sort((a, b) => a - b);
   if (times.length === 0) return null;
@@ -574,10 +624,10 @@ export function adviseRetry(
 
 export function breakageReport(snapshot: Snapshot, now: Date = new Date()): BreakageReport {
   const sources = snapshot.sources.map((s): SourceBreakage => {
-    // The newest incident still open on this source. Incidents are never edited, so the
-    // open one is the current state and the closed ones are the measurement history.
+    // The newest incident still describing this source's present. See `stillOpen`: an
+    // unclosed record is not the same thing as a source that is still broken.
     const open = snapshot.incidents
-      .filter((i) => i.sourceId === s.id && i.closedAt === null)
+      .filter((i) => i.sourceId === s.id && stillOpen(s, i))
       .sort((a, b) => b.openedAt.localeCompare(a.openedAt))[0];
 
     const cause = open?.cause ?? null;

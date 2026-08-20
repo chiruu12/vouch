@@ -9,7 +9,8 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { recallContext, quarantinedFor, vouchReport, breakageReport } from "./context.js";
+import { recallContext, quarantinedFor, vouchReport, breakageReport, measuredRepairMs } from "./context.js";
+import type { PubIncident } from "./snapshot.js";
 import type { PubRecall, PubSource, Snapshot } from "./snapshot.js";
 import { MATCH_CAVEAT, PUBLISH_THRESHOLD } from "./match.js";
 import type { RecordState } from "./types.js";
@@ -258,7 +259,12 @@ function blockedCpsc(): Snapshot {
         id: "I-blocked",
         sourceId: "cpsc",
         sourceLabel: "US CPSC",
-        openedAt: "2026-08-19T07:00:00Z",
+        // After `lastVerifiedAt` (08:00), which is the only ordering the runner can
+        // produce: a refused cycle goes through `carried()`, which never advances
+        // `lastVerifiedAt`. A block dated before the last good cycle would describe a
+        // source that was blocked and then successfully verified anyway, which is a
+        // resolved incident wearing an open one's clothes.
+        openedAt: "2026-08-19T09:00:00Z",
         closedAt: null,
         cause: "blocked",
         healable: false,
@@ -347,4 +353,127 @@ test("a duplicate source id cannot be vouched for by its healthy twin", () => {
   });
   const a = recallContext(twice, "Some Product Nobody Recalled", NOW);
   assert.equal(a.refusalCode, "absence_unverifiable");
+});
+
+// --- what "measured" means in a retry wait --------------------------------
+
+/** An incident carrying only the fields `measuredRepairMs` reads. */
+function inc(over: Partial<PubIncident>): PubIncident {
+  return {
+    id: "i", sourceId: "tradewell", sourceLabel: "Tradewell", openedAt: "2026-08-18T08:00:00.000Z",
+    closedAt: "2026-08-18T08:06:00.000Z", cause: "drift", healable: true, evidence: [],
+    refusal: null, healAttempted: true, healDeferred: false, healDurationMs: 1000,
+    prompt: null, verified: true, mttrMs: null, withdrawnRefs: [], resurrectedRefs: [],
+    rows: 12, breaches: [],
+    ...over,
+  } as PubIncident;
+}
+
+test("a withdrawal and a resurrection are not repairs, so they do not set the retry wait", () => {
+  // The exact shape in runs/ as of 2026-08-20: a gone incident and a resurrected one
+  // both carry verified=true and mttrMs=0, because nothing had to be repaired for them
+  // to resolve. Median of [0, 0, 347580] is 0, so breakage_report told callers to retry
+  // after 0s, on a source the engine elsewhere says to leave alone. The tool promises a
+  // wait "measured from repairs that actually ran there", and two of those three are
+  // events, not repairs.
+  const incidents = [
+    inc({ cause: "gone", mttrMs: 0 }),
+    inc({ cause: "resurrected", mttrMs: 0 }),
+    inc({ cause: "pagination", mttrMs: 347580 }),
+  ];
+
+  assert.equal(measuredRepairMs(incidents, "tradewell"), 347580);
+});
+
+test("a source whose only incidents were events has measured nothing", () => {
+  // Null rather than zero. Nothing was measured, and saying "retry immediately" on the
+  // strength of a withdrawal resolving instantly is a guess wearing a measurement.
+  const incidents = [inc({ cause: "gone", mttrMs: 0 }), inc({ cause: "resurrected", mttrMs: 0 })];
+
+  assert.equal(measuredRepairMs(incidents, "tradewell"), null);
+});
+
+test("an unverified repair does not count toward the wait", () => {
+  const incidents = [
+    inc({ cause: "drift", verified: false, mttrMs: 999 }),
+    inc({ cause: "drift", mttrMs: 200000 }),
+  ];
+
+  assert.equal(measuredRepairMs(incidents, "tradewell"), 200000);
+});
+
+test("an event that took real time to resolve is still not a repair", () => {
+  // Why the cause filter exists on top of the `> 0` guard, which would be enough today.
+  // `gone` and `resurrected` both hardcode mttrMs to 0 right now, so zero alone catches
+  // them. That is an implementation choice and a reasonable person could change it:
+  // "time from noticing the withdrawal to serving without it" is a sensible thing to
+  // record, and the moment it is recorded the median is poisoned again by a number that
+  // has nothing to do with how long a repair takes. The filter is on what happened, not
+  // on what it happened to measure.
+  const incidents = [
+    inc({ cause: "gone", mttrMs: 4000 }),
+    inc({ cause: "resurrected", mttrMs: 5000 }),
+    inc({ cause: "drift", mttrMs: 300000 }),
+  ];
+
+  assert.equal(measuredRepairMs(incidents, "tradewell"), 300000);
+});
+
+// --- an unclosed incident is not the same as a broken source ----------------
+
+test("a deferred repair does not keep claiming work is in progress forever", () => {
+  // Incidents are written once, at diagnosis, and nothing revisits them. A repair
+  // deferred because another was already running on the collector therefore leaves a
+  // record open permanently. breakage_report read that as the present tense and told
+  // callers "the work is in progress" a day after the source had gone green, while
+  // vouch_report called the same source healthy in the same breath.
+  const snap = snapshot({
+    incidents: [
+      {
+        id: "I-deferred", sourceId: "cpsc", sourceLabel: "US CPSC",
+        openedAt: "2026-08-19T06:00:00Z", closedAt: null, cause: "pagination",
+        healable: true, evidence: ["returned 7 rows against a baseline of 14"],
+        refusal: null, healAttempted: false, healDeferred: true, healDurationMs: null,
+        prompt: null, verified: false, mttrMs: null, withdrawnRefs: [], resurrectedRefs: [],
+      },
+    ] as never,
+  });
+
+  // The source was verified at 08:00, two hours after this opened.
+  const b = breakageReport(snap, NOW);
+  const cpsc = b.sources.find((s) => s.id === "cpsc");
+  assert.equal(cpsc?.cause, null, "a source verified since is not still broken");
+  assert.equal(b.canReportAbsence, true);
+  assert.equal(b.healthy, true);
+});
+
+test("an incident opened after the last good cycle is still the present tense", () => {
+  // The direction that must not loosen. Superseding on a later verification is only
+  // sound because a refused cycle cannot advance `lastVerifiedAt`; if this ever starts
+  // reading `null`, a live block stops refusing absence, which is the hole the open-
+  // incident check was added to close in the first place.
+  const b = breakageReport(blockedCpsc(), NOW);
+  assert.equal(b.sources.find((s) => s.id === "cpsc")?.cause, "blocked");
+  assert.equal(b.healthy, false);
+  assert.equal(b.canReportAbsence, false);
+});
+
+test("a source that has never been verified keeps its incident open", () => {
+  const snap = snapshot({
+    sources: [
+      source("cpsc", "verified", { lastVerifiedAt: null }),
+      source("arcadia", "verified"),
+    ],
+    incidents: [
+      {
+        id: "I-first", sourceId: "cpsc", sourceLabel: "US CPSC",
+        openedAt: "2026-08-19T06:00:00Z", closedAt: null, cause: "drift",
+        healable: true, evidence: ["field title null rate 100.0%"], refusal: null,
+        healAttempted: false, healDeferred: false, healDurationMs: null, prompt: null,
+        verified: false, mttrMs: null, withdrawnRefs: [], resurrectedRefs: [],
+      },
+    ] as never,
+  });
+
+  assert.equal(breakageReport(snap, NOW).sources.find((s) => s.id === "cpsc")?.cause, "drift");
 });
