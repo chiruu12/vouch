@@ -20,7 +20,7 @@
 import { readFileSync, statSync } from "node:fs";
 import { createInterface } from "node:readline";
 import { dirname, join, resolve } from "node:path";
-import { recallContext, quarantinedFor, vouchReport, breakageReport } from "./context.js";
+import { recallContext, quarantinedFor, vouchReport, breakageReport, type VouchSource } from "./context.js";
 import { compactAnswer, digestAnswer, digestBreakage, digestQuarantine } from "./wire.js";
 import type { Snapshot } from "./snapshot.js";
 
@@ -75,6 +75,31 @@ const str = (v: unknown): string => (typeof v === "string" ? v : "");
 const wantsJson = (a: Record<string, unknown>): boolean => a.format === "json";
 const j = (v: unknown): string => JSON.stringify(v);
 
+/** One source's line in the `vouch_report` digest.
+ *
+ *  Extracted so the bound below can be proved. Inline it could not be: the worst case is
+ *  a source failing many fields at once, every real snapshot on disk has at most one
+ *  breach per source, and a test driving the live answer would assert the bound against
+ *  a source that could not exceed it.
+ *
+ *  The bound itself is the point. `vouch_report` answers "what can be vouched for";
+ *  `breakage_report` answers "why we are refusing", and says so in its own description.
+ *  This line used to do both by joining every breach onto it, so asking what was
+ *  trustworthy cost more the worse one source had broken, and the sentence that said
+ *  what happened was buried at the end of the ones that did not. An answer nothing will
+ *  read is the same failure as a refusal nothing will read.
+ *
+ *  So: the first breach, verbatim, and a count of the rest with the tool that has them. */
+export function vouchLine(s: VouchSource): string {
+  const head =
+    `${s.kind === "recall" ? "RECALL_SRC" : "LISTING_SRC"} ${s.id} ${s.state} rows=${s.rows}`;
+  const tail = s.synthetic ? " SYNTHETIC" : "";
+  if (s.contractPassed || s.breaches.length === 0) return head + tail;
+  const [first, ...rest] = s.breaches;
+  const more = rest.length === 0 ? "" : ` (+${rest.length} more, call breakage_report)`;
+  return `${head} FAILING: ${first}${more}${tail}`;
+}
+
 export const TOOLS: Tool[] = [
   {
     name: "recall_context",
@@ -99,15 +124,7 @@ export const TOOLS: Tool[] = [
       const r = vouchReport(snapshot());
       return wantsJson(a)
         ? j(r)
-        : [
-            `CAN_REPORT_ABSENCE ${String(r.canReportAbsence)}`,
-            ...r.sources.map(
-              (s2) =>
-                `${s2.kind === "recall" ? "RECALL_SRC" : "LISTING_SRC"} ${s2.id} ${s2.state} rows=${s2.rows}` +
-                (s2.contractPassed ? "" : ` FAILING: ${s2.breaches.join("; ")}`) +
-                (s2.synthetic ? " SYNTHETIC" : "")
-            ),
-          ].join("\n");
+        : [`CAN_REPORT_ABSENCE ${String(r.canReportAbsence)}`, ...r.sources.map(vouchLine)].join("\n");
     },
   },
   {

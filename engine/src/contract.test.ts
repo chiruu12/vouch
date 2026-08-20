@@ -250,6 +250,45 @@ describe("checkContract", () => {
     assert.equal(report.passed, false);
   });
 
+  it("reports zero rows as one breach, not a null rate over an empty set", () => {
+    // A null rate measured over no rows is not a measurement. Every field reads 100%
+    // null because the denominator is empty, so an extraction that returned nothing
+    // produced one breach per field plus the real one, and the real one was last.
+    //
+    // Nobody saw it while every source that broke still returned rows. eBay is the first
+    // source to return zero in production, and it put seven sentences of the form "null
+    // rate 100.0% over 0 rows" onto the agent-facing surface, where they crowded out the
+    // sentence that actually said what happened.
+    //
+    // The field reports keep `breached: true`, because they are what `deriveTrust` reads
+    // to decide a volume drop is not explained by withdrawals, and an empty extraction is
+    // emphatically not. What goes away is only the redundant prose.
+    const c = contract({
+      minRows: 1,
+      maxRowDropRate: 1,
+      fields: {
+        brand: { type: "string", maxNullRate: 0, minLength: 2 },
+        title: { type: "string", maxNullRate: 0, minLength: 2 },
+      },
+    });
+    const report = checkContract(c, [], 12, frozenNow);
+
+    assert.equal(report.passed, false);
+    assert.ok(
+      report.breaches.some((b) => b.includes("returned 0 rows")),
+      "a zero-row extraction has to say so"
+    );
+    assert.deepEqual(
+      report.breaches.filter((b) => /over 0 rows/.test(b)),
+      [],
+      "a null rate was reported over an empty denominator"
+    );
+    assert.ok(
+      report.fields.every((f) => f.breached),
+      "the field reports still have to fail, or deriveTrust would treat an empty extraction as explainable"
+    );
+  });
+
   it("populates sampleRefs for offending rows", () => {
     const c = contract({
       minRows: 1,

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-20T10:59:32.495Z",
+  "generatedAt": "2026-08-20T19:34:48.150Z",
   "caveat": "Matched on product line, not on unit. Recalls are often limited to specific batches or serial ranges, and marketplace listings rarely show them, so a match here means this listing appears to be the same product as a recall, not that this particular item is affected.",
   "publishThreshold": 0.7,
   "sources": [
@@ -56,6 +56,25 @@
         "TW-44903"
       ],
       "heals": 1
+    },
+    {
+      "id": "ebay",
+      "label": "eBay",
+      "scraped": true,
+      "synthetic": false,
+      "collectorId": "c_mt1u43dj2h99xaf6l2",
+      "url": "https://www.ebay.com/sch/i.html?_nkw=Cooluli+minifridge",
+      "contractVersion": "ebay@1",
+      "trust": "unverified",
+      "rows": 0,
+      "baselineRows": null,
+      "contractPassed": false,
+      "breaches": [
+        "returned 0 rows, contract requires at least 5"
+      ],
+      "lastVerifiedAt": null,
+      "withdrawnRefs": [],
+      "heals": 0
     }
   ],
   "recalls": [
@@ -8465,6 +8484,127 @@
       ],
       "rows": 12,
       "breaches": []
+    },
+    {
+      "id": "ebay-1787242643447",
+      "sourceId": "ebay",
+      "sourceLabel": "eBay",
+      "openedAt": "2026-08-20T16:08:30.047Z",
+      "closedAt": null,
+      "cause": "drift",
+      "healable": true,
+      "evidence": [
+        "field id null rate 100.0% against a limit of 0.0% over 0 rows (examples: )",
+        "field permalink null rate 100.0% against a limit of 0.0% over 0 rows (examples: )",
+        "field title null rate 100.0% against a limit of 0.0% over 0 rows (examples: )",
+        "field price null rate 100.0% against a limit of 2.0% over 0 rows (examples: )",
+        "field currency null rate 100.0% against a limit of 2.0% over 0 rows (examples: )",
+        "field condition null rate 100.0% against a limit of 5.0% over 0 rows (examples: )",
+        "field location null rate 100.0% against a limit of 5.0% over 0 rows (examples: )",
+        "listing fetched cleanly (HTTP 200, 1812678 bytes) but yielded no rows"
+      ],
+      "refusal": "heal reported \"done\" but the result still fails the contract: field id null rate 100.0% exceeds limit 0.0% over 0 rows; field permalink null rate 100.0% exceeds limit 0.0% over 0 rows",
+      "healAttempted": true,
+      "healDeferred": false,
+      "healDurationMs": 294331,
+      "prompt": "Extraction returned an empty array: 0 rows where several were expected, and no errors were raised. The listing at https://www.ebay.com/sch/i.html?_nkw=Cooluli+minifridge still returns HTTP 200 with 1812678 bytes, so it is not blocked. Permalinks for the previously extracted notices still return HTTP 200, so nothing was withdrawn. The previously working selector .permalink now matches 0 elements. Attribute hooks present in the live document: data-inlinepayload, data-marko-key, data-id, data-marko, data-ebayui, data-view-type, data-pageci, data-operationid. Re-extract every notice from https://www.ebay.com/sch/i.html?_nkw=Cooluli+minifridge.",
+      "verified": false,
+      "mttrMs": null,
+      "withdrawnRefs": [],
+      "resurrectedRefs": [],
+      "rows": 0,
+      "breaches": [
+        "field id null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "field permalink null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "field title null rate 100.0% exceeds limit 0.0% over 0 rows",
+        "field price null rate 100.0% exceeds limit 2.0% over 0 rows",
+        "field currency null rate 100.0% exceeds limit 2.0% over 0 rows",
+        "field condition null rate 100.0% exceeds limit 5.0% over 0 rows",
+        "field location null rate 100.0% exceeds limit 5.0% over 0 rows",
+        "returned 0 rows, contract requires at least 5"
+      ]
+    },
+    {
+      "id": "ebay-1787250820405",
+      "sourceId": "ebay",
+      "sourceLabel": "eBay",
+      "openedAt": "2026-08-20T18:21:49.091Z",
+      "closedAt": null,
+      "cause": "drift",
+      "healable": true,
+      "evidence": [
+        "field id null rate 100.0% against a limit of 0.0% over 0 rows (examples: )",
+        "field permalink null rate 100.0% against a limit of 0.0% over 0 rows (examples: )",
+        "field title null rate 100.0% against a limit of 0.0% over 0 rows (examples: )",
+        "field price null rate 100.0% against a limit of 2.0% over 0 rows (examples: )",
+        "field currency null rate 100.0% against a limit of 2.0% over 0 rows (examples: )",
+        "field condition null rate 100.0% against a limit of 5.0% over 0 rows (examples: )",
+        "field location null rate 100.0% against a limit of 5.0% over 0 rows (examples: )",
+        "listing fetched cleanly (HTTP 200, 1782051 bytes) but yielded no rows"
+      ],
+      "refusal": "heal reported \"done\" but the result still fails the contract: returned 0 rows, contract requires at least 5",
+      "healAttempted": true,
+      "healDeferred": false,
+      "healDurationMs": 454458,
+      "prompt": "Extraction returned an empty array: 0 rows where several were expected, and no errors were raised. The listing at https://www.ebay.com/sch/i.html?_nkw=Cooluli+minifridge still returns HTTP 200 with 1782051 bytes, so it is not blocked. Permalinks for the previously extracted notices still return HTTP 200, so nothing was withdrawn. The previously working selector .permalink now matches 0 elements. Attribute hooks present in the live document: data-inlinepayload, data-uvcc-ready, data-marko-key, data-ebayui, data-marko, data-gh-search-form-field, data-view-type, data-pageci. Re-extract every notice from https://www.ebay.com/sch/i.html?_nkw=Cooluli+minifridge.",
+      "verified": false,
+      "mttrMs": null,
+      "withdrawnRefs": [],
+      "resurrectedRefs": [],
+      "rows": 0,
+      "breaches": [
+        "returned 0 rows, contract requires at least 5"
+      ]
+    },
+    {
+      "id": "ebay-1787253466305",
+      "sourceId": "ebay",
+      "sourceLabel": "eBay",
+      "openedAt": "2026-08-20T18:45:39.315Z",
+      "closedAt": null,
+      "cause": "drift",
+      "healable": true,
+      "evidence": [
+        "field location null rate 5.6% against a limit of 5.0% over 480 rows (examples: , , )"
+      ],
+      "refusal": "heal reported \"done\" but the result still fails the contract: field location null rate 5.6% exceeds limit 5.0% over 568 rows",
+      "healAttempted": true,
+      "healDeferred": false,
+      "healDurationMs": 264395,
+      "prompt": "Extraction returned 480 rows but these fields breached contract ebay@1: location (6% null). The listing at https://www.ebay.com/sch/i.html?_nkw=Cooluli+minifridge still returns HTTP 200 with 1765681 bytes, so it is not blocked. Permalinks for the previously extracted notices still return HTTP 200, so nothing was withdrawn. The previously working selector .permalink now matches 0 elements. Attribute hooks present in the live document: data-inlinepayload, data-type, data-variant, data-webpack, data-uvcc-ready, data-marko-key, data-id, data-marko. Re-extract every notice from https://www.ebay.com/sch/i.html?_nkw=Cooluli+minifridge.",
+      "verified": false,
+      "mttrMs": null,
+      "withdrawnRefs": [],
+      "resurrectedRefs": [],
+      "rows": 568,
+      "breaches": [
+        "field location null rate 5.6% exceeds limit 5.0% over 568 rows"
+      ]
+    },
+    {
+      "id": "ebay-1787254411299",
+      "sourceId": "ebay",
+      "sourceLabel": "eBay",
+      "openedAt": "2026-08-20T19:20:44.766Z",
+      "closedAt": null,
+      "cause": "blocked",
+      "healable": false,
+      "evidence": [
+        "listing returned HTTP 403",
+        "healing cannot clear a block; backing off instead",
+        "blocked cycle 1 in a row; holding off until 2026-08-20T19:34:31.295Z before the next request"
+      ],
+      "refusal": "the source refused the request; healing cannot clear a block",
+      "healAttempted": false,
+      "healDeferred": false,
+      "healDurationMs": null,
+      "prompt": null,
+      "verified": false,
+      "mttrMs": null,
+      "withdrawnRefs": [],
+      "resurrectedRefs": [],
+      "rows": 561,
+      "breaches": []
     }
   ],
   "study": {
@@ -8655,7 +8795,7 @@
     "asserted": 4,
     "quarantined": 1,
     "withdrawn": 2,
-    "refusals": 3
+    "refusals": 7
   },
   "agents": {
     "simulatedBreach": "row count fell from 307 to 204, a 33.6% drop, limit 20.0%",

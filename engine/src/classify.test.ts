@@ -77,6 +77,7 @@ function input(
     currentRefs?: readonly string[];
     permalinks?: readonly PermalinkProbe[];
     rowsPerPage?: number;
+    extractionErrors?: readonly { error: string; error_code?: string }[];
   } = {}
 ): ClassifyInput {
   const value: ClassifyInput = {
@@ -88,6 +89,9 @@ function input(
   };
   if (overrides.rowsPerPage !== undefined) {
     value.rowsPerPage = overrides.rowsPerPage;
+  }
+  if (overrides.extractionErrors !== undefined) {
+    value.extractionErrors = overrides.extractionErrors;
   }
   return value;
 }
@@ -390,6 +394,196 @@ describe("classify", () => {
 // defeated the guarantee this file exists to enforce. Block detection was body-aware
 // from the start while withdrawal detection was status-only, which put the weaker
 // detector on the case the project is actually about.
+describe("an extraction that did not finish", () => {
+  // Found on live eBay, and it had already cost two paid repairs against a collector
+  // that was working perfectly.
+  //
+  // `runScraper` had a 120 second timeout. The eBay collector exceeds Bright Data's
+  // realtime page limit and switches to batch mode, which polls for minutes, so the
+  // scrape was killed every time. The cycle caught the timeout and passed it along as an
+  // extraction error, the message matched no block phrase, and `extractionErrors` had
+  // exactly one reader: `blockedAtSource`. So the single most direct piece of evidence
+  // about why nothing came back was dropped on the floor.
+  //
+  // What the classifier saw next was zero rows, a page answering 200, and every permalink
+  // answering 200. That is the signature of drift, so it said drift, said healable, and
+  // authorised a repair. It is the same mistake as reading an unanswered probe as a
+  // changed page, one layer down: on the extraction path instead of the probe path.
+  const timedOut = () =>
+    classify(
+      input({
+        report: report({
+          rows: 0,
+          baselineRows: 193,
+          rowDropRate: 1,
+          passed: false,
+          breaches: ["returned 0 rows, contract requires at least 5"],
+          fields: [field({ field: "title", nullRate: 1, breached: true })],
+        }),
+        listing: listing({ status: 200, bodyBytes: 1782051 }),
+        baselineRefs: refs(193),
+        currentRefs: [],
+        permalinks: refs(193).map((ref) => ({ ref, status: 200, goneSignature: null })),
+        extractionErrors: [{ error: "Command failed: timeout of 120000ms exceeded" }],
+      })
+    );
+
+  it("is never repaired, because a repair cannot make a scrape finish", () => {
+    assert.equal(timedOut().healable, false);
+  });
+
+  it("says what the collector reported instead of dropping it", () => {
+    const d = timedOut();
+    assert.ok(
+      d.evidence.some((e) => e.includes("timeout of 120000ms exceeded")),
+      "the collector's own error is the most direct evidence there is and it has to be quoted"
+    );
+  });
+
+  it("does not report records as missing when nothing read the listing", () => {
+    // The same rule the block branch already applies. Every baseline ref looks missing
+    // after a scrape that died, and not one of them is: nothing looked. Reporting 193
+    // notices as "missing while their permalinks still return HTTP 200" would be a
+    // sentence about a listing no one read.
+    assert.deepEqual(timedOut().lostRefs, []);
+  });
+
+  it("keeps a withdrawal the permalink oracle established itself", () => {
+    // Withdrawals survive, because they do not come from the extraction. The oracle asked
+    // the record's own page and got a 404, and a scrape dying afterwards does not unsay it.
+    const d = classify(
+      input({
+        report: report({
+          rows: 0, baselineRows: 3, rowDropRate: 1, passed: false,
+          breaches: ["returned 0 rows, contract requires at least 5"],
+          fields: [field({ field: "title", nullRate: 1, breached: true })],
+        }),
+        listing: listing({ status: 200 }),
+        baselineRefs: refs(3),
+        currentRefs: [],
+        permalinks: [
+          { ref: "ARC-0001", status: 404, goneSignature: null },
+          { ref: "ARC-0002", status: 200, goneSignature: null },
+          { ref: "ARC-0003", status: 200, goneSignature: null },
+        ],
+        extractionErrors: [{ error: "Command failed: timeout of 120000ms exceeded" }],
+      })
+    );
+    assert.equal(d.healable, false);
+    assert.deepEqual(d.withdrawnRefs, ["ARC-0001"]);
+    assert.deepEqual(d.lostRefs, []);
+  });
+
+  it("does not claim the extraction merely came back empty", () => {
+    // "listing fetched cleanly but yielded no rows" is a true sentence about the page and
+    // a false one about the run, and it is published verbatim on the incident page.
+    assert.deepEqual(
+      timedOut().evidence.filter((e) => e.includes("yielded no rows")),
+      []
+    );
+  });
+
+  it("still calls a clean empty extraction healable drift", () => {
+    // The floor. An extraction that finished and genuinely found nothing is drift, and
+    // is the case the repair path exists for. Refusing that too would trade one wrong
+    // answer for another.
+    const d = classify(
+      input({
+        report: report({
+          rows: 0,
+          baselineRows: 193,
+          rowDropRate: 1,
+          passed: false,
+          breaches: ["returned 0 rows, contract requires at least 5"],
+          fields: [field({ field: "title", nullRate: 1, breached: true })],
+        }),
+        listing: listing({ status: 200, bodyBytes: 1782051 }),
+        baselineRefs: refs(193),
+        currentRefs: [],
+        permalinks: refs(193).map((ref) => ({ ref, status: 200, goneSignature: null })),
+      })
+    );
+    assert.equal(d.cause, "drift");
+    assert.equal(d.healable, true);
+  });
+});
+
+describe("an extraction that returned nothing", () => {
+  // Live eBay, twice. The collector came back with zero rows against a page that
+  // answered HTTP 200 with 1.8 MB, and the evidence the classifier wrote was seven
+  // sentences of the form "field title null rate 100.0% against a limit of 0.0% over 0
+  // rows (examples: )" followed by the one sentence that said what happened.
+  //
+  // Every one of those is a rate measured over an empty denominator, and the empty
+  // `examples:` is the tell: there were no rows to take an example from. `checkContract`
+  // stopped emitting them as breaches for the same reason; this is the same statement on
+  // the other path, and this path is the one rendered verbatim on the incident page.
+  const emptyFields = ["id", "permalink", "title", "price", "condition", "location"].map((f) =>
+    field({ field: f, nullRate: 1, nullRateLimit: 0, breached: true, sampleRefs: [] })
+  );
+  const emptyRun = () =>
+    classify(
+      input({
+        report: report({
+          rows: 0,
+          baselineRows: 193,
+          rowDropRate: 1,
+          passed: false,
+          breaches: ["returned 0 rows, contract requires at least 5"],
+          fields: emptyFields,
+        }),
+        listing: listing({ status: 200, bodyBytes: 1782051 }),
+        baselineRefs: refs(193),
+        currentRefs: [],
+        permalinks: refs(193).map((ref) => ({ ref, status: 200, goneSignature: null })),
+      })
+    );
+
+  it("says the extraction came back empty", () => {
+    const d = emptyRun();
+    assert.equal(d.cause, "drift");
+    assert.ok(
+      d.evidence.some((e) => e.includes("yielded no rows")),
+      "the one sentence that says what happened has to survive"
+    );
+  });
+
+  it("does not measure a null rate over an empty set", () => {
+    const d = emptyRun();
+    assert.deepEqual(
+      d.evidence.filter((e) => e.includes("null rate")),
+      [],
+      "a per-field rate was reported over zero rows"
+    );
+    assert.deepEqual(
+      d.evidence.filter((e) => e.includes("examples: )")),
+      [],
+      "evidence quotes an example list that is empty because there were no rows"
+    );
+  });
+
+  it("still reports per-field evidence when there are rows to measure", () => {
+    // The floor. Suppressing field evidence on an empty extraction must not suppress it
+    // on a real one, which is the case the drift branch exists for.
+    const d = classify(
+      input({
+        report: report({
+          rows: 12,
+          passed: false,
+          breaches: ["field title null rate 50.0% exceeds limit 0.0% over 12 rows"],
+          fields: [field({ field: "title", nullRate: 0.5, breached: true, sampleRefs: ["A-1", "A-2"] })],
+        }),
+        listing: listing({ status: 200 }),
+      })
+    );
+    assert.equal(d.cause, "drift");
+    assert.ok(
+      d.evidence.some((e) => e.includes("field title null rate 50.0%") && e.includes("A-1")),
+      "a real field breach must still be quoted with its examples"
+    );
+  });
+});
+
 describe("the withdrawal oracle when it is not a clean 404", () => {
   it("treats a 200 whose body says the record is gone as a withdrawal, not a loss", () => {
     // Plenty of sites answer 200 with a "no longer available" page. Status-only

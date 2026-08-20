@@ -4,7 +4,8 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { TOOLS, handle, resetSession } from "./mcp.js";
+import { TOOLS, handle, resetSession, vouchLine } from "./mcp.js";
+import type { VouchSource } from "./context.js";
 
 const call = (method: string, params?: Record<string, unknown>, id: number | null = 1) =>
   handle({ jsonrpc: "2.0", id, method, ...(params ? { params } : {}) }) as
@@ -96,6 +97,60 @@ test("a live tools/call answers from the published snapshot, in both formats", (
   assert.match(asDigest, /^CAN_REPORT_ABSENCE (true|false)/);
   assert.equal(asDigest.includes("CAN_REPORT_ABSENCE true"), report.canReportAbsence);
   assert.ok(asDigest.length < asJson.length, "the digest must be the cheaper of the two");
+});
+
+test("a failing source is named in one line, not unrolled breach by breach", () => {
+  // `vouch_report` answers "what can be vouched for". `breakage_report` answers "why we
+  // are refusing", and says so in its own description. The digest used to do both by
+  // joining every breach a source had onto its line, so the cost of asking what is
+  // trustworthy scaled with how badly one source had broken.
+  //
+  // eBay is what made that visible. A collector returning nothing put a 500-byte source
+  // line in front of every agent that asked, and the sentence explaining what had
+  // happened was at the end of it. An answer nothing will read is the same failure as a
+  // refusal nothing will read.
+  // Driven directly rather than through the live snapshot. Every source on disk has at
+  // most one breach right now, so asserting the bound against the published answer would
+  // assert it against a source that cannot exceed it: the check would pass, and it would
+  // pass whether or not the bound existed. The worst case has to be constructed.
+  const failing: VouchSource = {
+    id: "ebay", label: "eBay", kind: "listing", state: "unverified", rows: 0,
+    lastVerifiedAt: null, contractPassed: false, synthetic: false,
+    breaches: [
+      "field id null rate 100.0% exceeds limit 0.0% over 40 rows",
+      "field permalink null rate 100.0% exceeds limit 0.0% over 40 rows",
+      "field title null rate 100.0% exceeds limit 0.0% over 40 rows",
+      "field price null rate 100.0% exceeds limit 2.0% over 40 rows",
+      "field currency null rate 100.0% exceeds limit 2.0% over 40 rows",
+      "field condition null rate 100.0% exceeds limit 5.0% over 40 rows",
+      "field location null rate 100.0% exceeds limit 5.0% over 40 rows",
+    ],
+  };
+  const line = vouchLine(failing);
+
+  assert.ok(line.includes("FAILING"), "a failing source has to say it is failing");
+  assert.ok(line.includes(failing.breaches[0]!), "the first breach is quoted verbatim, not summarised away");
+  assert.ok(line.includes("+6 more"), "the breaches it did not print have to be counted");
+  assert.ok(line.includes("breakage_report"), "the reader has to be told where the rest are");
+  assert.ok(
+    line.length < 200,
+    `a source line is ${line.length} bytes: the digest is unrolling breaches again`
+  );
+  for (const b of failing.breaches.slice(1)) {
+    assert.ok(!line.includes(b), `breach "${b.slice(0, 30)}..." was unrolled onto the line anyway`);
+  }
+
+  // A healthy source stays quiet, and a synthetic one still says so.
+  assert.equal(
+    vouchLine({ ...failing, contractPassed: true, breaches: [], synthetic: true, rows: 12 }),
+    "LISTING_SRC ebay unverified rows=12 SYNTHETIC"
+  );
+
+  // And the live answer still obeys it.
+  const digest = textOf(call("tools/call", { name: "vouch_report", arguments: {} })!);
+  for (const l of digest.split("\n")) {
+    assert.ok(l.length < 200, `published source line is ${l.length} bytes`);
+  }
 });
 
 test("every tool answers in both formats", () => {

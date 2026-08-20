@@ -397,8 +397,51 @@ export function classify(input: ClassifyInput): Diagnosis {
     return { cause: "pagination", withdrawnRefs, lostRefs, unresolvedRefs: [], healable: true, evidence };
   }
 
+  // 4b. The extraction did not finish.
+  //
+  // An error the block oracle did not recognise still means the run failed, and a run
+  // that failed is not evidence that the page changed. This is the same rule as
+  // `noAnswer` on the listing probe, one layer down: unknown is unknown, and the
+  // difference between "we read the page and the shape moved" and "we never finished
+  // reading" is the difference between a repair that helps and a repair that rewrites a
+  // working collector.
+  //
+  // Live eBay is where this came from. `runScraper` timed out at 120 seconds against a
+  // collector that switches to batch mode and polls for minutes, so the scrape was killed
+  // every cycle. The timeout matched no block phrase, `extractionErrors` had exactly one
+  // reader in this file, and the error was dropped. What was left looked exactly like
+  // drift, so the supervisor paid for two repairs against a collector that was fine.
+  //
+  // `drift` with `healable: false` rather than a fifth cause, matching how the other
+  // unresolved state is already carried. The label is the weakest part of it and the
+  // decision is the right one, which is stated in the README rather than hidden here.
+  const unfinished = (input.extractionErrors ?? []).filter((e) => typeof e.error === "string");
+  if (report.rows === 0 && unfinished.length > 0) {
+    for (const e of unfinished.slice(0, 3)) {
+      evidence.push(`the collector did not finish: "${e.error}"`);
+    }
+    evidence.push(
+      "an extraction that did not finish is not evidence the page changed, so no repair is authorised"
+    );
+    // `lostRefs` is emptied for the same reason the block branch empties it. "Missing from
+    // the listing while its own page is fine" is the inference that authorises a repair,
+    // and it needs a listing we actually read. A scrape that died read nothing, so every
+    // baseline ref looks missing and none of them is. Withdrawals are kept: those came
+    // from the permalink oracle, which answered us directly and owes nothing to the
+    // extraction.
+    return { cause: "drift", withdrawnRefs, lostRefs: [], unresolvedRefs: [], healable: false, evidence };
+  }
+
   // 5. Drift. The data is still there in a different shape.
-  for (const f of report.fields.filter((f) => f.breached)) {
+  //
+  // Per-field evidence only when there were rows to measure. On an empty extraction every
+  // field reads 100% null because the denominator is empty, so this loop wrote one
+  // sentence per contracted field, each one a rate over nothing, each ending in an
+  // `(examples: )` that is empty because there were no rows to take an example from.
+  // Seven of them for eBay, in front of the single line below that says what actually
+  // happened. `checkContract` stopped emitting the same statement as a breach; this is
+  // the other path, and it is the one published verbatim on the incident page.
+  for (const f of report.rows === 0 ? [] : report.fields.filter((f) => f.breached)) {
     if (f.typeErrors > 0) {
       evidence.push(
         `field ${f.field} failed type parsing on ${f.typeErrors} of ${report.rows} rows ` +

@@ -149,7 +149,18 @@ export function checkContract(
       sampleRefs,
     });
 
-    if (nullRate > rule.maxNullRate) {
+    // Breach PROSE is suppressed on an empty extraction; the field report above is not.
+    //
+    // A null rate over no rows is not a measurement. `nullRate` is 1 by the line above
+    // because the denominator is empty, so every field breaches at once and an extraction
+    // that returned nothing produced one sentence per field before it got to the sentence
+    // that says what actually happened. Seven of them for eBay, then "returned 0 rows".
+    //
+    // The field entries keep `breached: true` deliberately. `deriveTrust` reads them to
+    // decide whether a volume drop is explained by withdrawals, and an empty extraction is
+    // emphatically not explained by anything. Suppressing the prose changes what we say,
+    // not what we conclude.
+    if (n > 0 && nullRate > rule.maxNullRate) {
       breaches.push(
         `field ${field} null rate ${pct(nullRate)} exceeds limit ${pct(rule.maxNullRate)} over ${n} rows`
       );
@@ -163,6 +174,12 @@ export function checkContract(
 
   if (n < contract.minRows) {
     breaches.push(`returned ${n} rows, contract requires at least ${contract.minRows}`);
+  } else if (n === 0 && Object.keys(contract.fields).length > 0) {
+    // Only reachable on a contract with `minRows: 0`, and it is the reason the field
+    // prose above could be suppressed safely. Without this, a contract that tolerates a
+    // quiet week would report an extraction of nothing as clean, because the only thing
+    // that used to fail it was the per-field noise this change removed.
+    breaches.push("returned 0 rows and every contracted field is therefore unmeasurable");
   }
 
   let rowDropRate: number | null = null;

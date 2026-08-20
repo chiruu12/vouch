@@ -6,8 +6,26 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { readUnlockerEnvelope, redirectedAway } from "./bdata.js";
+import { readUnlockerEnvelope, redirectedAway, SCRAPE_TIMEOUT_MS } from "./bdata.js";
 import { detectGone } from "./oracles.js";
+
+describe("how long a scrape gets", () => {
+  it("is long enough for the vendor to finish one", () => {
+  // The floor exists because the number below it was 120 seconds, and 120 seconds is
+  // long enough for a fixture and not for a real site. Bright Data answers a large job
+  // by switching to batch mode and polling; the eBay collector does that on every run
+  // and takes about nine minutes. Every cycle killed its own scrape, and zero rows next
+  // to a page answering HTTP 200 reads as drift, so the supervisor paid to repair a
+  // collector that was working.
+  //
+  // Ten minutes is the floor rather than the value, so tuning stays possible and going
+  // back under the batch-mode horizon does not.
+    assert.ok(
+      SCRAPE_TIMEOUT_MS >= 600_000,
+      `a scrape gets ${SCRAPE_TIMEOUT_MS}ms, which is under the batch-mode horizon that caused the false drift`
+    );
+  });
+});
 
 describe("the withdrawal oracle's body and redirect signals", () => {
   it("reads an ended-listing page that answered 200", () => {

@@ -44,7 +44,29 @@ const SESSION = [
 // size of the catalogue. Probed across eight queries against 319 records, the worst
 // answer is one WITHHELD line and 1201 bytes. A budget that grows with the catalogue
 // would be no budget at all, and this one does not.
-const BUDGET = { 1: 1300, 2: 1800, 3: 1250, 4: 200, 5: 200, 6: 300, 7: 1400 };
+//
+// Budgets 5 and 6 moved (200 -> 260, 300 -> 400) when eBay became a fourth supervised
+// source. Both answers list every source, so both grew by one line, and both were
+// checked before the numbers moved rather than after.
+//
+// What was found while checking is the reason budget 5 did not have to move further.
+// `vouch_report` used to join a failing source's entire breach list onto its line, so
+// the cost of asking what was trustworthy scaled with how badly one source had broken:
+// eBay returning nothing put 500 bytes in front of every caller, with the sentence that
+// explained it last. Two changes fixed that at the source rather than by raising a
+// number. `checkContract` no longer emits a null-rate breach over zero rows, because a
+// rate measured over an empty denominator is not a measurement and there were seven of
+// them. And `vouchLine` now prints the first breach and counts the rest, pointing at
+// `breakage_report`, which is the tool whose description already says it explains
+// refusals. That bound is asserted by a test driving a seven-breach source, not by the
+// published answer, which currently has no source that could exceed it.
+//
+// `breakage_report` still carries every breach, deliberately: explaining is its whole
+// job and a caller reaches it only after a refusal. So budget 6 is the one that grows
+// with a source's field count. 400 is current-plus-headroom, not the worst case. A
+// source breaching seven fields at once would cost about 670 and trip this gate, which
+// is the gate working: a budget set to pre-authorise the worst case never fires.
+const BUDGET = { 1: 1300, 2: 1800, 3: 1250, 4: 200, 5: 260, 6: 400, 7: 1400 };
 
 const show = process.argv.includes("--show");
 

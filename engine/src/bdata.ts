@@ -75,7 +75,30 @@ function isErrorRow(r: unknown): r is { error: string; error_code?: string } {
  * silent failure this project exists to catch, so it is returned as a normal result
  * rather than thrown.
  */
-export async function runScraper(collectorId: string, url: string, timeoutMs = 120_000): Promise<RunResult> {
+/** How long a scrape is given before we give up on it.
+ *
+ *  It was 120 seconds, which is fine for a small fixture and wrong for anything real.
+ *  Bright Data serves a large job by exceeding its realtime page limit, switching to
+ *  batch mode and polling, and the eBay collector does that every single run: 560 rows
+ *  takes about nine minutes. So every eBay cycle killed its own scrape at two minutes,
+ *  and what the classifier saw afterwards was zero rows next to a page answering 200,
+ *  which is the signature of drift. It paid for two repairs against a collector that was
+ *  working.
+ *
+ *  Matched to `healScraper`'s timeout, because the two bound the same thing: how long we
+ *  are willing to wait on one vendor operation before calling it a loss. A cycle that
+ *  waits is cheaper than a cycle that guesses.
+ *
+ *  This number is a tuning constant and not the guarantee. The guarantee is in
+ *  classify.ts, which now refuses to authorise a repair when the extraction did not
+ *  finish, so a timeout that is still too short costs freshness rather than credits. */
+export const SCRAPE_TIMEOUT_MS = 900_000;
+
+export async function runScraper(
+  collectorId: string,
+  url: string,
+  timeoutMs = SCRAPE_TIMEOUT_MS
+): Promise<RunResult> {
   const started = Date.now();
   const { stdout } = await exec(
     BIN,

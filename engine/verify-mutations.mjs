@@ -209,9 +209,14 @@ const MUTATIONS = [
     to: "",
   },
   {
+    // The rule moved. It was `cpscTrust` in snapshot.ts, written for the one source that
+    // had a committed fallback; adding a second real source with the same shape made it
+    // general, so it is `supervisedTrust` in trust.ts now and `cpscTrust` calls it. The
+    // mutation moved with it rather than being dropped, which is the whole point of the
+    // harness exiting 2 on a stale target instead of skipping quietly.
     name: "a captured sample is stamped verified again",
     breaks: "the one real regulator in the feed becomes the one source deriveTrust never sees, and rows nobody probed license the sentence \"no recall matched and this feed can currently say so\"",
-    file: "src/snapshot.ts",
+    file: "src/trust.ts",
     from: '  if (state === null || state.lastGoodRows.length === 0) return "unverified";',
     to: "",
   },
@@ -489,6 +494,105 @@ const MUTATIONS = [
     file: "src/classify.ts",
     from: "const sourceSideBlock = blockedAtSource(input.extractionErrors ?? []);",
     to: "const sourceSideBlock = null;",
+  },
+  {
+    // This one has a history. A review agent applied exactly this swap to the working
+    // tree and left it there, so it was briefly the real state of the code: every
+    // published listing was a Tradewell fixture wearing eBay's provenance. The test that
+    // compared a listing's provenance to the card that provenance NAMES passed the whole
+    // time, because that comparison is self-consistent by construction. What caught it
+    // was checking the label against the permalink's host, which is the one field on a
+    // published listing that does not come from the provenance.
+    name: "a marketplace listing wears the other marketplace's provenance",
+    breaks: "promise E in both directions: a real listing published as a fixture, and a fixture as real",
+    file: "src/snapshot.ts",
+    from:
+      '      { sourceId: "tradewell", state: twState, contract: TRADEWELL_CONTRACT, listings: twLive },\n' +
+      '      { sourceId: "ebay", state: ebayState, contract: EBAY_CONTRACT, listings: ebayRows },',
+    to:
+      '      { sourceId: "tradewell", state: twState, contract: TRADEWELL_CONTRACT, listings: ebayRows },\n' +
+      '      { sourceId: "ebay", state: ebayState, contract: EBAY_CONTRACT, listings: twLive },',
+  },
+  {
+    name: "a confirmed withdrawal reaches the publish boundary",
+    breaks: "the second lock on a phantom: a record proved gone republished as on sale",
+    file: "src/snapshot.ts",
+    from: "  return (state.lastGoodRows as unknown as Listing[]).filter((l) => !withdrawn.has(String(l.id)));",
+    to: "  return state.lastGoodRows as unknown as Listing[];",
+  },
+  {
+    name: "a marketplace falls back to a capture nobody probed",
+    breaks: "193 actionable claims about real sellers' pages, sourced from a file that never passed a cycle",
+    file: "src/snapshot.ts",
+    from: "  const ebayRows = vouchedListings(ebayState);",
+    to: '  const ebayRows = ebayState !== null && ebayState.lastGoodRows.length > 0 ? vouchedListings(ebayState) : (normaliseEbay(load("engine/samples/ebay-cooluli-minifridge.json")) as unknown as Listing[]);',
+  },
+  {
+    // The most expensive bug this project has had, and it was found by running against a
+    // real site rather than by reading the code. Two paid repairs against a collector
+    // that was working perfectly, because a scrape killed by our own timeout looks
+    // exactly like a page whose shape moved.
+    name: "an extraction that never finished is repaired anyway",
+    breaks: "the rule that unknown is not evidence, on the extraction path: it authorises a repair against a working collector",
+    file: "src/classify.ts",
+    from: "  if (report.rows === 0 && unfinished.length > 0) {",
+    to: "  if (false) {",
+  },
+  {
+    name: "the location limit goes back to measuring the marketplace",
+    breaks: "a deep crawl of an ordinary query, by refusing it and paying to repair a field nothing broke",
+    file: "src/sources/ebay.ts",
+    from: '    location: { type: "string", maxNullRate: 0.1, minLength: 3 },',
+    to: '    location: { type: "string", maxNullRate: 0.05, minLength: 3 },',
+  },
+  {
+    name: "a dead scrape still reports which records went missing",
+    breaks: "the inference a repair rests on, by taking it from a listing nothing actually read",
+    file: "src/classify.ts",
+    from: '    return { cause: "drift", withdrawnRefs, lostRefs: [], unresolvedRefs: [], healable: false, evidence };',
+    to: '    return { cause: "drift", withdrawnRefs, lostRefs, unresolvedRefs: [], healable: false, evidence };',
+  },
+  {
+    name: "a scrape is killed before the vendor can finish it",
+    breaks: "every source large enough to go to batch mode, by turning its healthy runs into false drift",
+    file: "src/bdata.ts",
+    from: "export const SCRAPE_TIMEOUT_MS = 900_000;",
+    to: "export const SCRAPE_TIMEOUT_MS = 120_000;",
+  },
+  {
+    name: "classifier evidence measures a null rate over an empty denominator",
+    breaks: "the incident page, by publishing seven rates over no rows in front of the line that explains it",
+    file: "src/classify.ts",
+    from: "  for (const f of report.rows === 0 ? [] : report.fields.filter((f) => f.breached)) {",
+    to: "  for (const f of report.fields.filter((f) => f.breached)) {",
+  },
+  {
+    name: "a null rate is reported over an empty denominator",
+    breaks: "the agent-facing surface, by burying the sentence that says what happened under seven that do not",
+    file: "src/contract.ts",
+    from: "    if (n > 0 && nullRate > rule.maxNullRate) {",
+    to: "    if (nullRate > rule.maxNullRate) {",
+  },
+  {
+    name: "vouch_report unrolls every breach onto a source line",
+    breaks: "the cheap answer to what is trustworthy, by making it cost more the worse one source broke",
+    file: "src/mcp.ts",
+    from: "  const more = rest.length === 0 ? \"\" : ` (+${rest.length} more, call breakage_report)`;",
+    to: "  const more = rest.length === 0 ? \"\" : `; ${rest.join(\"; \")}`;",
+  },
+  {
+    name: "a withdrawal on one source explains a return on another",
+    breaks: "a published back-on-sale date drawn from a site the listing was never on",
+    file: "src/snapshot.ts",
+    from: "        (j) => j.sourceId === i.sourceId && j.withdrawnRefs.includes(ref) && j.openedAt <= i.openedAt",
+    to: "        (j) => j.withdrawnRefs.includes(ref) && j.openedAt <= i.openedAt",
+  },
+  {
+    name: "a source with no collector is repaired anyway",
+    breaks: "the refusal CPSC exists to demonstrate: a heal prompt sent at a collector that does not exist",
+    file: "src/cycle.ts",
+    from: "    repairable: false,",
+    to: "    repairable: true,",
   },
 ];
 

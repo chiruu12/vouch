@@ -443,21 +443,25 @@ export function quarantinedFor(snapshot: Snapshot, query: string): QuarantinedRe
   return out.sort((a, b) => b.confidence - a.confidence);
 }
 
+/** One source as `vouch_report` describes it. Named rather than inline so the wire layer
+ *  can build a line for one without depending on the whole report. */
+export interface VouchSource {
+  id: SourceId;
+  label: string;
+  kind: "recall" | "listing";
+  state: RecordState;
+  rows: number;
+  lastVerifiedAt: string | null;
+  contractPassed: boolean;
+  breaches: string[];
+  synthetic: boolean;
+}
+
 export interface VouchReport {
   at: string;
   /** True only when every recall source is currently passing its contract. */
   canReportAbsence: boolean;
-  sources: {
-    id: SourceId;
-    label: string;
-    kind: "recall" | "listing";
-    state: RecordState;
-    rows: number;
-    lastVerifiedAt: string | null;
-    contractPassed: boolean;
-    breaches: string[];
-    synthetic: boolean;
-  }[];
+  sources: VouchSource[];
 }
 
 /** What the service can and cannot vouch for right now.
