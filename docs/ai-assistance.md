@@ -11,10 +11,11 @@ have not verified would look ridiculous being vague about how it was built.
 ## The short answer
 
 This project was built by one person during the hackathon week using Claude Code as a
-coding assistant throughout. The git history spans about a day of concentrated work,
-which is the honest number: an earlier draft of this document said six days and nobody
-had checked it against `git log`. An adversarial review did, which is the sort of thing
-that should embarrass a project making the claims this one makes. Most of the code in this repository was drafted with AI
+coding assistant throughout. The git history spans 67 hours and 99 commits,
+which is what `git log` reports. Two earlier drafts of this line were wrong in opposite
+directions, first six days and then about one, and a review caught it both times rather
+than the author. A project that asks to be judged on its numbers should not need telling
+twice about its own. Most of the code in this repository was drafted with AI
 assistance and then reviewed, corrected and directed by me. The architecture, the
 central argument, and every call about what the system is allowed to claim are mine.
 
@@ -25,7 +26,7 @@ central argument, and every call about what the system is allowed to claim are m
 - **The fixture markup.** `fixtures/*/build.mjs` generates the synthetic sites and
   their variants. The generators were written with assistance; the product data in
   `fixtures/*/data.json` was chosen by hand so the fixtures mirror real recalled products.
-- **Tests.** The 306 tests were written with assistance. Several caught real bugs, and
+- **Tests.** The 348 tests were written with assistance. Several caught real bugs, and
   where they did the fix is described in the file the bug lived in.
 - **The visual design.** The feed was redesigned by Kimi K3 running headless in an
   isolated git worktree, briefed on the constraints and given no access to the branch it
@@ -64,8 +65,8 @@ Recording these because a disclosure that only lists successes is not a disclosu
   collector looked broken, and the engine spent four minutes healing it. That incident
   is on the published incident log rather than deleted.
 - A contract was wired to compare its own canonical field names against the collector's
-  raw ones, so every field read as 100% null and a healthy scraper was repaired for no
-  reason. This is precisely the false repair the project argues against, produced by
+  raw ones, so every field read as null on every row and a healthy scraper was repaired
+  for no reason. This is precisely the false repair the project argues against, produced by
   the project.
 - An early matcher run returned zero publishable matches out of 169 real listings. The
   fault was the experiment design, not the matcher: the search queries were hand-picked

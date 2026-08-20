@@ -52,20 +52,23 @@ claim the evidence supports.
 $ npm run ask
 
   2. THE RECALL SOURCE FAILS ITS CONTRACT   SIMULATED
-  row count fell 31.0% against a baseline of 29, limit 20.0%
+  row count fell from 307 to 204, a 33.6% drop, limit 20.0%
   canReportAbsence = false
 
   ask  "COMMOWNER Pressure Washers Recalled"
   ANSWER   26692  COMMOWNER Pressure Washers Recalled Due to Serious R
-           brand+product at 0.72 on [pressure, washer, commowner]
-           US CPSC, unverified, last confirmed 2026-08-17T13:13:32.000Z
-  CAUTION  the notice itself does not expire, so it is reported with the
-           time it was last confirmed rather than withheld.
+           brand+product at 0.72 on [pressure, washer, commowner, pressurewasher]
+           US CPSC, unverified, last confirmed 2026-08-20T10:47:55.529Z
+  CAUTION  1 of 1 recall(s) come from a source we cannot currently vouch for
+  CAUTION  (US CPSC). The notice itself does not expire, so it is reported
+  CAUTION  with the time it was last confirmed rather than withheld.
+  withheld 6 x matched on product-only at 0.30, below the 0.7 bar to assert
 
   ask  "wireless bluetooth headphones"
-  REFUSED  no recall matched, but this cannot be reported as "not
-           recalled". US CPSC is not currently verified (row count fell
-           31.0% against a baseline of 29, limit 20.0%).
+  REFUSED
+          no recall matched, but this cannot be reported as "not recalled".
+          US CPSC is not currently verified (row count fell from 307 to 204,
+          a 33.6% drop, limit 20.0%).
 ```
 
 ## What is withheld is absent, not labelled
