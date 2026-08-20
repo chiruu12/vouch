@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-19T15:11:13.352Z",
+  "generatedAt": "2026-08-20T07:36:19.557Z",
   "caveat": "Matched on product line, not on unit. Recalls are often limited to specific batches or serial ranges, and marketplace listings rarely show them, so a match here means this listing appears to be the same product as a recall, not that this particular item is affected.",
   "publishThreshold": 0.7,
   "sources": [
@@ -1133,7 +1133,7 @@
     "refusals": 3
   },
   "agents": {
-    "simulatedBreach": "row count fell 31.0% against a baseline of 29, limit 20.0%",
+    "simulatedBreach": "row count fell from 6 to 4, a 33.3% drop, limit 20.0%",
     "beats": [
       {
         "query": "COMMOWNER Pressure Washers Recalled",
@@ -1156,7 +1156,7 @@
       {
         "query": "wireless bluetooth headphones",
         "world": "failing",
-        "digest": "REFUSED absence_unverifiable\nno recall matched, but this cannot be reported as \"not recalled\". US CPSC (captured sample) is not currently verified (row count fell 31.0% against a baseline of 29, limit 20.0%). Absence is a claim about everything we did not find, so it is only reportable when every recall source is currently passing its contract, and the commonest way to fail one is to return fewer records than the baseline.",
+        "digest": "REFUSED absence_unverifiable\nno recall matched, but this cannot be reported as \"not recalled\". US CPSC (captured sample) is not currently verified (row count fell from 6 to 4, a 33.3% drop, limit 20.0%). Absence is a claim about everything we did not find, so it is only reportable when every recall source is currently passing its contract, and the commonest way to fail one is to return fewer records than the baseline.",
         "refused": true
       }
     ],

@@ -115,6 +115,13 @@ const MUTATIONS = [
     to: "  const servableRows = rows;",
   },
   {
+    name: "the published illustration writes its own breach sentence",
+    breaks: "the agents page describes a contract failure in a grammar the contract checker cannot produce, so a reader checking it against the incident log finds nothing and cannot tell which is lying",
+    file: "src/agentview.ts",
+    from: "  return { breach: volumeBreach(before, after, 0.2), before, after };",
+    to: '  return { breach: `row count fell ${((before - after) / before * 100).toFixed(1)}% against a baseline of ${before}, limit 20.0%`, before, after };',
+  },
+  {
     name: "a withdrawal counts as breakage",
     breaks: "the service refuses to answer every time a notice is withdrawn, which is an ordinary event and not a failure",
     file: "src/context.ts",

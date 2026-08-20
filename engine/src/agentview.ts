@@ -12,6 +12,7 @@
 // the engine did not, the build fails.
 
 import { recallContext } from "./context.js";
+import { volumeBreach } from "./contract.js";
 import { digestAnswer } from "./wire.js";
 import { TOOLS } from "./mcp.js";
 import type { Snapshot } from "./snapshot.js";
@@ -39,14 +40,30 @@ export interface PubAgentView {
 
 /** The same feed after a cycle that failed its contract on a row-count cliff.
  *
- *  Built in memory and never written. The numbers are the shape `runs/timing.log`
- *  records for a real cliff, so the illustration is of something that has happened
- *  rather than something invented for it. */
-export function simulateFailingSource(snap: Snapshot, breach: string): Snapshot {
+ *  Built in memory and never written. The breach sentence comes from `volumeBreach`, the
+ *  same function the contract checker calls, and the row counts come from the source in
+ *  the snapshot being passed in. Both details are load-bearing. This used to hand-write
+ *  the sentence and hardcode a baseline of 29 against a source that has six rows, which
+ *  produced a grammar the engine cannot emit describing a cliff that never happened. */
+/** A cliff this source could actually fall off, stated in the engine's own words.
+ *
+ *  Derived from the rows the snapshot really carries rather than a number chosen to look
+ *  dramatic, so the illustration stays true when the sample behind it changes. Losing a
+ *  third of the rows is comfortably past the 20% limit every contract here sets. */
+export function cliffFor(snap: Snapshot): { breach: string; before: number; after: number } {
+  const before = snap.sources.find((s) => s.id === "cpsc")?.rows ?? 6;
+  const after = Math.floor(before * (2 / 3));
+  return { breach: volumeBreach(before, after, 0.2), before, after };
+}
+
+export function simulateFailingSource(snap: Snapshot): Snapshot {
+  const { breach, after } = cliffFor(snap);
   return {
     ...snap,
     sources: snap.sources.map((s) =>
-      s.id === "cpsc" ? { ...s, trust: "unverified" as const, contractPassed: false, breaches: [breach] } : s
+      s.id === "cpsc"
+        ? { ...s, trust: "unverified" as const, contractPassed: false, rows: after, breaches: [breach] }
+        : s
     ),
     recalls: snap.recalls.map((r) =>
       r.provenance.sourceId === "cpsc"
@@ -57,8 +74,8 @@ export function simulateFailingSource(snap: Snapshot, breach: string): Snapshot 
 }
 
 export function buildAgentView(snap: Snapshot, now: Date): PubAgentView {
-  const simulatedBreach = "row count fell 31.0% against a baseline of 29, limit 20.0%";
-  const failing = simulateFailingSource(snap, simulatedBreach);
+  const simulatedBreach = cliffFor(snap).breach;
+  const failing = simulateFailingSource(snap);
 
   // One query that hits and one that does not, asked in both worlds. Four beats is the
   // whole argument: the hit survives the breakage and the miss does not.

@@ -19,6 +19,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { recallContext, vouchReport } from "./context.js";
+import { cliffFor, simulateFailingSource } from "./agentview.js";
 import type { Snapshot } from "./snapshot.js";
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), "..", "..");
@@ -37,26 +38,13 @@ const plain = process.env.NO_COLOR !== undefined || !process.stdout.isTTY;
 const c = (code: string, s: string): string => (plain ? s : `${code}${s}${OFF}`);
 const rule = (): void => console.log(c(DIM, "-".repeat(78)));
 
-/** The same feed after a cycle that failed its contract on a row-count cliff. Built by
- *  hand rather than by breaking anything, and labelled SIMULATED wherever it prints: a
- *  demo that could be mistaken for a live incident is the kind of thing this project
- *  exists to complain about. The numbers are the shape `runs/timing.log` records. */
-function afterTheSourceBreaks(snap: Snapshot): Snapshot {
-  const breach = "row count fell 31.0% against a baseline of 29, limit 20.0%";
-  return {
-    ...snap,
-    sources: snap.sources.map((s) =>
-      s.id === "cpsc"
-        ? { ...s, trust: "unverified" as const, contractPassed: false, rows: 20, breaches: [breach] }
-        : s
-    ),
-    recalls: snap.recalls.map((r) =>
-      r.provenance.sourceId === "cpsc"
-        ? { ...r, provenance: { ...r.provenance, trust: "unverified" as const } }
-        : r
-    ),
-  };
-}
+/** The same feed after a cycle that failed its contract on a row-count cliff.
+ *
+ *  Shared with the agents page rather than reimplemented here. This file used to carry
+ *  its own copy, and the two drifted: both hand-wrote a breach sentence in a grammar the
+ *  contract checker does not produce, against a baseline the source does not have. One
+ *  implementation, deriving its numbers from the snapshot, cannot disagree with itself. */
+const afterTheSourceBreaks = simulateFailingSource;
 
 function ask(snap: Snapshot, query: string, label: string, note: string): void {
   console.log("");
@@ -147,7 +135,7 @@ ask(healthy, NOT_RECALLED, "1b. a product with no recall", "absence is a claim, 
 rule();
 console.log("");
 console.log(`  ${c(BOLD, "2. THE RECALL SOURCE FAILS ITS CONTRACT")}   ${c(YELLOW, "SIMULATED")}`);
-console.log(c(DIM, "  row count fell 31.0% against a baseline of 29, limit 20.0%"));
+console.log(c(DIM, `  ${cliffFor(healthy).breach}`));
 console.log(
   c(DIM, `  canReportAbsence = ${String(vouchReport(broken).canReportAbsence)}`)
 );

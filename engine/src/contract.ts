@@ -169,9 +169,7 @@ export function checkContract(
   if (baselineRows !== null && baselineRows > 0) {
     rowDropRate = (baselineRows - n) / baselineRows;
     if (rowDropRate > contract.maxRowDropRate) {
-      breaches.push(
-        `row count fell from ${baselineRows} to ${n}, a ${pct(rowDropRate)} drop, limit ${pct(contract.maxRowDropRate)}`
-      );
+      breaches.push(volumeBreach(baselineRows, n, contract.maxRowDropRate));
     }
   }
 
@@ -190,6 +188,20 @@ export function checkContract(
 
 function pct(x: number): string {
   return `${(x * 100).toFixed(1)}%`;
+}
+
+/** The sentence a volume cliff produces, exported so nothing has to reproduce it.
+ *
+ *  The demo and the agent view illustrate a broken source by constructing a breach, and
+ *  they used to write that sentence out by hand. It drifted: they emitted "row count fell
+ *  31.0% against a baseline of 29", a grammar this function has never produced, in a repo
+ *  whose docs say every number came from a real run. An illustration is allowed to be
+ *  constructed, but not to be a shape the engine cannot emit, because then a reader
+ *  checking it against the incident log finds nothing and cannot tell which one is lying.
+ *  Calling this is now the only way to say it. */
+export function volumeBreach(baselineRows: number, n: number, maxRowDropRate: number): string {
+  const rate = (baselineRows - n) / baselineRows;
+  return `row count fell from ${baselineRows} to ${n}, a ${pct(rate)} drop, limit ${pct(maxRowDropRate)}`;
 }
 
 // --- the Arcadia fixture contract -------------------------------------------
