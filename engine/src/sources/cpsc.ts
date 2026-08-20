@@ -4,7 +4,11 @@
 import type { SourceContract } from "../contract.js";
 import type { RecallRecord, SourceAdapter } from "../types.js";
 
-const ENDPOINT = "https://www.saferproducts.gov/RestWebServices/Recall";
+/** Exported so the cycle can probe the same URL it fetches from. A listing probe that
+ *  watches a different address than the collector reads is how a wall on one path stays
+ *  invisible from the other. */
+export const CPSC_ENDPOINT = "https://www.saferproducts.gov/RestWebServices/Recall";
+const ENDPOINT = CPSC_ENDPOINT;
 const LOOKBACK_DAYS = 180;
 
 type Candidate = Omit<RecallRecord, "provenance">;

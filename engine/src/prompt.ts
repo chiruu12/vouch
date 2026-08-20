@@ -30,6 +30,8 @@ export interface MarkupObservation {
 }
 
 export interface SynthesiseArgs {
+  /** False for a source fetched directly rather than scraped. See CycleArgs. */
+  repairable?: boolean;
   diagnosis: Diagnosis;
   report: ContractReport;
   markup: MarkupObservation;
@@ -75,6 +77,17 @@ export function synthesiseHealPrompt(args: SynthesiseArgs): string {
   }
   if (!diagnosis.healable) {
     throw new NotHealableError(diagnosis.cause, "classifier marked this diagnosis unhealable");
+  }
+  // Checked here rather than in the runner because this function is the gate that is
+  // allowed to veto the classifier, and "there is nothing to repair" is a veto of the
+  // same kind as the three above it. The classifier is right that the data drifted; it
+  // has no way to know the drift is in an API rather than in markup.
+  if (args.repairable === false) {
+    throw new NotHealableError(
+      diagnosis.cause,
+      "this source has no collector to repair: it is fetched directly, so a contract break " +
+        "means the upstream format changed and a person has to update the adapter"
+    );
   }
 
   // Ordered by how much it helps the repair. Later clauses get dropped first when

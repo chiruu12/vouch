@@ -112,6 +112,14 @@ export interface CycleArgs {
   /** How a ref becomes a permalink, when the row does not carry one. */
   permalinkFor(ref: string): string | null;
   refOf(row: Row): string;
+  /** False for a source we fetch ourselves rather than scrape.
+   *
+   *  A repair here rewrites a collector's selectors. A source with no collector has no
+   *  selectors to rewrite, so a contract break means its API changed shape and a person
+   *  has to update the adapter. Attempting a repair would spend a budget on something it
+   *  cannot affect and then measure the result as though it meant something. Defaults to
+   *  true, because every source that existed before this flag did was scraped. */
+  repairable?: boolean;
   rowsPerPage?: number;
   extraPaths?: readonly string[];
 }
@@ -549,6 +557,7 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
       report,
       markup,
       targetUrl: url,
+      repairable: args.repairable ?? true,
       ...(args.extraPaths !== undefined ? { extraPaths: args.extraPaths } : {}),
     });
   } catch (e) {

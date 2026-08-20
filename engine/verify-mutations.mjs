@@ -209,6 +209,27 @@ const MUTATIONS = [
     to: "",
   },
   {
+    name: "a captured sample is stamped verified again",
+    breaks: "the one real regulator in the feed becomes the one source deriveTrust never sees, and rows nobody probed license the sentence \"no recall matched and this feed can currently say so\"",
+    file: "src/snapshot.ts",
+    from: '  if (state === null || state.lastGoodRows.length === 0) return "unverified";',
+    to: "",
+  },
+  {
+    name: "a source with no collector is sent to the healer anyway",
+    breaks: "a repair budget is spent rewriting selectors on a source that has none, and whatever comes back is then measured as though it meant something",
+    file: "src/prompt.ts",
+    from: "  if (args.repairable === false) {",
+    to: "  if (false) {",
+  },
+  {
+    name: "the study reads the live catalogue",
+    breaks: "the number the README quotes changes on every cycle, so the documented figure is wrong more often than right and nobody can reproduce it",
+    file: "src/snapshot.ts",
+    from: "  const study = buildStudy(studyRecalls, normaliseEbay(",
+    to: "  const study = buildStudy(cpscRecalls, normaliseEbay(",
+  },
+  {
     name: "a withdrawal counts as breakage",
     breaks: "the service refuses to answer every time a notice is withdrawn, which is an ordinary event and not a failure",
     file: "src/context.ts",

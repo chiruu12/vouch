@@ -9,7 +9,8 @@
 
 import { test, describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { buildSnapshot, type PubListing, type PubRecall } from "./snapshot.js";
+import { buildSnapshot, cpscTrust, type PubListing, type PubRecall } from "./snapshot.js";
+import { emptyState } from "./runner.js";
 import { deriveTrust, samePlaceWeScraped } from "./trust.js";
 import { TRADEWELL_CONTRACT } from "./sources/tradewell.js";
 import type { SourceState } from "./runner.js";
@@ -245,4 +246,63 @@ test("the published study still says what the documents say it says", () => {
   assert.equal(study.unmatched, 8, "listings that matched no recall at all");
   assert.equal(study.publishable + study.quarantined, study.matched);
   assert.equal(study.matched + study.unmatched, study.listings);
+});
+
+test("cpsc is supervised when a cycle has run, and says so when one has not", () => {
+  // The correction an outside review asked for, in the only terms that matter: what the
+  // code reads. The label said "captured sample" the whole time and the provenance said
+  // `verified`, stamped by hand, bypassing deriveTrust. `canReportAbsence` reads the
+  // provenance, so six rows captured once licensed the sentence "no recall matched and
+  // this feed can currently say so". Trust now comes from a cycle or it does not exist.
+  const built = buildSnapshot(new Date("2026-08-20T12:00:00.000Z"));
+  const cpsc = built.sources.find((s) => s.id === "cpsc");
+
+  assert.ok(cpsc, "cpsc must be in the snapshot");
+  assert.equal(cpsc.synthetic, false, "cpsc is the one real regulator here");
+  assert.doesNotMatch(cpsc.label, /captured sample/, "the label describes what is served");
+
+  if (cpsc.rows > 6) {
+    // A cycle has run. Trust is derived, and the timestamp is a probe rather than a stamp.
+    assert.notEqual(cpsc.lastVerifiedAt, "2026-08-17T13:13:32.000Z", "that is the capture time, not a verification");
+    assert.equal(cpsc.contractPassed, true);
+  } else {
+    // The committed sample. It has never been probed, so it cannot be vouched for, and
+    // absence must stop being reportable rather than quietly resting on a file.
+    assert.equal(cpsc.trust, "unverified", "a file nobody probed is not verified");
+  }
+});
+
+test("the study does not move when the live catalogue does", () => {
+  // The study is a measurement taken once and quoted in the README. Wiring CPSC live
+  // moved it from 17/168/8 to 17/170/6 on the first cycle and would have moved it again
+  // on the next, so the documented number would have been wrong more often than right.
+  // Both sides of it are now fixed captures. The feed is live; the experiment is pinned.
+  const a = buildSnapshot(new Date("2026-08-20T12:00:00.000Z")).study;
+  const b = buildSnapshot(new Date("2027-01-01T00:00:00.000Z")).study;
+
+  assert.equal(a.publishable, b.publishable);
+  assert.equal(a.quarantined, b.quarantined);
+  assert.equal(a.unmatched, b.unmatched);
+  assert.ok(a.recalls <= 6, `the study reads the committed sample, not the live catalogue (saw ${a.recalls})`);
+});
+
+test("an unsupervised cpsc sample is never verified, whatever is on this machine", () => {
+  // Reachable regardless of whether a cycle has run here, which the buildSnapshot test
+  // above is not. A machine with runs/state-cpsc.json takes the supervised branch every
+  // time, so without this the correction is only half tested and a mutation that stamps
+  // "verified" unconditionally passes clean. It did.
+  // The rows matter. An empty array fails the contract on minRows all by itself, so a
+  // test using one passes whether the guard is there or not, and the first version of
+  // this test did exactly that. The unsupervised path carries the committed sample:
+  // rows that satisfy the contract perfectly well and have still never been probed.
+  // That is the whole point. Passing a contract is not the same as being verified.
+  const sample = buildSnapshot(new Date("2026-08-20T12:00:00.000Z")).recalls.slice(0, 6);
+
+  assert.ok(sample.length === 6, "need contract-satisfying rows for this to prove anything");
+  assert.equal(cpscTrust(null, sample), "unverified", "no state at all");
+  assert.equal(
+    cpscTrust({ ...emptyState(), lastVerifiedAt: "2026-08-17T13:13:32.000Z" }, sample),
+    "unverified",
+    "a state file with no vouched rows behind it is not supervision"
+  );
 });

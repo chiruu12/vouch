@@ -35,7 +35,16 @@ const SESSION = [
 // Budgets. Set just above what the current implementation costs, so a change that makes
 // an answer meaningfully more expensive has to be a deliberate one that moves the number
 // here as well.
-const BUDGET = { 1: 1300, 2: 1800, 3: 1200, 4: 200, 5: 200, 6: 300, 7: 1400 };
+//
+// Budget 3 moved 1200 -> 1250 when CPSC went from a six-row captured sample to a live
+// supervised cycle carrying 307 notices. The answer itself did not change shape and
+// still names the same recall; what grew was the withheld tally, by one byte. Checked
+// before moving it rather than after: `tally` groups withheld records by reason, so the
+// number of WITHHELD lines is bounded by the number of distinct reasons and not by the
+// size of the catalogue. Probed across eight queries against 319 records, the worst
+// answer is one WITHHELD line and 1201 bytes. A budget that grows with the catalogue
+// would be no budget at all, and this one does not.
+const BUDGET = { 1: 1300, 2: 1800, 3: 1250, 4: 200, 5: 200, 6: 300, 7: 1400 };
 
 const show = process.argv.includes("--show");
 

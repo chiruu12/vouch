@@ -25,12 +25,24 @@ import type { MarkupObservation } from "./prompt.js";
 import { emptyState, hydrateState, runCycle, type CycleDeps, type Row, type SourceState } from "./runner.js";
 import { normaliseArcadia } from "./sources/arcadia.js";
 import { TRADEWELL_CONTRACT, normaliseTradewell } from "./sources/tradewell.js";
+import { CPSC_CONTRACT, CPSC_ENDPOINT, cpscAdapter, normaliseCpsc } from "./sources/cpsc.js";
 import type { SourceId } from "./types.js";
 
 // --- what a source needs in order to be supervised -------------------------
 
 interface SourceWiring {
+  /** Empty for a source we fetch ourselves. See `collect`. */
   collectorId: string;
+  /** Fetch the rows directly, instead of running a Bright Data collector.
+   *
+   *  CPSC publishes an official JSON API, so scraping it would be worse in every way:
+   *  slower, more fragile, and rude. The supervision around it is identical either way,
+   *  which is the point. A contract, a permalink oracle, a withdrawal check and a refusal
+   *  to serve what we cannot verify do not care where the rows came from; only the repair
+   *  does, and a source with no collector says so through `repairable`. */
+  collect?: () => Promise<Row[]>;
+  /** False when there is no collector to rewrite. Defaults to true. */
+  repairable?: boolean;
   url: string;
   contract: SourceContract;
   /** Raw collector output into the canonical shape the contract is written against.
@@ -68,6 +80,21 @@ const SOURCES: Partial<Record<SourceId, SourceWiring>> = {
     permalinkFor: (ref, origin) => `${origin}/notice/${ref}.html`,
     rowsPerPage: 6,
     extraPaths: ["/page-2.html"],
+  },
+  cpsc: {
+    // No collector: fetched from the official API by us. The url is the endpoint, which
+    // is also what the listing probe watches, so a 429 or a 5xx from CPSC reads as the
+    // block it is rather than as a page that changed.
+    collectorId: "",
+    collect: async () => (await cpscAdapter.fetch()) as unknown as Row[],
+    repairable: false,
+    url: CPSC_ENDPOINT,
+    contract: CPSC_CONTRACT,
+    normalise: (raw) => normaliseCpsc(raw) as unknown as Row[],
+    refOf: (row) => str(row, "ref"),
+    // The notice's own page, which is the withdrawal oracle. CPSC rescinds recalls, and
+    // this is the only thing that can tell us it happened.
+    permalinkFor: (ref) => `https://www.cpsc.gov/Recalls/${ref}`,
   },
   tradewell: {
     // Filled in by the create call; see runs/create-tradewell.json.
@@ -119,7 +146,12 @@ function observeMarkup(body: string, contract: SourceContract): MarkupObservatio
   };
 }
 
-function makeDeps(sourceId: SourceId, normalise: (raw: unknown) => Row[], observe?: PageObserver): CycleDeps {
+function makeDeps(
+  sourceId: SourceId,
+  normalise: (raw: unknown) => Row[],
+  observe?: PageObserver,
+  collect?: () => Promise<Row[]>
+): CycleDeps {
   return {
   async probeListing(url: string): Promise<ListingProbe> {
     const probe = await probeUrl(url);
@@ -131,6 +163,15 @@ function makeDeps(sourceId: SourceId, normalise: (raw: unknown) => Row[], observ
     };
   },
   async runScraper(collectorId, url) {
+    // A source we fetch ourselves. Same contract, same failure handling: a throw here is
+    // data, not an exception, for exactly the reason the collector path gives below.
+    if (collect !== undefined) {
+      try {
+        return { rows: await collect(), errors: [] };
+      } catch (e) {
+        return { rows: [], errors: [{ error: e instanceof Error ? e.message : String(e) }] };
+      }
+    }
     // A failed run is data, not an exception. Measured against the blocked fixture: the
     // sync endpoint times out server-side after 50s while the scraper sits on an
     // interstitial, and the CLI exits non-zero. Letting that throw crashed the cycle
@@ -207,7 +248,7 @@ async function main(): Promise<void> {
 
   const wiring = SOURCES[sourceId]!;
   const collectorId = arg("collector") ?? wiring.collectorId;
-  if (collectorId === "") {
+  if (collectorId === "" && wiring.collect === undefined) {
     console.error(`no collector id for ${sourceId}. Pass --collector c_... or set the env var.`);
     process.exit(2);
   }
@@ -221,7 +262,7 @@ async function main(): Promise<void> {
   const firstRun = state.baselineRefs.length === 0;
 
   console.log(`source      ${sourceId}`);
-  console.log(`collector   ${collectorId}`);
+  console.log(`collector   ${wiring.collect !== undefined ? "none: fetched directly, so a break is not repairable" : collectorId}`);
   console.log(`url         ${url}`);
   console.log(`baseline    ${firstRun ? "none (this run establishes it)" : `${state.baselineRefs.length} refs`}`);
   if (state.streak !== null) {
@@ -247,10 +288,11 @@ async function main(): Promise<void> {
       state,
       permalinkFor: (ref) => wiring.permalinkFor(ref, new URL(url).origin),
       refOf: wiring.refOf,
+      ...(wiring.repairable !== undefined ? { repairable: wiring.repairable } : {}),
       ...(wiring.rowsPerPage !== undefined ? { rowsPerPage: wiring.rowsPerPage } : {}),
       ...(wiring.extraPaths !== undefined ? { extraPaths: wiring.extraPaths } : {}),
     },
-    makeDeps(sourceId, wiring.normalise, pages.observe)
+    makeDeps(sourceId, wiring.normalise, pages.observe, wiring.collect)
   );
 
   // Written once the cycle is done rather than per page, so a run that dies part way

@@ -264,7 +264,7 @@ interface SourceMeta {
 
 const META: Record<string, SourceMeta> = {
   cpsc: {
-    label: "US CPSC (captured sample)",
+    label: "US CPSC",
     // CPSC publishes a JSON API. Saying we scraped it would overstate the difficulty
     // and understate the reliability, so the feed distinguishes the two.
     scraped: false,
@@ -272,9 +272,14 @@ const META: Record<string, SourceMeta> = {
     url: "https://www.saferproducts.gov/RestWebServices/Recall",
     contract: CPSC_CONTRACT,
     synthetic: false,
-    // Pulled once from the live API and committed so the tests and the feed run
-    // offline. Stamped rather than implied, because a captured sample that presents
-    // itself as current is exactly the failure this project is about.
+    // The fallback capture, used only when no cycle has run. The label used to read
+    // "US CPSC (captured sample)" because the sample was all there was; the source is now
+    // supervised like any other, so the qualifier would be describing the fallback rather
+    // than what is being served. What replaces it is not a nicer label but a real
+    // `lastVerifiedAt` from a cycle, and `unverified` trust when there has not been one.
+    //
+    // Kept stamped rather than implied, for the original reason: a captured sample that
+    // presents itself as current is exactly the failure this project is about.
     capturedAt: "2026-08-17T13:13:32.000Z",
   },
   arcadia: {
@@ -518,11 +523,44 @@ function buildStudy(recalls: readonly RecallRecord[], listings: readonly Listing
   };
 }
 
+/** What the feed is willing to say about CPSC, given what supervision has happened.
+ *
+ *  Extracted from `buildSnapshot` so both answers are reachable from a test. Left inline
+ *  it was not: a machine that has run a cycle takes the supervised branch every time, so
+ *  the branch that matters, the one where nothing has been probed, was exercised by
+ *  nobody and a mutation replacing the whole expression with `"verified"` passed clean.
+ *  A guarantee only one branch of which can be reached is half a guarantee.
+ *
+ *  `unverified` for the fallback is the entire correction. The committed sample used to
+ *  be stamped `verified` by hand, so the one real regulator in the feed was the one
+ *  source `deriveTrust` never saw, and six rows captured once licensed "no recall
+ *  matched and this feed can currently say so". A file nobody probed is not verified. */
+export function cpscTrust(state: SourceState | null, rows: readonly unknown[]): RecordState {
+  if (state === null || state.lastGoodRows.length === 0) return "unverified";
+  return deriveTrust(CPSC_CONTRACT, rows as never, state);
+}
+
 export function buildSnapshot(now = new Date()): Snapshot {
   // --- recalls. CPSC is real and published; arcadia is the scraped fixture. -----
+  // CPSC is supervised like everything else when a cycle has run, and falls back to the
+  // committed sample when one has not.
+  //
+  // It used to be only the fallback, with trust stamped `verified` by hand, which meant
+  // the one real regulator in the feed was the one source `deriveTrust` never saw. Six
+  // rows captured once, presented as current, licensing the sentence "no recall matched
+  // and this feed can currently say so". The label said "captured sample" and the
+  // provenance said verified, and the provenance is what the code read.
+  //
+  // The fallback is still here, because a clone with no network should build. What it no
+  // longer does is claim to have been verified. `unverified` is the truth about a file
+  // nobody probed, and it costs exactly what it should: absence stops being reportable
+  // until a cycle runs.
   const cpscState = readState("cpsc");
-  const cpscRows = normaliseCpsc(load("engine/test/fixtures/cpsc-sample.json"));
-  const cpscProv = provenanceFor("cpsc", cpscState, "verified");
+  const supervised = cpscState !== null && cpscState.lastGoodRows.length > 0;
+  const cpscRows = supervised
+    ? (cpscState.lastGoodRows as unknown as ReturnType<typeof normaliseCpsc>)
+    : normaliseCpsc(load("engine/test/fixtures/cpsc-sample.json"));
+  const cpscProv = provenanceFor("cpsc", cpscState, cpscTrust(cpscState, cpscRows as never));
   const cpscRecalls: RecallRecord[] = cpscRows.map((c) => ({ ...c, provenance: cpscProv as never }));
 
   const arcadiaState = readState("arcadia");
@@ -632,7 +670,18 @@ export function buildSnapshot(now = new Date()): Snapshot {
       return m === undefined ? publishListing(l, withdrawnProv) : publishListing(l, withdrawnProv, m);
     });
 
-  const study = buildStudy(cpscRecalls, normaliseEbay(load("engine/samples/ebay-cooluli-minifridge.json")));
+  // Both sides of the study are fixed captures, and the recall side is deliberately the
+  // committed sample rather than the live catalogue the feed now supervises.
+  //
+  // The study is a measurement taken once, reported whole, and quoted in the README. A
+  // measurement whose input changes every cycle is not a measurement: wiring CPSC live
+  // moved it from 17/168/8 to 17/170/6 on the first run, and it would have moved again
+  // on the next one, so the documented number would have been wrong more often than
+  // right and nobody could reproduce it. The feed is live. The experiment is pinned.
+  const studyRecalls: RecallRecord[] = normaliseCpsc(
+    load("engine/test/fixtures/cpsc-sample.json")
+  ).map((c) => ({ ...c, provenance: cpscProv as never }));
+  const study = buildStudy(studyRecalls, normaliseEbay(load("engine/samples/ebay-cooluli-minifridge.json")));
 
   const sources: PubSource[] = [
     sourceCard("cpsc", cpscState, cpscRows, incidents),

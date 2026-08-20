@@ -16,8 +16,9 @@ out/
 #
 # Supervision state and incidents are IN, for two reasons. They are the evidence the
 # write-up and the feed both cite, and `snapshot.ts` reads them, so without them a fresh
-# clone cannot build and one test fails. Both files were checked for seller identity
-# before being added: state-tradewell.json carries 11 sellerKey hashes and no names.
+# clone cannot build and one test fails. Every file was checked for seller identity
+# before being added: state-tradewell.json carries 11 sellerKey hashes and no names,
+# state-cpsc.json is 307 public regulator notices and carries none.
 # Anything new under runs/ is excluded by default, so a raw capture cannot arrive here
 # by accident.
 scratch/
@@ -26,6 +27,7 @@ runs/*.json
 !runs/timing.log
 !runs/state-arcadia.json
 !runs/state-tradewell.json
+!runs/state-cpsc.json
 !runs/incident-*.json
 
 # local agent fleet config (dev tooling, not part of the submission)

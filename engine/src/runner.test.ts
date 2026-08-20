@@ -366,3 +366,21 @@ test("a resurrection is not believed until the record's own page answers", async
     "a record the source still calls gone is not served because a listing carried it"
   );
 });
+
+test("a source with no collector refuses the repair instead of attempting one", async () => {
+  // CPSC is fetched from an official JSON API, not scraped, so there is no collector to
+  // rewrite. A contract break there means the API changed shape and a person has to
+  // update the adapter. That is a fifth honest refusal rather than a gap: pointing a
+  // selector-rewriting healer at a source that has no selectors would burn a repair
+  // budget on a thing it cannot affect, and then serve whatever came back.
+  const state = seeded(ROWS);
+  const broken = ROWS.map((r) => ({ ...r, title: "" }));
+  const { deps: d, calls } = deps({ runScraper: async () => ({ rows: broken, errors: [] }) });
+  const r = await runCycle(args(state, { repairable: false }), d);
+
+  assert.equal(r.diagnosis.cause, "drift", "the classifier still says what is wrong");
+  assert.equal(calls.heal, 0, "and the repair is never attempted");
+  assert.equal(r.incident?.healAttempted, false);
+  assert.match(r.incident?.refusal ?? "", /no collector/);
+  assert.equal(r.serving.state, "unverified", "last-good is served, clearly labelled");
+});
