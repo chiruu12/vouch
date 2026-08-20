@@ -65,8 +65,33 @@ export interface ClassifyInput {
   extractionErrors?: readonly { error: string; error_code?: string }[];
 }
 
-/** Statuses that mean "we were refused", not "the content changed". */
-const BLOCK_STATUSES = new Set([401, 403, 407, 429, 451, 503]);
+/** Statuses that mean "we did not get the page", not "the content changed".
+ *
+ *  Two groups. 401/403/407/429/451 are refusals: someone decided not to serve us.
+ *  408/500/502/503/504 are failures: the server, or something in front of it, could not
+ *  answer. The branch treats them alike because the only question it asks is whether the
+ *  bytes in hand are the source's current answer, and under all ten of them they are not.
+ *
+ *  Only 503 was here at first, which left the ordinary infrastructure split reading as a
+ *  redesign: a dynamic listing endpoint falls over while the static notice pages carry on
+ *  serving 200, and the classifier called it healable drift and sent a healer at a server
+ *  that was not answering. Nothing about the markup had changed, so there was nothing for
+ *  a repair to find, and the request went out anyway.
+ *
+ *  Deliberately no 0. `BLOCK_STATUS_PATTERN` below is derived from this set and matched
+ *  against collector error text, where a bare 0 is not a status: adding it here made
+ *  "selector matched 0 elements" read as a refusal, which would have refused the repairs
+ *  this system exists to make. A probe that never answered is handled as `noAnswer`,
+ *  because it is a different fact from a server having replied. */
+const BLOCK_STATUSES = new Set([401, 403, 407, 408, 429, 451, 500, 502, 503, 504]);
+
+/** Our own probe never completed: a timeout, a DNS failure, a connection reset.
+ *
+ *  Not a refusal and not a failure the server reported, but it lands in the same branch
+ *  because it answers the same question the same way: the bytes in hand are not the
+ *  source's current answer. It used to match nothing and fall through to drift, so a
+ *  source we could not reach at all authorised a repair. Unknown is not a diagnosis. */
+const noAnswer = (status: number): boolean => status === 0;
 
 /** Extraction errors that mean "we were refused", not "the page changed". Kept narrow,
  *  like every other detector here: a false positive stops a repair that should have
@@ -199,8 +224,18 @@ export function classify(input: ClassifyInput): Diagnosis {
   //    reporting it was refused, and the second one is the one that decides whether the
   //    extraction could have worked at all.
   const sourceSideBlock = blockedAtSource(input.extractionErrors ?? []);
-  if (BLOCK_STATUSES.has(listing.status) || listing.blockSignature !== null || sourceSideBlock !== null) {
-    if (sourceSideBlock !== null && !BLOCK_STATUSES.has(listing.status) && listing.blockSignature === null) {
+  if (
+    BLOCK_STATUSES.has(listing.status) ||
+    noAnswer(listing.status) ||
+    listing.blockSignature !== null ||
+    sourceSideBlock !== null
+  ) {
+    if (
+      sourceSideBlock !== null &&
+      !BLOCK_STATUSES.has(listing.status) &&
+      !noAnswer(listing.status) &&
+      listing.blockSignature === null
+    ) {
       // Worth saying explicitly in the log. A reader looking at a clean 200 next to a
       // refusal would otherwise reasonably think the classifier had lost its mind.
       evidence.push(
@@ -208,8 +243,12 @@ export function classify(input: ClassifyInput): Diagnosis {
           `"${sourceSideBlock}". The wall is on the scraper's path, not ours`
       );
     } else {
+      // "HTTP 0" is not a thing a reader can look up, and an incident log that prints it
+      // sends whoever reads it hunting for a status code that was never sent.
       evidence.push(
-        `listing returned HTTP ${listing.status}` +
+        (noAnswer(listing.status)
+          ? "the listing did not answer at all: no status, no body"
+          : `listing returned HTTP ${listing.status}`) +
           (listing.blockSignature ? ` with block signature "${listing.blockSignature}"` : "") +
           (sourceSideBlock !== null ? `, and the collector reported "${sourceSideBlock}"` : "")
       );

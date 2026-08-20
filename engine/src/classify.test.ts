@@ -821,3 +821,47 @@ describe("a block on the scraper's path only", () => {
     assert.equal(d.healable, true);
   });
 });
+
+// --- infrastructure failures are not page changes --------------------------
+
+it("a listing serving 5xx is a wall, not a redesign", () => {
+  // The ordinary infrastructure split: a dynamic listing API is down while the static
+  // notice pages carry on serving. BLOCK_STATUSES knew 503 and not its neighbours, so
+  // this classified as healable drift and authorised a repair against a server that
+  // was not answering. Nothing about the markup changed, so there is nothing to repair.
+  // The permalinks answering 200 is the whole point of the fixture. Without it the
+  // missing refs are unresolved, the classifier refuses on those grounds, and the test
+  // passes without the status ever being consulted. That is how this defect survived:
+  // every case that reached it was already being refused for an unrelated reason.
+  const live = refs(12).map((ref) => ({ ref, status: 200 }));
+
+  for (const status of [500, 502, 503, 504, 408]) {
+    const d = classify(
+      input({
+        report: report({ rows: 0, passed: false, breaches: ["returned 0 rows"] }),
+        listing: listing({ status }),
+        currentRefs: [],
+        permalinks: live,
+      })
+    );
+
+    assert.equal(d.cause, "blocked", `HTTP ${status} should read as blocked`);
+    assert.equal(d.healable, false, `HTTP ${status} must not authorise a repair`);
+  }
+});
+
+it("a listing probe that never answered is not evidence the page changed", () => {
+  // Status 0 is our own probe timing out or failing to connect. It matched nothing, so
+  // it fell through to drift and sent a healer at a source we could not even reach.
+  // Unknown is not a diagnosis, and it is certainly not one that authorises a repair.
+  const d = classify(
+    input({
+      report: report({ rows: 0, passed: false, breaches: ["returned 0 rows"] }),
+      listing: listing({ status: 0 }),
+      currentRefs: [],
+      permalinks: refs(12).map((ref) => ({ ref, status: 200 })),
+    })
+  );
+
+  assert.equal(d.healable, false, "a probe that did not answer cannot authorise a repair");
+});

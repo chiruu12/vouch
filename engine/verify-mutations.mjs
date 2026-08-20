@@ -143,6 +143,27 @@ const MUTATIONS = [
     to: "  return false;",
   },
   {
+    name: "the block statuses forget server failure",
+    breaks: "a listing endpoint down while the notice pages still serve reads as a redesign, and a healer is sent at a server that is not answering",
+    file: "src/classify.ts",
+    from: "const BLOCK_STATUSES = new Set([401, 403, 407, 408, 429, 451, 500, 502, 503, 504]);",
+    to: "const BLOCK_STATUSES = new Set([401, 403, 407, 429, 451, 503]);",
+  },
+  {
+    name: "a probe that never answered counts as a page that changed",
+    breaks: "a timeout or a DNS failure falls through to drift, so a source we could not reach at all authorises a repair",
+    file: "src/classify.ts",
+    from: "const noAnswer = (status: number): boolean => status === 0;",
+    to: "const noAnswer = (_status: number): boolean => false;",
+  },
+  {
+    name: "the block oracle forgets the polite walls",
+    breaks: "a rate limiter that says so in words rather than a status is read as ordinary markup, which is how a collector gets wedged repairing against a wall",
+    file: "src/oracles.ts",
+    from: '  "too many requests",',
+    to: "",
+  },
+  {
     name: "a withdrawal counts as breakage",
     breaks: "the service refuses to answer every time a notice is withdrawn, which is an ordinary event and not a failure",
     file: "src/context.ts",

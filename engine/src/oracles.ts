@@ -34,6 +34,19 @@ export const BLOCK_MARKERS = [
   "access denied",
   "enable javascript and cookies",
   "checking your browser",
+  // Rate limiting and soft failure, served at 200. The first six are all interstitials
+  // that announce themselves as anti-bot measures; these are the polite ones, and they
+  // were the gap. "too many requests" was already known to the collector-error pattern
+  // and not to this list, so the same wall was refused when the scraper reported it and
+  // healed when the page said it. Each was checked against the CPSC sample, the eBay
+  // capture and both fixtures before being added: none appears in real content, and a
+  // false positive here costs a cycle of freshness rather than publishing anything.
+  "too many requests",
+  "request was throttled",
+  "please slow down",
+  "unusually high traffic",
+  "service temporarily unavailable",
+  "security check",
 ];
 
 /** A block is checked against the raw body AND the visible text, and the asymmetry with

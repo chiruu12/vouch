@@ -109,3 +109,40 @@ test("a marker split across two elements still does not fire", () => {
   const split = `<html><body><li>no longer</li><li>available</li></body></html>`;
   assert.equal(detectGone(split, "arcadia"), null);
 });
+
+// --- walls that do not announce themselves in the status --------------------
+
+test("a 200 that is really a wall is caught whatever words it uses", () => {
+  // Seven wordings that a real rate limiter or interstitial serves at HTTP 200. Each
+  // one used to pass straight through the block oracle and read as drift, which is the
+  // failure the README says has already wedged two collectors.
+  const walls = [
+    "Too many requests from this IP, retry after 60 seconds",
+    "Request was throttled",
+    "Please slow down and try again later",
+    "We are experiencing unusually high traffic",
+    "Service temporarily unavailable. Please try again.",
+    "Security check. We are verifying your connection.",
+  ];
+
+  for (const body of walls) {
+    assert.notEqual(
+      detectBlock(`<html><body><h1>${body}</h1></body></html>`),
+      null,
+      `not recognised as a wall: ${body}`
+    );
+  }
+});
+
+test("a status code quoted in prose is not treated as a wall", () => {
+  // Deliberately not caught, and pinned here so nobody closes it by accident.
+  //
+  // A page that answers 200 while its body says "Error code 503-102" may well be a wall,
+  // but the only way to catch it is to scan the body for status digits, and a recall
+  // feed is the worst possible place to do that. "Model 503", a quantity, a house number
+  // in an address: every one of them would put a live source behind a permanent false
+  // wall, where it stops updating and refuses absence forever. The status line is where
+  // a status belongs, and when a server actually sends 503 it is already caught.
+  assert.equal(detectBlock("<html><body><p>Error code 503-102</p></body></html>"), null);
+  assert.equal(detectBlock("<html><body><h1>Recall: Model 503 pressure washer</h1></body></html>"), null);
+});

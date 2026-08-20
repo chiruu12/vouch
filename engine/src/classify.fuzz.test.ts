@@ -48,6 +48,7 @@ interface Generated {
   baselineRefs: string[];
   currentRefs: string[];
   permalinks: PermalinkProbe[];
+  extractionErrors: { error: string; error_code?: string }[];
   rowsPerPage?: number;
 }
 
@@ -100,11 +101,29 @@ function generate(seed: number): Generated {
   };
 
   const listing: ListingProbe = {
-    status: pick(r, [200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 403, 429, 503]),
+    // 0 and the 5xx family are here because they were not, and their absence hid a real
+    // defect: three thousand runs never once produced a listing that failed to answer or
+    // answered 500, so the branch that sent a healer at an unreachable server was never
+    // reached by any property below. A generator that only produces the statuses the
+    // code already handles cannot tell you the code handles the wrong set.
+    status: pick(r, [200, 200, 200, 200, 200, 200, 200, 200, 200, 403, 429, 503, 500, 502, 504, 408, 0]),
     bodyBytes: 500,
     blockSignature: pick(r, BLOCK_SIGS),
     body: "<html></html>",
   };
+
+  // Likewise never generated before, so the collector-side refusal branch was reached by
+  // examples only. The wall the scraper hits and our probe does not is the expensive one.
+  const extractionErrors = pick(r, [
+    [],
+    [],
+    [],
+    [],
+    [{ error: "page returned no items", error_code: "dead_page" }],
+    [{ error: "selector matched 0 elements", error_code: "extraction_failed" }],
+    [{ error: "Access denied", error_code: "http_403" }],
+    [{ error: "Too many requests", error_code: "http_429" }],
+  ]) as { error: string; error_code?: string }[];
 
   // Sometimes set exactly to the surviving row count, which is the shape a broken
   // paging scheme produces and the only way the pagination branch is ever reached.
@@ -117,6 +136,7 @@ function generate(seed: number): Generated {
     baselineRefs,
     currentRefs,
     permalinks,
+    extractionErrors,
     ...(perPage !== undefined ? { rowsPerPage: perPage } : {}),
   };
 }
@@ -239,12 +259,19 @@ describe("classifier invariants over generated input", () => {
     let healable = 0;
     let unresolved = 0;
     let withdrawn = 0;
+    let serverFailed = 0;
+    let noAnswer = 0;
+    let collectorRefused = 0;
     for (let seed = 1; seed <= RUNS; seed++) {
-      const d = classify(generate(seed));
+      const g = generate(seed);
+      const d = classify(g);
       causes.set(d.cause, (causes.get(d.cause) ?? 0) + 1);
       if (d.healable) healable++;
       if (d.unresolvedRefs.length > 0) unresolved++;
       if (d.withdrawnRefs.length > 0) withdrawn++;
+      if ([500, 502, 504, 408].includes(g.listing.status)) serverFailed++;
+      if (g.listing.status === 0) noAnswer++;
+      if (g.extractionErrors.some((e) => (e.error_code ?? "").startsWith("http_"))) collectorRefused++;
     }
 
     const at = (c: string): number => causes.get(c) ?? 0;
@@ -261,6 +288,17 @@ describe("classifier invariants over generated input", () => {
         `generator reached ${cause} only ${at(cause)} times in ${RUNS}, floor is ${floor}`
       );
     }
+    // Inputs the generator did not produce at all until the block oracle was widened.
+    // Each is the precondition of a case that used to authorise a repair against a
+    // server that was not answering, and a zero here would make that silently untested
+    // again rather than visibly broken.
+    assert.ok(serverFailed >= 100, `listing 5xx reached ${serverFailed} times in ${RUNS}`);
+    assert.ok(noAnswer >= 50, `listing that never answered reached ${noAnswer} times in ${RUNS}`);
+    assert.ok(
+      collectorRefused >= 100,
+      `collector-reported refusal reached ${collectorRefused} times in ${RUNS}`
+    );
+
     // The repair-authorising path is the one the headline property constrains, so it
     // gets its own floor rather than being covered by "drift happened".
     assert.ok(healable >= 200, `only ${healable} healable inputs in ${RUNS}`);
