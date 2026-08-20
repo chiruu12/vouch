@@ -477,3 +477,46 @@ test("a source that has never been verified keeps its incident open", () => {
 
   assert.equal(breakageReport(snap, NOW).sources.find((s) => s.id === "cpsc")?.cause, "drift");
 });
+
+// --- what a quarantined near-miss tells you about where it came from -------
+
+/** A snapshot whose only recall is a synthetic-fixture notice that a query can come
+ *  close to without clearing the bar. The capacity clash is what holds it back, which is
+ *  the commonest hold in the real study. */
+function syntheticNearMiss(trust: RecordState = "verified"): Snapshot {
+  return snapshot({
+    sources: [source("cpsc", "verified"), source("arcadia", trust)],
+    recalls: [
+      recall({
+        ref: "APS-2026-0406",
+        title: "Iselin Kitchen 6L pressure cooker, IK-PC6",
+        brand: "Iselin Kitchen",
+        provenance: prov("arcadia", trust),
+      }),
+    ],
+  });
+}
+
+test("a quarantined near-miss carries the provenance the asserted path carries", () => {
+  // The one published surface no gate covered. `quarantined_for` renders on no web page,
+  // so verify-output never saw it, and it returned ref, full title, confidence and reason
+  // with nothing saying which source they came from. A synthetic fixture recall reached
+  // an agent looking exactly like a real regulator notice. The same record asserted
+  // through recall_context was labelled; withheld through this tool it was not.
+  const held = quarantinedFor(syntheticNearMiss(), "Iselin Kitchen 8L pressure cooker");
+
+  assert.equal(held.length, 1, "the fixture must produce exactly one near-miss");
+  assert.equal(held[0]?.vouch.sourceId, "arcadia");
+  assert.equal(held[0]?.vouch.synthetic, true, "a fixture recall must say so here too");
+  assert.equal(held[0]?.vouch.state, "verified");
+});
+
+test("a near-miss from a stale source says the source is stale", () => {
+  // The adjacent gap the same change closes. Trust state was as absent as the synthetic
+  // flag, so a near-miss from a source that had stopped passing its contract arrived
+  // indistinguishable from one that was fine.
+  const held = quarantinedFor(syntheticNearMiss("unverified"), "Iselin Kitchen 8L pressure cooker");
+
+  assert.equal(held[0]?.vouch.stale, true);
+  assert.equal(held[0]?.vouch.state, "unverified");
+});

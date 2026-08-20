@@ -404,12 +404,26 @@ export function recallContext(
  *  Separate from `recallContext` and named for what it does, because the whole reason
  *  quarantine is absent from the default answer is that a caller should not receive it
  *  without having decided to. Asking for it is the disclosure. */
-export function quarantinedFor(
-  snapshot: Snapshot,
-  query: string
-): { ref: string; title: string; confidence: number; basis: MatchBasis; reason: string }[] {
+export interface QuarantinedRecall {
+  ref: string;
+  title: string;
+  confidence: number;
+  basis: MatchBasis;
+  reason: string;
+  /** The same block the asserted path carries, and for the same reason.
+   *
+   *  This was absent, and its absence was the sharpest promise break an outside review
+   *  found. "Fixtures are always labelled synthetic" held everywhere the output gate
+   *  could see, and this tool renders on no page, so a synthetic fixture recall reached
+   *  agents with ref, full title, confidence and reason and nothing marking it as a
+   *  fixture. Withholding a record is not a reason to say less about where it came from;
+   *  if anything it is a reason to say more, because the caller asked for it explicitly. */
+  vouch: Vouched;
+}
+
+export function quarantinedFor(snapshot: Snapshot, query: string): QuarantinedRecall[] {
   const listing = asListing(query.trim());
-  const out: { ref: string; title: string; confidence: number; basis: MatchBasis; reason: string }[] = [];
+  const out: QuarantinedRecall[] = [];
   for (const r of snapshot.recalls) {
     if (r.provenance.trust === "withdrawn") continue;
     const m = scoreMatch(asRecallRecord(r), listing);
@@ -423,6 +437,7 @@ export function quarantinedFor(
         m.contradiction !== null
           ? `contradicted: ${m.contradiction}`
           : `below the ${PUBLISH_THRESHOLD} bar to assert`,
+      vouch: vouchFor(r),
     });
   }
   return out.sort((a, b) => b.confidence - a.confidence);

@@ -21,7 +21,7 @@ import { readFileSync, statSync } from "node:fs";
 import { createInterface } from "node:readline";
 import { dirname, join, resolve } from "node:path";
 import { recallContext, quarantinedFor, vouchReport, breakageReport } from "./context.js";
-import { compactAnswer, digestAnswer, digestBreakage } from "./wire.js";
+import { compactAnswer, digestAnswer, digestBreakage, digestQuarantine } from "./wire.js";
 import type { Snapshot } from "./snapshot.js";
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), "..", "..");
@@ -133,9 +133,7 @@ export const TOOLS: Tool[] = [
     run: (a) => {
       const q = quarantinedFor(snapshot(), str(a.product));
       if (wantsJson(a)) return j(q);
-      return q.length === 0
-        ? "NONE nothing resembled this closely enough to quarantine"
-        : q.map((x) => `NEAR ${x.ref} conf=${x.confidence.toFixed(2)} basis=${x.basis} held=${x.reason}\n${x.title}`).join("\n");
+      return digestQuarantine(q);
     },
   },
 ];

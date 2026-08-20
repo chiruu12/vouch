@@ -23,7 +23,7 @@
 // available for anything that really is parsing, and both are produced from this one
 // file so they cannot drift apart.
 
-import type { ContextAnswer, BreakageReport, Vouched } from "./context.js";
+import type { ContextAnswer, BreakageReport, QuarantinedRecall, Vouched } from "./context.js";
 
 /** Minute precision. Seconds and milliseconds on a "last confirmed" timestamp are three
  *  tokens spent on a distinction nobody acts on. */
@@ -135,16 +135,51 @@ export function digestAnswer(a: ContextAnswer): string {
 
   for (const w of a.withheld) out.push(`WITHHELD ${w.count}x ${w.reason}`);
 
+  out.push(...sourceLines(a.asserted.map((r) => r.vouch)));
+
+  return out.join("\n");
+}
+
+/** One `SRC` line per distinct source, in first-seen order.
+ *
+ *  Shared by the asserted and quarantined digests rather than written twice. The
+ *  quarantine tool used to build its own lines and carried no provenance at all, which
+ *  is how a synthetic fixture recall reached agents unlabelled; two renderers is how the
+ *  labelling stayed correct in one of them and absent in the other. */
+function sourceLines(vouches: readonly Vouched[]): string[] {
+  const out: string[] = [];
   const seen = new Set<string>();
-  for (const r of a.asserted) {
-    const k = sourceKey(r.vouch);
+  for (const v of vouches) {
+    const k = sourceKey(v);
     if (seen.has(k)) continue;
     seen.add(k);
-    const bits = [r.vouch.sourceLabel, r.vouch.state, `confirmed ${shortTime(r.vouch.lastVerifiedAt) ?? "never"}`];
-    if (r.vouch.synthetic) bits.push("SYNTHETIC FIXTURE");
+    const bits = [v.sourceLabel, v.state, `confirmed ${shortTime(v.lastVerifiedAt) ?? "never"}`];
+    if (v.synthetic) bits.push("SYNTHETIC FIXTURE");
     out.push(`SRC ${k} ${bits.join(" | ")}`);
   }
+  return out;
+}
 
+/** The quarantine digest.
+ *
+ *    NEAR <ref> conf=<n> basis=<b> src=<id> held=<reason>
+ *    <title>
+ *    SRC <id> <label> | <state> | confirmed <time> [| SYNTHETIC FIXTURE]
+ *
+ *  `src` on the NEAR line and the SRC block under it are both new. A caller that asked
+ *  for withheld records was previously told what was held and nothing about who held it,
+ *  so it could not tell a fixture from a regulator. */
+export function digestQuarantine(held: readonly QuarantinedRecall[]): string {
+  if (held.length === 0) return "NONE nothing resembled this closely enough to quarantine";
+  const out: string[] = [];
+  for (const x of held) {
+    out.push(
+      `NEAR ${x.ref} conf=${x.confidence.toFixed(2)} basis=${x.basis} ` +
+        `src=${sourceKey(x.vouch)} held=${x.reason}`
+    );
+    out.push(x.title);
+  }
+  out.push(...sourceLines(held.map((x) => x.vouch)));
   return out.join("\n");
 }
 

@@ -164,6 +164,23 @@ const MUTATIONS = [
     to: "",
   },
   {
+    name: "a withheld record arrives with no provenance",
+    breaks: "quarantined_for hands an agent a synthetic fixture recall with ref, title, confidence and reason and nothing saying it is a fixture, on the one published surface no page-level gate can see",
+    file: "src/context.ts",
+    // Anchored through the reason line above it: both the asserted and the quarantined
+    // paths end in the same `vouch: vouchFor(r),`, and editing the wrong one of the two
+    // would prove something about a different promise.
+    from: "          : `below the ${PUBLISH_THRESHOLD} bar to assert`,\n      vouch: vouchFor(r),",
+    to: "          : `below the ${PUBLISH_THRESHOLD} bar to assert`,",
+  },
+  {
+    name: "the quarantine digest drops the source it came from",
+    breaks: "a near-miss reads as an ordinary regulator notice because the line that names its source is gone",
+    file: "src/wire.ts",
+    from: "        `src=${sourceKey(x.vouch)} held=${x.reason}`",
+    to: "        `held=${x.reason}`",
+  },
+  {
     name: "a withdrawal counts as breakage",
     breaks: "the service refuses to answer every time a notice is withdrawn, which is an ordinary event and not a failure",
     file: "src/context.ts",
@@ -249,9 +266,9 @@ const MUTATIONS = [
   },
   {
     name: "compaction drops the synthetic-fixture label",
-    breaks: "a fixture built to induce failures is served to an agent as a real recall notice",
+    breaks: "a fixture built to induce failures is served to an agent as a real recall notice, now on both the asserted and the quarantined digest since they share one source renderer",
     file: "src/wire.ts",
-    from: "    if (r.vouch.synthetic) bits.push(\"SYNTHETIC FIXTURE\");",
+    from: "    if (v.synthetic) bits.push(\"SYNTHETIC FIXTURE\");",
     to: "    if (false) bits.push(\"SYNTHETIC FIXTURE\");",
   },
   {

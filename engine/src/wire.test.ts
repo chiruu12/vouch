@@ -7,7 +7,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { compactAnswer, dense, digestAnswer, digestBreakage, shortTime } from "./wire.js";
+import { compactAnswer, dense, digestAnswer, digestBreakage, shortTime , digestQuarantine } from "./wire.js";
 import { adviseRetry, measuredRepairMs, type ContextAnswer, type BreakageReport } from "./context.js";
 import type { PubIncident } from "./snapshot.js";
 
@@ -185,4 +185,60 @@ test("the breakage digest puts the retry decision on its own line", () => {
   assert.match(d, /^HEALTHY false\s+CAN_REPORT_ABSENCE false/);
   assert.match(d, /BROKEN cpsc unverified cause=gone healable=false/);
   assert.match(d, /NO_RETRY the records were withdrawn/);
+});
+
+// --- the quarantine digest -------------------------------------------------
+
+const near = (over = {}) => ({
+  ref: "APS-2026-0406",
+  title: "Iselin Kitchen 6L pressure cooker, IK-PC6",
+  confidence: 0.35,
+  basis: "brand+product" as const,
+  reason: "contradicted: recall covers 6L; this listing states 8L",
+  vouch: {
+    sourceId: "arcadia" as const,
+    sourceLabel: "Arcadia Product Safety (synthetic)",
+    state: "verified" as const,
+    lastVerifiedAt: "2026-08-18T08:48:12.595Z",
+    stale: false,
+    synthetic: true,
+  },
+  ...over,
+});
+
+test("a withheld record names the source it was withheld from", () => {
+  // Without `src=` on the line, a near-miss reads as an ordinary regulator notice. The
+  // caller asked for withheld records on purpose, so it is entitled to know whose.
+  const d = digestQuarantine([near()]);
+
+  assert.match(d, /^NEAR APS-2026-0406 conf=0\.35 basis=brand\+product src=arcadia held=/m);
+  assert.match(d, /Iselin Kitchen 6L pressure cooker/);
+});
+
+test("a withheld fixture record says it is a fixture", () => {
+  // The promise that failed here and nowhere else: "fixtures are always labelled
+  // synthetic" held on every page and on the asserted path, and this tool renders on no
+  // page, so nothing caught that it did not hold here.
+  assert.match(digestQuarantine([near()]), /SRC arcadia .*\| SYNTHETIC FIXTURE/);
+});
+
+test("a withheld record from a real source is not labelled a fixture", () => {
+  const real = near({
+    vouch: {
+      sourceId: "cpsc" as const,
+      sourceLabel: "US CPSC",
+      state: "verified" as const,
+      lastVerifiedAt: "2026-08-17T13:13:32.000Z",
+      stale: false,
+      synthetic: false,
+    },
+  });
+
+  const d = digestQuarantine([real]);
+  assert.match(d, /src=cpsc/);
+  assert.doesNotMatch(d, /SYNTHETIC FIXTURE/);
+});
+
+test("nothing quarantined says so rather than returning an empty reply", () => {
+  assert.equal(digestQuarantine([]), "NONE nothing resembled this closely enough to quarantine");
 });
