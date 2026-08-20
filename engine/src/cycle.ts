@@ -26,11 +26,12 @@ import { emptyState, hydrateState, runCycle, type CycleDeps, type Row, type Sour
 import { normaliseArcadia } from "./sources/arcadia.js";
 import { TRADEWELL_CONTRACT, normaliseTradewell } from "./sources/tradewell.js";
 import { CPSC_CONTRACT, CPSC_ENDPOINT, cpscAdapter, normaliseCpsc } from "./sources/cpsc.js";
+import { EBAY_CONTRACT, ebayRefOf, normaliseEbay } from "./sources/ebay.js";
 import type { SourceId } from "./types.js";
 
 // --- what a source needs in order to be supervised -------------------------
 
-interface SourceWiring {
+export interface SourceWiring {
   /** Empty for a source we fetch ourselves. See `collect`. */
   collectorId: string;
   /** Fetch the rows directly, instead of running a Bright Data collector.
@@ -70,7 +71,7 @@ function str(row: Row, name: string): string {
   return typeof v === "string" ? v.trim() : "";
 }
 
-const SOURCES: Partial<Record<SourceId, SourceWiring>> = {
+export const SOURCES: Partial<Record<SourceId, SourceWiring>> = {
   arcadia: {
     collectorId: "c_msx7z3xi2hs08ccwms",
     url: "https://arcadia-safety.vercel.app/",
@@ -95,6 +96,40 @@ const SOURCES: Partial<Record<SourceId, SourceWiring>> = {
     // The notice's own page, which is the withdrawal oracle. CPSC rescinds recalls, and
     // this is the only thing that can tell us it happened.
     permalinkFor: (ref) => `https://www.cpsc.gov/Recalls/${ref}`,
+  },
+  ebay: {
+    // A real marketplace that does not know we exist, which is the whole reason it is
+    // here. Every failure mode below this line has so far been demonstrated against
+    // Arcadia and Tradewell, two sites we built and are allowed to break. They can show
+    // the machinery works. They cannot show it survives a site with its own opinion
+    // about being scraped, and eBay already has one on record: runs/run-ebay.json is a
+    // real `rate_limit`, "too many requests", returned to this collector.
+    //
+    // Repairable, unlike CPSC, because there is a collector here to rewrite.
+    // The second collector. The first, c_msx96yzmkunilzwhd, was built on 17 Aug and
+    // extracted nothing on 20 Aug against a page that answered HTTP 200 with 1.8 MB.
+    // The cycle diagnosed drift, repaired it, re-measured, and rejected the repair;
+    // runs/incident-ebay-1787242643447.json is that event. Rebuilding rather than
+    // healing again is the escalation the vendor's healer had already failed twice, and
+    // it is what the design says a person does when a repair cannot be verified.
+    collectorId: process.env.EBAY_COLLECTOR ?? "c_mt1u43dj2h99xaf6l2",
+    // One recall-derived search rather than the whole marketplace. That is not a
+    // simplification of the design, it is the design: a feed matching 307 recalls
+    // against everything for sale is not a thing anyone can run, and a feed watching the
+    // queries a recall implies is. The query is fixed so a baseline means something.
+    url: "https://www.ebay.com/sch/i.html?_nkw=Cooluli+minifridge",
+    contract: EBAY_CONTRACT,
+    normalise: (raw) => normaliseEbay(raw) as unknown as Row[],
+    refOf: (row) => ebayRefOf(row as Record<string, unknown>),
+    // eBay item ids are public and stable, and an ended listing answers 200 with its own
+    // wording rather than a 404, which is exactly the case `detectGone` reads visible
+    // text for. "this listing has ended" and "no longer available" are already in the
+    // built-in marker set.
+    permalinkFor: (ref, origin) => `${origin}/itm/${ref}`,
+    // rowsPerPage is deliberately absent. The collector pages internally from one input
+    // URL, so the number the pagination oracle would need is the collector's stride and
+    // not eBay's, and nothing here has measured it. A guess would make a real drift read
+    // as pagination and send a repair at the wrong thing.
   },
   tradewell: {
     // Filled in by the create call; see runs/create-tradewell.json.
@@ -347,7 +382,22 @@ async function main(): Promise<void> {
   process.exit(serving.state === "verified" || serving.state === "healed" ? 0 : 1);
 }
 
-main().catch((e: unknown) => {
-  console.error(e instanceof Error ? e.stack : String(e));
-  process.exit(3);
-});
+/** Guarded, so the registry above can be imported and checked by a test.
+ *
+ *  It could not be before. `SOURCES` decides which sources are supervised at all, and
+ *  every field in it is load-bearing: a contract keyed to the wrong source measures the
+ *  wrong thing, a permalink built on the wrong origin reads 404s there as withdrawals
+ *  from a site we were never looking at, and a source marked repairable with nothing to
+ *  repair sends a heal prompt into the void. None of that was reachable from a test,
+ *  because importing this module ran a live cycle. */
+function isMain(): boolean {
+  const entry = process.argv[1];
+  return entry !== undefined && entry.endsWith("cycle.ts");
+}
+
+if (isMain()) {
+  main().catch((e: unknown) => {
+    console.error(e instanceof Error ? e.stack : String(e));
+    process.exit(3);
+  });
+}

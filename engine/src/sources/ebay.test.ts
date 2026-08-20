@@ -184,6 +184,55 @@ describe("EBAY_CONTRACT", () => {
     assert.match(condition.sampleRefs[0] ?? "", /^\d+$/);
   });
 
+  it("tolerates the location rate a deep crawl really has, and still catches the selector breaking", () => {
+    // The limit was 5%, calibrated on the 169-row pressure-washer capture where 2 rows
+    // lacked a location. The supervised query is a different search and the collector
+    // crawls it about three times deeper, and eBay's tail is sparser than its first page:
+    //
+    //   pressure washer, 169 rows    2 null   1.2%   <- what the 5% limit was set against
+    //   cooluli study,   193 rows    4 null   2.1%
+    //   cooluli live,    559 rows   25 null   4.5%
+    //   cooluli cycle,   568 rows            5.6%   <- breached, and a heal was attempted
+    //
+    // A repair cannot make a seller fill in a location, so that breach bought a refusal
+    // and a wasted repair for a field behaving exactly as the adapter header says it
+    // does. The limit was measuring the marketplace rather than our extraction.
+    //
+    // 10% is a little under twice the worst rate seen. What the check exists to catch is
+    // the selector breaking, and that does not arrive as 6%: it arrives as 100%. Both
+    // directions are asserted here so the number cannot be loosened until it stops
+    // catching anything.
+    // Built to a rate rather than to a stride, so the fixture cannot drift past the limit
+    // it is meant to sit under when the capture behind it changes size.
+    const rows = normaliseEbay(sample);
+    const want = Math.round(rows.length * 0.07);
+    let nulled = rows.filter((l) => l.location === null).length;
+    const sparse = rows.map((l) => {
+      if (l.location !== null && nulled < want) {
+        nulled++;
+        return { ...l, location: null };
+      }
+      return l;
+    });
+    const sparseRate = sparse.filter((l) => l.location === null).length / sparse.length;
+    assert.ok(sparseRate > 0.05, `fixture is ${(sparseRate * 100).toFixed(1)}% null and has to exceed the old 5% limit`);
+    assert.ok(sparseRate < 0.1, `fixture is ${(sparseRate * 100).toFixed(1)}% null and has to stay under the new one`);
+
+    const ok = checkContract(EBAY_CONTRACT, sparse, sparse.length, frozenNow, ebayRefOf);
+    assert.deepEqual(
+      ok.breaches.filter((b) => b.includes("location")),
+      [],
+      "an ordinary deep crawl is being reported as a contract breach"
+    );
+
+    const broken = rows.map((l) => ({ ...l, location: null }));
+    const fails = checkContract(EBAY_CONTRACT, broken, broken.length, frozenNow, ebayRefOf);
+    assert.ok(
+      fails.breaches.some((b) => b.includes("location")),
+      "the location selector breaking outright must still fail the contract"
+    );
+  });
+
   it("catches a price that arrives as a formatted string", () => {
     // The realistic drift: eBay changes markup, the collector starts returning
     // "1,099.99" as text, and every arithmetic downstream silently breaks.

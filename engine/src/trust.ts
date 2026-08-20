@@ -30,6 +30,32 @@ import type { RecordState } from "./types.js";
  *  read cleanly: the classifier established that every missing record 404s and that no
  *  field breached, so the survivors are still vouched for. A field breach is different
  *  and does un-verify them, because it means we misread what we did fetch. */
+/** `deriveTrust` for a source that may never have been probed at all.
+ *
+ *  `deriveTrust` answers "does what we are holding satisfy the contract", and for a
+ *  committed capture with no supervision behind it the answer is yes: it was captured
+ *  from a healthy source once, so of course it parses. `verified` is then a claim about
+ *  the file rather than about the source, and the two are only the same thing while the
+ *  capture is fresh, which nothing here guarantees and nobody checks.
+ *
+ *  This is the correction made for CPSC when its committed sample was being stamped
+ *  `verified` by hand, generalised rather than repeated. It had to be generalised because
+ *  the same hole was still open one layer up: the health strip re-derived trust straight
+ *  from `deriveTrust`, so a source could carry `unverified` provenance on every record
+ *  while its own card called it verified. Adding a second real source with a fallback
+ *  capture is what made that reachable again.
+ *
+ *  A file nobody probed is `unverified`, and it costs what it should: that source stops
+ *  counting towards anything the feed is willing to vouch for until a cycle runs. */
+export function supervisedTrust(
+  contract: SourceContract,
+  state: SourceState | null,
+  rows: readonly unknown[]
+): RecordState {
+  if (state === null || state.lastGoodRows.length === 0) return "unverified";
+  return deriveTrust(contract, rows, state);
+}
+
 export function deriveTrust(
   contract: SourceContract,
   rows: readonly unknown[],

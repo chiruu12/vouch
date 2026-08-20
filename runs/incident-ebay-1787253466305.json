@@ -1,0 +1,105 @@
+{
+  "incident": {
+    "sourceId": "ebay",
+    "openedAt": "2026-08-20T18:45:39.315Z",
+    "closedAt": null,
+    "cause": "drift",
+    "evidence": [
+      "field location null rate 5.6% against a limit of 5.0% over 480 rows (examples: , , )"
+    ],
+    "prompt": "Extraction returned 480 rows but these fields breached contract ebay@1: location (6% null). The listing at https://www.ebay.com/sch/i.html?_nkw=Cooluli+minifridge still returns HTTP 200 with 1765681 bytes, so it is not blocked. Permalinks for the previously extracted notices still return HTTP 200, so nothing was withdrawn. The previously working selector .permalink now matches 0 elements. Attribute hooks present in the live document: data-inlinepayload, data-type, data-variant, data-webpack, data-uvcc-ready, data-marko-key, data-id, data-marko. Re-extract every notice from https://www.ebay.com/sch/i.html?_nkw=Cooluli+minifridge.",
+    "healAttempted": true,
+    "healDeferred": false,
+    "healDurationMs": 264395,
+    "verified": false,
+    "serving": false,
+    "mttrMs": null,
+    "withdrawnRefs": [],
+    "resurrectedRefs": [],
+    "refusal": "heal reported \"done\" but the result still fails the contract: field location null rate 5.6% exceeds limit 5.0% over 568 rows"
+  },
+  "report": {
+    "sourceId": "ebay",
+    "contractVersion": "ebay@1",
+    "at": "2026-08-20T19:17:46.303Z",
+    "rows": 568,
+    "baselineRows": null,
+    "rowDropRate": null,
+    "passed": false,
+    "breaches": [
+      "field location null rate 5.6% exceeds limit 5.0% over 568 rows"
+    ],
+    "fields": [
+      {
+        "field": "id",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "permalink",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "title",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "price",
+        "nullRate": 0,
+        "nullRateLimit": 0.02,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "currency",
+        "nullRate": 0,
+        "nullRateLimit": 0.02,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "condition",
+        "nullRate": 0,
+        "nullRateLimit": 0.05,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "location",
+        "nullRate": 0.056338028169014086,
+        "nullRateLimit": 0.05,
+        "typeErrors": 0,
+        "breached": true,
+        "sampleRefs": [
+          "",
+          "",
+          ""
+        ]
+      }
+    ]
+  },
+  "diagnosis": {
+    "cause": "drift",
+    "withdrawnRefs": [],
+    "lostRefs": [],
+    "unresolvedRefs": [],
+    "healable": true,
+    "evidence": [
+      "field location null rate 5.6% against a limit of 5.0% over 480 rows (examples: , , )"
+    ]
+  }
+}

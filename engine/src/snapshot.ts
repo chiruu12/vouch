@@ -20,11 +20,11 @@
 
 import { readFileSync, readdirSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { deriveTrust, samePlaceWeScraped } from "./trust.js";
+import { deriveTrust, samePlaceWeScraped, supervisedTrust } from "./trust.js";
 import { checkContract, ARCADIA_CONTRACT, type SourceContract } from "./contract.js";
 import { MATCH_CAVEAT, PUBLISH_THRESHOLD, matchListings, type Listing, type Match } from "./match.js";
 import { normaliseCpsc, CPSC_CONTRACT } from "./sources/cpsc.js";
-import { normaliseEbay } from "./sources/ebay.js";
+import { EBAY_CONTRACT, normaliseEbay } from "./sources/ebay.js";
 import { TRADEWELL_CONTRACT } from "./sources/tradewell.js";
 import type { Incident, SourceState } from "./runner.js";
 import type { RecallRecord, RecordState, RiskLevel, SourceId } from "./types.js";
@@ -290,6 +290,23 @@ const META: Record<string, SourceMeta> = {
     contract: ARCADIA_CONTRACT,
     synthetic: true,
   },
+  ebay: {
+    label: "eBay",
+    scraped: true,
+    collectorId: "c_mt1u43dj2h99xaf6l2",
+    url: "https://www.ebay.com/sch/i.html?_nkw=Cooluli+minifridge",
+    contract: EBAY_CONTRACT,
+    // The only marketplace here that is not ours. Everything else in this table we
+    // built, which is why the flag exists at all.
+    synthetic: false,
+    // No `capturedAt`, unlike CPSC, and the difference is the whole reason that field
+    // exists. It states when the data being served was captured, so a source falling
+    // back to a committed capture can give its real age instead of reporting "never".
+    // A marketplace has no fallback: it serves what a cycle vouched for or it serves
+    // nothing. So there is no capture behind these rows to date, and putting one here
+    // would print "last verified 2026-08-17" under a source whose every cycle so far has
+    // failed. `never` is the true answer and the strip already renders it.
+  },
   tradewell: {
     label: "Tradewell Market (synthetic)",
     scraped: true,
@@ -372,7 +389,7 @@ function sourceCard(
     collectorId: meta.collectorId,
     url: meta.url,
     contractVersion: meta.contract.version,
-    trust: deriveTrust(meta.contract, rows, state),
+    trust: supervisedTrust(meta.contract, state, rows),
     rows: rows.length,
     baselineRows: state?.baselineRows ?? null,
     contractPassed: report.passed,
@@ -536,8 +553,77 @@ function buildStudy(recalls: readonly RecallRecord[], listings: readonly Listing
  *  source `deriveTrust` never saw, and six rows captured once licensed "no recall
  *  matched and this feed can currently say so". A file nobody probed is not verified. */
 export function cpscTrust(state: SourceState | null, rows: readonly unknown[]): RecordState {
-  if (state === null || state.lastGoodRows.length === 0) return "unverified";
-  return deriveTrust(CPSC_CONTRACT, rows as never, state);
+  return supervisedTrust(CPSC_CONTRACT, state, rows);
+}
+
+/** How a listing's withdrawal and its return get paired, keyed by source AND ref.
+ *
+ *  Extracted so the pairing can be tested, for the reason `cpscTrust` was: the branch
+ *  that matters is not the one a real run takes. Every incident on disk today belongs to
+ *  one source, so a run of the real data exercises the agreeing case and nothing else,
+ *  and the rule that the sources must agree is proved by nobody.
+ *
+ *  With one marketplace the ref alone was enough. With two it is not, and the failure is
+ *  quiet: a withdrawal recorded on one source would be accepted as the missing half of a
+ *  resurrection on another, and the feed would publish a "back on sale" date drawn from a
+ *  site the listing was never on. eBay ids are numeric and Tradewell's are not, so
+ *  nothing collides today. Nothing here depends on that staying true.
+ *
+ *  A return with no recorded withdrawal behind it is skipped rather than guessed at. We
+ *  would be asserting a history we cannot show. */
+export function resurrectionKey(sourceId: SourceId, ref: string): string {
+  return `${sourceId}\u0000${ref}`;
+}
+
+export function pairResurrections(
+  incidents: readonly PubIncident[]
+): Map<string, PubListing["resurrected"]> {
+  const out = new Map<string, PubListing["resurrected"]>();
+  for (const i of incidents) {
+    for (const ref of i.resurrectedRefs) {
+      const gone = incidents.find(
+        (j) => j.sourceId === i.sourceId && j.withdrawnRefs.includes(ref) && j.openedAt <= i.openedAt
+      );
+      if (gone !== undefined) {
+        out.set(resurrectionKey(i.sourceId, ref), {
+          withdrawnAt: gone.openedAt,
+          backOnSaleAt: i.openedAt,
+        });
+      }
+    }
+  }
+  return out;
+}
+
+/** The listings a marketplace is allowed to contribute to the feed.
+ *
+ *  Rows from a cycle we vouched for, minus anything confirmed withdrawn. There is no
+ *  capture fallback here and that is the whole point of the function existing.
+ *
+ *  A recall source has one, because a feed with no recall catalogue is not a feed and a
+ *  clone with no network still has to build. A marketplace is not the same case. An
+ *  empty marketplace is a perfectly good feed: recalls, and nothing currently matched
+ *  against them. What a stale capture buys is 193 sentences of the form "this recalled
+ *  product is on sale at this URL", each one an actionable claim about a real seller's
+ *  page that may have been taken down days ago.
+ *
+ *  Tradewell's last-good is different from a committed capture in the way that matters:
+ *  it came from a cycle that passed, so there was a moment we vouched for it. A file in
+ *  the repository has never been through a cycle at all. That distinction is exactly the
+ *  one the CPSC sample lost when it was stamped `verified` by hand, and this is the same
+ *  correction made once for both marketplaces rather than twice, separately, in a
+ *  slightly different way each time.
+ *
+ *  The withdrawal filter is a second lock, not a restatement. The supervisor already
+ *  strips a withdrawn record from last-good and discards a repair that hands one back.
+ *  This refuses to take its word for it, because the publish boundary is where a phantom
+ *  stops being a bad row and becomes a live safety claim about a product someone might
+ *  buy. A bug that put a confirmed-withdrawn record back into `lastGoodRows` during an
+ *  unrelated repair is how the first lock failed once already. */
+export function vouchedListings(state: SourceState | null): Listing[] {
+  if (state === null) return [];
+  const withdrawn = new Set(state.withdrawnRefs);
+  return (state.lastGoodRows as unknown as Listing[]).filter((l) => !withdrawn.has(String(l.id)));
 }
 
 export function buildSnapshot(now = new Date()): Snapshot {
@@ -567,21 +653,23 @@ export function buildSnapshot(now = new Date()): Snapshot {
   const arcadiaRows = (arcadiaState?.lastGoodRows ?? []) as unknown as Omit<RecallRecord, "provenance">[];
   const arcadiaProv = provenanceFor("arcadia", arcadiaState, deriveTrust(ARCADIA_CONTRACT, arcadiaRows, arcadiaState));
 
-  // --- the marketplace we supervise -------------------------------------------
+  // --- the marketplaces we supervise ------------------------------------------
+  //
+  // Two of them now, and the second one is the point. Tradewell is a marketplace we
+  // built, which is what makes it useful: we can delist on cue, redesign its paging,
+  // and put a bot wall in front of it, none of which we may do to somebody else's site.
+  // What it cannot show is that any of this survives a marketplace with its own opinion
+  // about being scraped. eBay is real, is not ours, and has already rate-limited this
+  // collector once on record.
   const twState = readState("tradewell");
   const withdrawnRefs = new Set(twState?.withdrawnRefs ?? []);
+  const twLive = vouchedListings(twState);
 
-  // A withdrawn record should never be in lastGoodRows: the supervisor strips it from
-  // the fallback, and a repair that hands one back is discarded before it can be
-  // promoted. This filter does not restate that, it refuses to take its word for it.
-  // The publish boundary is where a phantom stops being a bad row and becomes a live
-  // safety claim about a product someone might buy, so it is worth a second lock. A
-  // bug that put a confirmed-withdrawn record back into lastGoodRows during an
-  // unrelated repair is exactly how the first lock failed.
-  const twLive = ((twState?.lastGoodRows ?? []) as unknown as Listing[]).filter(
-    (l) => !withdrawnRefs.has(String(l.id))
-  );
-  const twProv = provenanceFor("tradewell", twState, deriveTrust(TRADEWELL_CONTRACT, twLive, twState));
+  // eBay, supervised on the same cycle and by the same rules. The fallback is the pinned
+  // capture the study is measured on, and like the CPSC fallback it is `unverified`
+  // rather than stamped: a file nobody probed has not been verified, whoever captured it.
+  const ebayState = readState("ebay");
+  const ebayRows = vouchedListings(ebayState);
 
   // Withdrawn listings are not in lastGoodRows any more, by design. Their text comes
   // from the baseline capture, and they are republished only as a withdrawal record.
@@ -617,32 +705,60 @@ export function buildSnapshot(now = new Date()): Snapshot {
     ...cpscRecalls,
     ...arcadiaRows.map((r) => ({ ...r, provenance: arcadiaProv as never })),
   ];
-  const matches = matchListings(allRecalls, twLive);
-  const byListing = new Map(twLive.map((l) => [l.id, l]));
+  // Matched per marketplace, not against one merged list, and that is a correctness
+  // requirement rather than tidiness. `matchListings` keeps the best match per
+  // `listing.id`, so two marketplaces sharing an id would silently drop one of them;
+  // the publish side would then attach whichever provenance it looked up first, which
+  // is how a real eBay listing gets published wearing a synthetic fixture's label, or
+  // the reverse. eBay ids are numeric and Tradewell's are not, so nothing collides
+  // today. Nothing here depends on that staying true.
+  const marketplaces = (
+    [
+      { sourceId: "tradewell", state: twState, contract: TRADEWELL_CONTRACT, listings: twLive },
+      { sourceId: "ebay", state: ebayState, contract: EBAY_CONTRACT, listings: ebayRows },
+    ] as const
+  )
+    // A marketplace with nothing to publish is left out entirely rather than carried
+    // with an empty list. `provenanceFor` refuses to describe a record whose age nobody
+    // can state, which is correct and is why it throws; building one for a source that
+    // publishes nothing would mean answering that question about no records at all, and
+    // the only way to answer it is to name a date that is not a verification.
+    .filter((mk) => mk.listings.length > 0)
+    .map((mk) => ({
+      prov: provenanceFor(
+        mk.sourceId,
+        mk.state,
+        supervisedTrust(mk.contract, mk.state, mk.listings)
+      ),
+      byListing: new Map(mk.listings.map((l) => [l.id, l])),
+      matches: matchListings(allRecalls, mk.listings),
+    }));
 
   // Both halves of a resurrection come from the incident log rather than from a flag we
   // set here, so what the feed says about a record is checkable against the record of
   // why it says it. A ref with a return but no recorded withdrawal is skipped: we would
   // be asserting a history we cannot show.
+  //
+  // Keyed by source AND ref. With one marketplace the ref alone was enough; with two it
+  // is not, and the failure is not a crash. A withdrawal recorded on one source would be
+  // accepted as the missing half of a resurrection on another, and the feed would
+  // publish a "back on sale" date drawn from a site the listing was never on.
   const incidents = loadIncidents();
-  const backOnSale = new Map<string, PubListing["resurrected"]>();
-  for (const i of incidents) {
-    for (const ref of i.resurrectedRefs) {
-      const gone = incidents.find(
-        (j) => j.withdrawnRefs.includes(ref) && j.openedAt <= i.openedAt
-      );
-      if (gone !== undefined) {
-        backOnSale.set(ref, { withdrawnAt: gone.openedAt, backOnSaleAt: i.openedAt });
-      }
-    }
-  }
+  const backOnSale = pairResurrections(incidents);
 
   const recalls: PubRecall[] = allRecalls.map((r) => {
-    const mine = matches.filter((m) => m.recallRef === r.ref);
-    const toPub = (m: Match): PubListing | null => {
-      const l = byListing.get(m.listingId);
-      return l === undefined ? null : publishListing(l, twProv, m, backOnSale.get(m.listingId));
-    };
+    const forRecall = (want: boolean): PubListing[] =>
+      marketplaces.flatMap((mk) =>
+        mk.matches
+          .filter((m) => m.recallRef === r.ref && m.publishable === want)
+          .map((m) => {
+            const l = mk.byListing.get(m.listingId);
+            return l === undefined
+              ? null
+              : publishListing(l, mk.prov, m, backOnSale.get(resurrectionKey(mk.prov.sourceId, m.listingId)));
+          })
+          .filter((x): x is PubListing => x !== null)
+      );
     return {
       ref: r.ref,
       permalink: r.permalink,
@@ -655,8 +771,8 @@ export function buildSnapshot(now = new Date()): Snapshot {
       published: r.published,
       action: r.action,
       provenance: r.provenance as unknown as PubProvenance,
-      onSale: mine.filter((m) => m.publishable).map(toPub).filter((x): x is PubListing => x !== null),
-      quarantined: mine.filter((m) => !m.publishable).map(toPub).filter((x): x is PubListing => x !== null),
+      onSale: forRecall(true),
+      quarantined: forRecall(false),
     };
   });
 
@@ -687,6 +803,7 @@ export function buildSnapshot(now = new Date()): Snapshot {
     sourceCard("cpsc", cpscState, cpscRows, incidents),
     sourceCard("arcadia", arcadiaState, arcadiaRows, incidents),
     sourceCard("tradewell", twState, twLive as unknown as object[], incidents),
+    sourceCard("ebay", ebayState, ebayRows as unknown as object[], incidents),
   ];
 
   return {
@@ -700,7 +817,7 @@ export function buildSnapshot(now = new Date()): Snapshot {
     study,
     totals: {
       recalls: recalls.length,
-      listingsWatched: twLive.length,
+      listingsWatched: twLive.length + ebayRows.length,
       asserted: recalls.reduce((n, r) => n + r.onSale.length, 0),
       quarantined: recalls.reduce((n, r) => n + r.quarantined.length, 0),
       withdrawn: withdrawn.length,

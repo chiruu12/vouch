@@ -1,0 +1,106 @@
+{
+  "incident": {
+    "sourceId": "ebay",
+    "openedAt": "2026-08-20T19:20:44.766Z",
+    "closedAt": null,
+    "cause": "blocked",
+    "evidence": [
+      "listing returned HTTP 403",
+      "healing cannot clear a block; backing off instead",
+      "blocked cycle 1 in a row; holding off until 2026-08-20T19:34:31.295Z before the next request"
+    ],
+    "prompt": null,
+    "healAttempted": false,
+    "healDeferred": false,
+    "healDurationMs": null,
+    "verified": false,
+    "serving": false,
+    "mttrMs": null,
+    "withdrawnRefs": [],
+    "resurrectedRefs": [],
+    "refusal": "the source refused the request; healing cannot clear a block"
+  },
+  "report": {
+    "sourceId": "ebay",
+    "contractVersion": "ebay@1",
+    "at": "2026-08-20T19:33:31.294Z",
+    "rows": 561,
+    "baselineRows": null,
+    "rowDropRate": null,
+    "passed": true,
+    "breaches": [],
+    "fields": [
+      {
+        "field": "id",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "permalink",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "title",
+        "nullRate": 0,
+        "nullRateLimit": 0,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "price",
+        "nullRate": 0,
+        "nullRateLimit": 0.02,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "currency",
+        "nullRate": 0,
+        "nullRateLimit": 0.02,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "condition",
+        "nullRate": 0,
+        "nullRateLimit": 0.05,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": []
+      },
+      {
+        "field": "location",
+        "nullRate": 0.05169340463458111,
+        "nullRateLimit": 0.1,
+        "typeErrors": 0,
+        "breached": false,
+        "sampleRefs": [
+          "",
+          "",
+          ""
+        ]
+      }
+    ]
+  },
+  "diagnosis": {
+    "cause": "blocked",
+    "withdrawnRefs": [],
+    "lostRefs": [],
+    "unresolvedRefs": [],
+    "healable": false,
+    "evidence": [
+      "listing returned HTTP 403",
+      "healing cannot clear a block; backing off instead"
+    ]
+  }
+}

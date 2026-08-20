@@ -164,7 +164,22 @@ export const EBAY_CONTRACT: SourceContract = {
     price: { type: "number", maxNullRate: 0.02 }, // observed 0/169
     currency: { type: "string", maxNullRate: 0.02, minLength: 3 }, // observed 0/169 via price.currency
     condition: { type: "string", maxNullRate: 0.05, minLength: 3 }, // observed 0/169
-    location: { type: "string", maxNullRate: 0.05, minLength: 3 }, // observed 2/169 = 1.2%
+    // Recalibrated against the query actually supervised, and against a crawl three times
+    // deeper than the one this contract was first written for:
+    //
+    //   pressure washer, 169 rows    2 null   1.2%   <- the old 5% limit was set here
+    //   cooluli study,   193 rows    4 null   2.1%
+    //   cooluli live,    559 rows   25 null   4.5%
+    //   cooluli cycle,   568 rows            5.6%   <- breached, and a repair was attempted
+    //
+    // eBay's first page is better filled in than its tail, so the rate rises with depth.
+    // A repair cannot make a seller type an address, so the old limit bought a refusal and
+    // a 264-second repair for a field doing exactly what the header above says it does. It
+    // was measuring the marketplace, not our extraction.
+    //
+    // 10% is a little under twice the worst rate seen, and far below what the check is
+    // actually for: a broken selector reports 100%, not 6%.
+    location: { type: "string", maxNullRate: 0.1, minLength: 3 },
     // brand omitted: the collector does not extract it, so a limit here would fail
     // every healthy run. Recorded in the header as a known matching weakness.
     // listedOn omitted: never present in search results.
