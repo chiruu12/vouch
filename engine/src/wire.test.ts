@@ -242,3 +242,89 @@ test("a withheld record from a real source is not labelled a fixture", () => {
 test("nothing quarantined says so rather than returning an empty reply", () => {
   assert.equal(digestQuarantine([]), "NONE nothing resembled this closely enough to quarantine");
 });
+
+// --- the two formats say the same thing ------------------------------------
+
+/** A clean miss: nothing matched, and every recall source is currently vouched for. */
+const cleanMiss = (): ContextAnswer => ANSWER();
+
+test("a clean miss is a claim in JSON, not an empty object", () => {
+  // `dense` drops nulls and empties, so vouching for absence collapsed to {"at": ...}.
+  // A caller could not tell "we looked, we can vouch for every source, nothing matched"
+  // from "the tool produced no usable output", which is the exact ambiguity this whole
+  // service exists to remove. The digest said it plainly the whole time; only the JSON
+  // form was silent, so the two disagreed about the strongest claim the feed can make.
+  const j = compactAnswer(cleanMiss());
+
+  assert.equal(j["found"], false, "absence has to be stated, not left to be inferred");
+  assert.equal(j["refused"], undefined, "a clean miss is not a refusal");
+});
+
+test("a hit does not carry the absence token", () => {
+  const j = compactAnswer(ANSWER({ asserted: [HIT] }));
+
+  assert.equal(j["found"], undefined);
+});
+
+test("a refusal has the same shape in both formats", () => {
+  // digestAnswer returned early on a refusal and dropped the withheld tally; compactAnswer
+  // kept it. Same ContextAnswer, different semantics depending on which format you asked
+  // for. On a refusal there is no answer, so a tally of what was held back beside it is
+  // the advisory-sibling shape the design rejects everywhere else.
+  const refused: ContextAnswer = {
+    ...cleanMiss(),
+    withheld: [{ count: 1, reason: "the query contradicts the recall" }],
+    refusal: "US CPSC is not currently verified",
+    refusalCode: "absence_unverifiable",
+  };
+
+  const d = digestAnswer(refused);
+  const j = compactAnswer(refused);
+
+  assert.equal(d.split("\n")[0], "REFUSED absence_unverifiable");
+  assert.doesNotMatch(d, /WITHHELD/, "nothing follows a refusal that could read as an answer");
+  assert.equal(j["withheld"], undefined, "and the JSON form agrees");
+  assert.equal(j["found"], undefined, "a refusal is not a claim about absence either");
+});
+
+// --- a stale hit says so on the record, not only in the margin -------------
+
+const STALE_HIT = {
+  ...HIT,
+  vouch: { ...HIT.vouch, state: "unverified" as const, stale: true },
+};
+
+test("a stale hit is marked on the record, not only on the source block", () => {
+  // The asymmetry an outside review found in the design's own terms. The project argues
+  // that provenance carried as a sibling field is advisory, and that advisory is not a
+  // guarantee, so the guarantee moves into the shape of the reply. That move was made
+  // for absence, which became a refusal with no payload. It was never made for presence.
+  // A stale hit was served as an ordinary assertion with `stale` one key down inside a
+  // `src` block the caller has already read past, so a model enumerating `recalls[]`
+  // saw a vanilla recall.
+  const j = compactAnswer(ANSWER({ asserted: [STALE_HIT], caution: "the source is not currently verified" }));
+  const first = (j["recalls"] as Record<string, unknown>[])[0];
+
+  assert.equal(first?.["stale"], true, "the record itself has to carry it");
+});
+
+test("a fresh hit carries no stale marker", () => {
+  const j = compactAnswer(ANSWER({ asserted: [HIT] }));
+  const first = (j["recalls"] as Record<string, unknown>[])[0];
+
+  assert.equal(first?.["stale"], undefined);
+});
+
+test("a stale answer leads with STALE rather than trailing a caution", () => {
+  // Same rule as the refusal: the line that qualifies the answer comes before the answer,
+  // because a caller that reads one line should read the one that changes what the answer
+  // means. CAUTION already led, but it is prose; this is the token to branch on.
+  const d = digestAnswer(ANSWER({ asserted: [STALE_HIT], caution: "the source is not currently verified" }));
+
+  assert.equal(d.split("\n")[0], "STALE 1 of 1 source(s) not currently verified");
+  assert.match(d, /^CAUTION /m, "the sentence still follows, for whoever reads prose");
+  assert.ok(
+    d.indexOf("STALE") < d.indexOf("RECALL"),
+    "a qualifier after the thing it qualifies is a footnote"
+  );
+});

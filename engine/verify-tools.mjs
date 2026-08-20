@@ -16,8 +16,9 @@
 //   2. No seller identity appears in any reply, in any tool, in either format.
 //   3. A refusal leads its reply and carries a code to branch on, and nothing that could
 //      be mistaken for an answer follows it.
-//   4. The two formats agree about whether an answer was refused. A caller that switches
-//      format must not switch semantics.
+//   4. The two formats agree about whether an answer was refused, and about absence. A
+//      caller that switches format must not switch semantics. This covers the clean miss
+//      that used to be stated plainly in the digest and silently in JSON.
 //
 //   node verify-tools.mjs
 //
@@ -112,6 +113,10 @@ const CALLS = [
   { tool: "breakage_report", args: { format: "json" } },
   { tool: "recall_context", args: { product: "ab" } },
   { tool: "recall_context", args: { product: "ab", format: "json" } },
+  // A query that matches nothing while every recall source is vouched for: the strongest
+  // claim this feed makes, and the one the JSON form used to leave out entirely.
+  { tool: "recall_context", args: { product: "wireless bluetooth headphones" } },
+  { tool: "recall_context", args: { product: "wireless bluetooth headphones", format: "json" } },
 ];
 
 const replies = await callAll(CALLS);
@@ -202,6 +207,22 @@ for (let i = 0; i < replies.length; i++) {
       a.call,
       `digest ${digestRefused ? "refused" : "answered"} while json ${jsonRefused ? "refused" : "answered"}`
     );
+  }
+
+  // Absence, stated or not stated, in both. NONE and `found: false` are the same claim.
+  const digestNone = /^NONE /m.test(a.text);
+  const jsonNone = /"found"\s*:\s*false/.test(b.text);
+  if (digestNone !== jsonNone) {
+    note(
+      "rule 4 (format parity)",
+      a.call,
+      `digest ${digestNone ? "vouched for absence" : "did not"} while json ${jsonNone ? "did" : "did not"}`
+    );
+  }
+
+  // And a refusal carries no tally in either form.
+  if (digestRefused && /"withheld"/.test(b.text)) {
+    note("rule 4 (format parity)", a.call, "json keeps a withheld tally the digest drops on a refusal");
   }
 }
 

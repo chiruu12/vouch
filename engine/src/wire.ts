@@ -64,9 +64,24 @@ export function compactAnswer(a: ContextAnswer): Record<string, unknown> {
     });
   }
 
+  const refused = a.refusalCode !== null;
+
   return dense({
     refused: a.refusalCode,
     why: a.refusal,
+    // Absence, said out loud.
+    //
+    // `dense` drops nulls, empty strings and empty arrays, which is right for optional
+    // detail and was wrong for the one claim this service exists to make. A clean miss
+    // has no recalls, no caution and no refusal, so every key fell away and the whole
+    // reply was `{"at": ...}`. A caller could not distinguish "we looked, we can vouch
+    // for every recall source, and nothing matched" from "this tool produced nothing
+    // usable", which is precisely the ambiguity the refusal machinery exists to remove.
+    // The digest had been saying NONE the entire time; only this form was silent.
+    //
+    // `false` rather than a truthy token, so it survives `dense` on its own terms: the
+    // filter drops null and "" and [], and a literal false is none of those.
+    found: refused ? null : a.asserted.length > 0 ? null : false,
     caution: a.caution,
     at: shortTime(a.askedAt),
     recalls: a.asserted.map((r) =>
@@ -83,10 +98,25 @@ export function compactAnswer(a: ContextAnswer): Record<string, unknown> {
         basis: r.basis,
         on: r.matchedTokens,
         src: sourceKey(r.vouch),
+        // On the record, not only in the `src` block below.
+        //
+        // The block is stated once per source and read once, near the end. A caller
+        // enumerating `recalls[]` never goes back for it, which made a stale hit look
+        // identical to a verified one at exactly the point the caller decides what to
+        // say. Provenance in the margin is advisory; the guarantee has to be where the
+        // record is. Null when fresh, so `dense` drops it and an ordinary hit is unchanged.
+        stale: r.vouch.stale ? true : null,
       })
     ),
     src: Object.keys(srcs).length > 0 ? srcs : null,
-    withheld: a.withheld.map((w) => `${w.count}x ${w.reason}`),
+    // Dropped on a refusal, so this form matches the digest.
+    //
+    // The two disagreed: `digestAnswer` returns early on a refusal and emitted nothing
+    // after it, while this kept the tally, so the same ContextAnswer had different
+    // semantics depending on which format was asked for. The digest is the one that was
+    // right. A refusal means there is no answer, and a count of what was held back sits
+    // beside it as exactly the advisory sibling the design rejects everywhere else.
+    withheld: refused ? [] : a.withheld.map((w) => `${w.count}x ${w.reason}`),
   });
 }
 
@@ -113,6 +143,18 @@ export function digestAnswer(a: ContextAnswer): string {
     out.push(`REFUSED ${a.refusalCode}`);
     if (a.refusal !== null) out.push(a.refusal);
     return out.join("\n");
+  }
+
+  // The machine-readable qualifier first, then the sentence.
+  //
+  // CAUTION already led the digest, which was better than trailing it, but it is prose:
+  // a caller cannot branch on it without substring-matching wording that is expected to
+  // improve. This is the same argument that put `refusalCode` beside `refusal`, applied
+  // to the other thing that changes what an answer means.
+  const staleSources = new Set(a.asserted.filter((r) => r.vouch.stale).map((r) => sourceKey(r.vouch)));
+  if (staleSources.size > 0) {
+    const total = new Set(a.asserted.map((r) => sourceKey(r.vouch))).size;
+    out.push(`STALE ${staleSources.size} of ${total} source(s) not currently verified`);
   }
 
   if (a.caution !== null) out.push(`CAUTION ${a.caution}`);
