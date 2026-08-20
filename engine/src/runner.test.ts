@@ -324,3 +324,45 @@ test("a heal that resurrects a ref withdrawn this cycle is discarded, not served
     "a withdrawn ref must not leak back into the baseline"
   );
 });
+
+test("a failed cycle cannot un-withdraw a record", async () => {
+  // Qwen's F2, reproduced. The extraction breaks in the way that keeps the ref column
+  // and loses everything else, which is what a stale cache or a partial parse looks
+  // like. r3 is withdrawn and appears in those rows. Clearing the mark here would let
+  // the next clean cycle serve a withdrawn recall as verified with no incident behind
+  // it, which is the phantom this project exists to prevent, arriving through the one
+  // door the classifier does not watch.
+  const state: SourceState = { ...seeded(ROWS), withdrawnRefs: ["r3"] };
+  const broken = ROWS.map((r) => ({ ...r, title: "" }));
+  const { deps: d } = deps({ runScraper: async () => ({ rows: broken, errors: [] }) });
+  const r = await runCycle(args(state), d);
+
+  assert.equal(r.report.passed, false, "the fixture must actually breach the contract");
+  assert.deepEqual(r.resurrectedRefs, [], "a cycle we do not vouch for establishes nothing");
+  assert.deepEqual(
+    r.nextState.withdrawnRefs,
+    ["r3"],
+    "the withdrawal survives a cycle that failed its contract"
+  );
+});
+
+test("a resurrection is not believed until the record's own page answers", async () => {
+  // Qwen's F1. The contract passes by construction when a CDN serves a pre-withdrawal
+  // snapshot, because the snapshot IS the old baseline. The listing alone therefore
+  // cannot establish that a withdrawn record is back; only its own page can.
+  const state: SourceState = { ...seeded(ROWS), withdrawnRefs: ["r3"] };
+  const { deps: d } = deps({
+    probePermalinks: async (entries) =>
+      entries.map((e) => ({ ref: e.ref, status: e.ref === "r3" ? 404 : 200 })),
+  });
+  const r = await runCycle(args(state), d);
+
+  assert.deepEqual(r.resurrectedRefs, [], "its permalink still says the record is gone");
+  assert.equal(r.incident, null, "nothing came back, so there is nothing to report");
+  assert.deepEqual(r.nextState.withdrawnRefs, ["r3"], "still withdrawn");
+  assert.equal(
+    r.serving.rows.some((x) => x.id === "r3"),
+    false,
+    "a record the source still calls gone is not served because a listing carried it"
+  );
+});

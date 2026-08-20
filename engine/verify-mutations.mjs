@@ -94,6 +94,27 @@ const MUTATIONS = [
     to: '    const open = null;',
   },
   {
+    name: "a failed cycle can un-withdraw a record",
+    breaks: "an extraction that keeps the ref column and loses the rest clears the withdrawal mark, and the next clean cycle serves a withdrawn recall as verified with no incident behind it",
+    file: "src/runner.ts",
+    from: "  const resurrectedRefs = report.passed\n    ? await confirmedLive(resurrectionCandidates, args, deps)\n    : [];",
+    to: "  const resurrectedRefs = await confirmedLive(resurrectionCandidates, args, deps);",
+  },
+  {
+    name: "a resurrection is believed on the listing alone",
+    breaks: "a CDN serving a pre-withdrawal snapshot passes the contract by construction, so without the permalink re-probe a stale cache is enough to republish a recalled product as verified",
+    file: "src/runner.ts",
+    from: "  const resurrectedRefs = report.passed\n    ? await confirmedLive(resurrectionCandidates, args, deps)\n    : [];",
+    to: "  const resurrectedRefs = report.passed ? resurrectionCandidates : [];",
+  },
+  {
+    name: "a known-withdrawn record in the listing is served anyway",
+    breaks: "a withdrawn record carried by a stale listing reaches the feed before its resurrection is confirmed",
+    file: "src/runner.ts",
+    from: "  const servableRows = rows.filter((r) => !knownWithdrawn.includes(args.refOf(r)));",
+    to: "  const servableRows = rows;",
+  },
+  {
     name: "a withdrawal counts as breakage",
     breaks: "the service refuses to answer every time a notice is withdrawn, which is an ordinary event and not a failure",
     file: "src/context.ts",
@@ -202,8 +223,11 @@ const MUTATIONS = [
     name: "the fallback serves records known to be withdrawn",
     breaks: "a refused cycle republishes a record we already proved was taken down, labelled unverified",
     file: "src/runner.ts",
-    from: "(r) => !knownWithdrawn.includes(args.refOf(r))",
-    to: "() => true",
+    // Anchored on the whole binding rather than the bare predicate. The same filter now
+    // guards this cycle's own extraction (`servableRows`), so the predicate alone matches
+    // twice and a mutation that edits the wrong one of the two proves nothing.
+    from: "  const servableLastGood = state.lastGoodRows.filter(\n    (r) => !knownWithdrawn.includes(args.refOf(r))\n  );",
+    to: "  const servableLastGood = state.lastGoodRows;",
   },
   {
     name: "unresolved permalinks count as still published",

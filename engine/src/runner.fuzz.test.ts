@@ -47,6 +47,9 @@ interface Step {
   present: Row[];
   /** Refs whose permalink still answers a clean 200. */
   live: string[];
+  /** Refs the listing carries whose own page says the record is gone. The stale-cache
+   *  shape: a CDN or collector serving a snapshot taken before the withdrawal. */
+  stalePresent: string[];
   healOk: boolean;
   healStatus: string;
   /** What a successful heal makes the collector return next. */
@@ -59,15 +62,32 @@ function step(r: () => number): Step {
   // Each missing ref independently either still resolves, 404s, or does not answer.
   const live = missing.filter(() => r() < 0.45);
   const healOk = r() < 0.5;
-  return {
+  const out: Step = {
     blocked: r() < 0.15,
     present,
     live,
+    stalePresent: [],
     healOk,
     healStatus: healOk ? "done" : (["heal_call_failed", "heal_busy", "failed"][Math.floor(r() * 3)] ?? "failed"),
     afterHeal: r() < 0.6 ? CATALOGUE : CATALOGUE.slice(0, 1),
   };
+  // Drawn last, on purpose. Every field above keeps the stream position it had before
+  // this case existed, so the coverage floors below stay tuned against the same counts.
+  out.stalePresent = present.map(refOf).filter(() => r() < 0.2);
+  return out;
 }
+
+/** What a permalink probe finds, for any ref, not just a missing one.
+ *
+ *  The resolver this replaces only ever handled missing refs, because those were the
+ *  only ones probed. A resurrection is now confirmed against the record's own page, so
+ *  a ref present in the listing gets asked about too, and answering 404 for all of them
+ *  made the resurrection property vacuous rather than false. */
+const resolves = (s: Step) => (ref: string): number => {
+  if (s.stalePresent.includes(ref)) return 404;
+  if (s.present.some((x) => refOf(x) === ref)) return 200;
+  return s.live.includes(ref) ? 200 : 404;
+};
 
 function deps(s: Step, clock: { t: number }, missingResolver: (ref: string) => number): CycleDeps {
   let healed = false;
@@ -133,7 +153,7 @@ describe("state invariants across a sequence of cycles", async () => {
               refOf,
               rowsPerPage: 4,
             },
-            deps(s, clock, (ref) => (s.live.includes(ref) ? 200 : 404))
+            deps(s, clock, resolves(s))
         );
         state = result.nextState;
 
@@ -152,6 +172,7 @@ describe("state invariants across a sequence of cycles", async () => {
   it("only ever removes a withdrawn ref by reporting it as resurrected", async () => {
     // A record published as withdrawn must not quietly stop being withdrawn. If it
     // comes back, that is an event with an incident attached, not a silent edit.
+    let observed = 0;
     for (let seed = 1; seed <= SEEDS; seed++) {
       const r = rng(seed);
       let state: SourceState = emptyState();
@@ -171,19 +192,44 @@ describe("state invariants across a sequence of cycles", async () => {
               refOf,
               rowsPerPage: 4,
             },
-            deps(s, clock, (ref) => (s.live.includes(ref) ? 200 : 404))
+            deps(s, clock, resolves(s))
         );
         state = result.nextState;
 
         const dropped = before.filter((x) => !state.withdrawnRefs.includes(x));
+        observed += dropped.length;
         for (const ref of dropped) {
+          // Asserted against the incident, not against `result.resurrectedRefs`.
+          //
+          // This property used to read the field, which the runner sets on every branch
+          // it returns from. So it passed whenever the field was populated, including on
+          // cycles that dropped the withdrawal without opening anything, which is the one
+          // thing the property is named for catching. A test that passes for a reason
+          // other than its name is worse than no test, because it is counted as coverage.
+          //
+          // The cause is deliberately not pinned to "resurrected". A cycle can withdraw
+          // one record and see another come back, and that cycle's incident is correctly
+          // `gone`; the return is carried in resurrectedRefs beside it. Requiring the
+          // label would forbid reporting both, which is a real pair of events.
+          assert.notEqual(
+            result.incident,
+            null,
+            `seed ${seed} cycle ${c}: ${ref} stopped being withdrawn with no incident at all`
+          );
           assert.ok(
-            result.resurrectedRefs.includes(ref),
-            `seed ${seed} cycle ${c}: ${ref} stopped being withdrawn without being reported`
+            result.incident?.resurrectedRefs.includes(ref),
+            `seed ${seed} cycle ${c}: ${ref} stopped being withdrawn without being named`
           );
         }
       }
     }
+
+    // Without this the property is vacuous and looks identical to a passing one: if the
+    // generator never produces a withdrawal that comes back, the loop above asserts
+    // nothing at all. The resurrection path is now gated on a permalink re-probe, so a
+    // generator change that stops returning 200 for a withdrawn ref would silently empty
+    // this property rather than fail it.
+    assert.ok(observed > 0, "no withdrawn ref was ever dropped, so this property proved nothing");
   });
 
   it("opens an incident for every cycle that was not healthy", async () => {
@@ -205,7 +251,7 @@ describe("state invariants across a sequence of cycles", async () => {
               refOf,
               rowsPerPage: 4,
             },
-            deps(s, clock, (ref) => (s.live.includes(ref) ? 200 : 404))
+            deps(s, clock, resolves(s))
         );
         state = result.nextState;
 
@@ -255,7 +301,7 @@ describe("state invariants across a sequence of cycles", async () => {
             refOf,
             rowsPerPage: 4,
           },
-          deps(s, clock, (ref) => (s.live.includes(ref) ? 200 : 404))
+          deps(s, clock, resolves(s))
         );
         state = result.nextState;
 
@@ -294,7 +340,7 @@ describe("state invariants across a sequence of cycles", async () => {
               refOf,
               rowsPerPage: 4,
             },
-            deps(s, clock, (ref) => (s.live.includes(ref) ? 200 : 404))
+            deps(s, clock, resolves(s))
         );
         state = result.nextState;
 

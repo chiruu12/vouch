@@ -147,6 +147,33 @@ export function hydrateState(raw: Partial<SourceState> | null | undefined): Sour
   };
 }
 
+/** Which of these refs their own pages still serve.
+ *
+ *  Failing closed is the entire point. A ref whose permalink does not answer, or answers
+ *  with a withdrawal phrase, stays withdrawn. Unknown is not evidence of return, and the
+ *  direction matters: reading a withdrawal as a return republishes a recalled product,
+ *  while reading a return as a withdrawal only keeps a record out of the feed one cycle
+ *  longer than it needed to be. */
+async function confirmedLive(
+  refs: readonly string[],
+  args: CycleArgs,
+  deps: CycleDeps
+): Promise<string[]> {
+  if (refs.length === 0) return [];
+  const targets = refs
+    .map((ref) => ({ ref, url: args.permalinkFor(ref) }))
+    .filter((e): e is { ref: string; url: string } => e.url !== null);
+  // A source with no permalink oracle cannot establish a withdrawal either, so there is
+  // nothing here to reverse. Saying so out loud because returning [] on an empty target
+  // list looks like an oversight and is not one.
+  if (targets.length === 0) return [];
+  const probes = await deps.probePermalinks(targets);
+  const live = new Set(
+    probes.filter((p) => p.status === 200 && !p.goneSignature).map((p) => p.ref)
+  );
+  return refs.filter((r) => live.has(r));
+}
+
 export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleResult> {
   const { contract, state, url, collectorId, sourceId } = args;
   const openedAt = deps.now().toISOString();
@@ -252,10 +279,22 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
     ...(args.rowsPerPage !== undefined ? { rowsPerPage: args.rowsPerPage } : {}),
   });
 
-  // A ref we published as withdrawn, present in the extraction again. Its permalink is
-  // not probed here: the record is in the listing, which is stronger evidence of being
-  // live than a 200 on its own page would be.
-  const resurrectedRefs = state.withdrawnRefs.filter((r) => currentRefs.includes(r));
+  // A ref we published as withdrawn, present in the extraction again.
+  //
+  // The listing alone does not establish this, and the first version of this code
+  // assumed it did: being in the listing was treated as stronger evidence of being live
+  // than a 200 on the record's own page. That reasoning has a hole in it. A CDN or a
+  // collector serving a pre-withdrawal snapshot passes the contract by construction,
+  // because that snapshot IS the baseline it is being compared against, so a passing
+  // contract is not independent evidence that anything came back.
+  //
+  // Two gates, then. The cycle has to be one we vouch for, and the record's own page has
+  // to answer. The same oracle that establishes a withdrawal establishes its reversal,
+  // or a stale cache is enough to put a recalled product back on the feed as verified.
+  const resurrectionCandidates = state.withdrawnRefs.filter((r) => currentRefs.includes(r));
+  const resurrectedRefs = report.passed
+    ? await confirmedLive(resurrectionCandidates, args, deps)
+    : [];
   const resurrected = new Set(resurrectedRefs);
 
   // Withdrawn is a current status, not a permanent mark, so a resurrected ref leaves the
@@ -275,6 +314,15 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
   const servableLastGood = state.lastGoodRows.filter(
     (r) => !knownWithdrawn.includes(args.refOf(r))
   );
+
+  // The same rule applied to this cycle's own extraction.
+  //
+  // A listing can carry a record the source has withdrawn: that is precisely what a
+  // stale cache looks like, and until the resurrection is confirmed against the
+  // record's own page it is not evidence the record is back. Before the confirmation
+  // gate existed this filter was unnecessary, because anything withdrawn and present
+  // was un-withdrawn a few lines earlier and the question never arose. It arises now.
+  const servableRows = rows.filter((r) => !knownWithdrawn.includes(args.refOf(r)));
 
   // A record confirmed withdrawn this cycle stops being expected, whatever else went
   // wrong. Leaving it in the baseline means the next cycle sees it missing all over
@@ -351,8 +399,9 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
               `${resurrectedRefs.length} record(s) previously published as withdrawn are ` +
                 `present in the listing again: ${resurrectedRefs.slice(0, 5).join(", ")}` +
                 (resurrectedRefs.length > 5 ? ` and ${resurrectedRefs.length - 5} more` : ""),
-              `contract ${report.contractVersion} passed over ${report.rows} rows, so this ` +
-                `is the source's own change rather than a reading error on our part`,
+              `contract ${report.contractVersion} passed over ${report.rows} rows and each ` +
+                `record's own page was re-probed and still resolves, so this is the ` +
+                `source's own change rather than a reading error on our part`,
               "no longer marked withdrawn; the withdrawal and the return are both on the record",
             ],
             prompt: null,
@@ -372,8 +421,8 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
       diagnosis,
       resurrectedRefs,
       incident: resurrectionIncident,
-      serving: { rows, state: "verified" },
-      nextState: vouched(rows, report.at),
+      serving: { rows: servableRows, state: "verified" },
+      nextState: vouched(servableRows, report.at),
     };
   }
 
@@ -424,11 +473,11 @@ export async function runCycle(args: CycleArgs, deps: CycleDeps): Promise<CycleR
       diagnosis,
       resurrectedRefs,
       incident,
-      serving: { rows, state: "verified" },
+      serving: { rows: servableRows, state: "verified" },
       // A withdrawal is the source working correctly, not a failure, so it is vouched for
       // like any other cycle we serve, which also clears the streak. Backoff must never
       // end up throttling the one event this feed exists to publish.
-      nextState: vouched(rows, report.at),
+      nextState: vouched(servableRows, report.at),
     };
   }
 
