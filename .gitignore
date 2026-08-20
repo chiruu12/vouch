@@ -18,7 +18,13 @@ out/
 # write-up and the feed both cite, and `snapshot.ts` reads them, so without them a fresh
 # clone cannot build and one test fails. Every file was checked for seller identity
 # before being added: state-tradewell.json carries 11 sellerKey hashes and no names,
-# state-cpsc.json is 307 public regulator notices and carries none.
+# state-cpsc.json is 307 public regulator notices and carries none, and state-ebay.json
+# carries no seller name and no hash at all, because eBay has never had a cycle it could
+# vouch for and so holds no rows. It is allowlisted now rather than the day it goes green,
+# so that the check happens while the file is empty and provably safe. If a later cycle
+# passes, re-read it before pushing: at that point it will hold one hash per listing, in
+# the same shape tradewell's already does, and that is the moment to confirm the adapter
+# really did hash on the way in.
 # Anything new under runs/ is excluded by default, so a raw capture cannot arrive here
 # by accident.
 scratch/
@@ -28,6 +34,7 @@ runs/*.json
 !runs/state-arcadia.json
 !runs/state-tradewell.json
 !runs/state-cpsc.json
+!runs/state-ebay.json
 !runs/incident-*.json
 
 # local agent fleet config (dev tooling, not part of the submission)

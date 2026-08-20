@@ -281,8 +281,8 @@ export default function Page() {
             </h2>
             <p className="section-note">
               {quiet.length} notices with no match above or below the bar in the listings we
-              watch. Coverage is one marketplace, so this means we did not find it, not that it
-              is not being sold.
+              watch. Coverage is two marketplaces and one search each, so this means we did not
+              find it, not that it is not being sold.
             </p>
           </div>
           <div className="scroll">

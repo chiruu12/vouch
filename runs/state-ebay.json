@@ -1,0 +1,42 @@
+{
+  "baselineRefs": [],
+  "baselineRows": null,
+  "lastVerifiedAt": null,
+  "lastGoodRows": [],
+  "healHistory": [
+    {
+      "at": "2026-08-20T16:17:23.446Z",
+      "cause": "drift",
+      "prompt": "Extraction returned an empty array: 0 rows where several were expected, and no errors were raised. The listing at https://www.ebay.com/sch/i.html?_nkw=Cooluli+minifridge still returns HTTP 200 with 1812678 bytes, so it is not blocked. Permalinks for the previously extracted notices still return HTTP 200, so nothing was withdrawn. The previously working selector .permalink now matches 0 elements. Attribute hooks present in the live document: data-inlinepayload, data-marko-key, data-id, data-marko, data-ebayui, data-view-type, data-pageci, data-operationid. Re-extract every notice from https://www.ebay.com/sch/i.html?_nkw=Cooluli+minifridge.",
+      "verified": false,
+      "promoted": false,
+      "collectorId": "c_msx96yzmkunilzwhd",
+      "durationMs": 294331
+    },
+    {
+      "at": "2026-08-20T18:33:40.403Z",
+      "cause": "drift",
+      "prompt": "Extraction returned an empty array: 0 rows where several were expected, and no errors were raised. The listing at https://www.ebay.com/sch/i.html?_nkw=Cooluli+minifridge still returns HTTP 200 with 1782051 bytes, so it is not blocked. Permalinks for the previously extracted notices still return HTTP 200, so nothing was withdrawn. The previously working selector .permalink now matches 0 elements. Attribute hooks present in the live document: data-inlinepayload, data-uvcc-ready, data-marko-key, data-ebayui, data-marko, data-gh-search-form-field, data-view-type, data-pageci. Re-extract every notice from https://www.ebay.com/sch/i.html?_nkw=Cooluli+minifridge.",
+      "verified": false,
+      "promoted": false,
+      "collectorId": "c_mt1u43dj2h99xaf6l2",
+      "durationMs": 454458
+    },
+    {
+      "at": "2026-08-20T19:17:46.303Z",
+      "cause": "drift",
+      "prompt": "Extraction returned 480 rows but these fields breached contract ebay@1: location (6% null). The listing at https://www.ebay.com/sch/i.html?_nkw=Cooluli+minifridge still returns HTTP 200 with 1765681 bytes, so it is not blocked. Permalinks for the previously extracted notices still return HTTP 200, so nothing was withdrawn. The previously working selector .permalink now matches 0 elements. Attribute hooks present in the live document: data-inlinepayload, data-type, data-variant, data-webpack, data-uvcc-ready, data-marko-key, data-id, data-marko. Re-extract every notice from https://www.ebay.com/sch/i.html?_nkw=Cooluli+minifridge.",
+      "verified": false,
+      "promoted": false,
+      "collectorId": "c_mt1u43dj2h99xaf6l2",
+      "durationMs": 264395
+    }
+  ],
+  "withdrawnRefs": [],
+  "streak": {
+    "cause": "blocked",
+    "count": 1,
+    "since": "2026-08-20T19:20:44.766Z"
+  },
+  "cooldownUntil": "2026-08-20T19:34:31.295Z"
+}

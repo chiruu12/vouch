@@ -364,5 +364,6 @@ MIT. See [LICENSE](LICENSE).
   relisted recalled product sorts to the top of the feed and carries both dates, which
   helps a reader who opens the page and not one who does not. This wants a subscription,
   and there is none.
-- Coverage is two recall sources and one marketplace, and only one of the three is a
-  real regulator.
+- Coverage is two recall sources and two marketplaces, and only two of the four are
+  real: one regulator and one marketplace. A recall we hold can be listed somewhere we
+  do not watch, and this feed cannot see that.
