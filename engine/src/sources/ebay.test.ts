@@ -120,11 +120,11 @@ describe("normaliseEbay", () => {
     const listings = normaliseEbay(sample);
     for (const l of listings) {
       assert.equal("seller_name" in l, false);
-      if (l.sellerKey !== undefined) assert.match(l.sellerKey, /^sk_[0-9a-f]{12}$/);
+      assert.equal("sellerKey" in l, false);
     }
   });
 
-  it("hashes a live seller_name rather than passing it along", () => {
+  it("derives nothing from a live seller_name, not even a hash", () => {
     const [listing] = normaliseEbay([
       {
         title: "Test pressure washer 3600 PSI",
@@ -136,8 +136,13 @@ describe("normaliseEbay", () => {
       },
     ]);
     assert.ok(listing);
-    assert.match(listing.sellerKey ?? "", /^sk_[0-9a-f]{12}$/);
-    assert.equal(JSON.stringify(listing).includes("Some Real Seller"), false);
+    // An unsalted hash of a public username is not anonymous. eBay usernames are
+    // enumerable, so the preimage space is small enough to walk with a dictionary and
+    // the hash is identity in a thin disguise. Nothing derived from the name survives.
+    assert.equal(listing.sellerKey, undefined);
+    const serialised = JSON.stringify(listing);
+    assert.equal(serialised.includes("Some Real Seller"), false);
+    assert.equal(/sk_[0-9a-f]/.test(serialised), false);
   });
 
   it("drops crawler error rows instead of counting them as listings", () => {

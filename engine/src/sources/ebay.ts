@@ -22,7 +22,6 @@
 // Seller identity is hashed on the way in, so a plain seller name never reaches the
 // rest of the pipeline. See docs/decisions.md §7.
 
-import { createHash } from "node:crypto";
 import type { SourceContract } from "../contract.js";
 import type { Listing } from "../match.js";
 
@@ -76,11 +75,6 @@ function idFromUrl(url: string | null): string | null {
   return m?.[1] ?? null;
 }
 
-/** Stable, one-way. Enough to spot one seller listing the same recalled product
- *  several times, useless for identifying who they are. */
-function hashSeller(name: string): string {
-  return "sk_" + createHash("sha256").update(name.trim().toLowerCase()).digest("hex").slice(0, 12);
-}
 
 function priceOf(raw: unknown): { value: number | null; currency: string | null } {
   if (typeof raw === "number" && Number.isFinite(raw)) return { value: raw, currency: null };
@@ -105,11 +99,10 @@ function normaliseOne(item: unknown): Listing | null {
 
   const { value, currency } = priceOf(row.price);
 
-  // Live runs carry `seller_name`; the committed sample is already scrubbed to
-  // `sellerKey`. Accept either so the sample exercises this code path unchanged.
-  const sellerName = blankToNull(row.seller_name);
-  const existingKey = blankToNull(row.sellerKey);
-  const sellerKey = sellerName !== null ? hashSeller(sellerName) : existingKey;
+  // Neither `seller_name` nor any hash of it is carried forward. An unsalted hash of a
+  // public username is not anonymous: eBay usernames are enumerable, so the preimage
+  // space is small enough to walk with a dictionary. Nothing in this codebase reads a
+  // seller key, so deriving one bought a re-identification risk and no capability.
 
   const listing: Listing = {
     id,
@@ -127,7 +120,6 @@ function normaliseOne(item: unknown): Listing | null {
     // eBay search results do not carry a listing date. Null rather than guessed.
     listedOn: null,
   };
-  if (sellerKey !== null) listing.sellerKey = sellerKey;
   return listing;
 }
 

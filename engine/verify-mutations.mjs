@@ -525,7 +525,10 @@ const MUTATIONS = [
     breaks: "193 actionable claims about real sellers' pages, sourced from a file that never passed a cycle",
     file: "src/snapshot.ts",
     from: "  const ebayRows = vouchedListings(ebayState);",
-    to: '  const ebayRows = ebayState !== null && ebayState.lastGoodRows.length > 0 ? vouchedListings(ebayState) : (normaliseEbay(load("engine/samples/ebay-cooluli-minifridge.json")) as unknown as Listing[]);',
+    // Unconditional on purpose. The original only fell back when lastGoodRows was
+    // empty, so the moment eBay passed a real cycle the edit applied and changed
+    // nothing, and an inert mutation passes for the same reason an unapplied one does.
+    to: '  const ebayRows = normaliseEbay(load("engine/samples/ebay-cooluli-minifridge.json")) as unknown as Listing[];',
   },
   {
     // The most expensive bug this project has had, and it was found by running against a
@@ -593,6 +596,13 @@ const MUTATIONS = [
     file: "src/cycle.ts",
     from: "    repairable: false,",
     to: "    repairable: true,",
+  },
+  {
+    name: "the eBay adapter derives a seller key again",
+    breaks: "seller re-identification: an unsalted hash of an enumerable public username is identity, not anonymity, and the recorded state is committed to a public repo",
+    file: "src/sources/ebay.ts",
+    from: "    listedOn: null,\n  };\n  return listing;",
+    to: "    listedOn: null,\n  };\n  const sn = blankToNull(row.seller_name);\n  if (sn !== null) listing.sellerKey = \"sk_\" + sn.trim().toLowerCase();\n  return listing;",
   },
 ];
 
