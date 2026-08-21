@@ -138,7 +138,7 @@ Stated plainly because the distinction matters when reading the numbers.
 | Source | Real? | How it is fetched |
 | --- | --- | --- |
 | US CPSC recalls | Real | The CPSC publishes a free JSON API. Fetched directly, not scraped, and the feed says so. Supervised on the same cycle as everything else: 307 notices, contract `cpsc@1`, permalink withdrawal oracle. A break there is not repairable, because there is no collector to rewrite |
-| eBay listings | Real | Bright Data Scraper Studio. 193 listings from one recall-derived query, about 6 minutes, 0 error rows |
+| eBay | Real | Bright Data Scraper Studio, supervised on the same cycle as everything else: contract `ebay@1`, a permalink withdrawal oracle, repairable because there is a collector to rewrite. One recall-derived search, not the whole marketplace. It publishes listings only from a cycle that passed, so a failing eBay contributes nothing rather than falling back to a capture |
 | Arcadia Product Safety | Synthetic fixture | Scraper Studio, against a site we built and are allowed to break |
 | Tradewell Market | Synthetic fixture | Scraper Studio, same |
 
@@ -324,46 +324,27 @@ MIT. See [LICENSE](LICENSE).
 ## Known limits
 
 - Matching is title-based. It cannot read a lot code off a photo, so batch-level
-  certainty is out of reach by construction.
-- The withdrawal oracle detects removal, not revision, and it is a liveness probe, so
-  three things get past it for the same reason. A recall expanded to cover more units
-  returns 200 at the same URL with changed content, and the engine sees a healthy record.
-  A recall rescinded at source, or narrowed, does the same. And a notice removed from a
-  listing while its own page stays up under an archive policy reads as merely missing,
-  which is the state that authorises a repair. All three need per-record content hashing
-  rather than a check that the page still answers, and that is the most consequential
-  thing still missing.
-- Presence survives staleness and absence does not, which is the rule the context service
-  is built on, and it holds against a broken pipe rather than against a changed world. A
-  notice does not expire, but it can be rescinded, and a source that is stale is exactly
-  the source that cannot tell us it happened. A recall retracted while its source is down
-  keeps being served as a stale hit until a cycle succeeds.
-- `redirectedAway` counts any same-host path change as a withdrawal and compares paths
-  only, so the asymmetry runs backwards: a move to a new domain reads as live, while a
-  path redesign on the same host reads as withdrawn. A maintenance redirect during a
-  cycle where extraction also broke would mark every missing record withdrawn at once.
-  Nothing phantom is published, but live recalls would leave the feed.
-- The gone markers were chosen for marketplace pages, and recall notices exist to say a
-  product is no longer for sale. Phrases like "no longer available" appear in legitimate
-  notice bodies. Reading visible text only, and never script payloads, contains this
-  rather than solving it.
-- At least three real failures are filed as `drift` because there is no better box: a
-  server failure, a rate limit whose wording we do not know, and a withdrawal that leaves
-  the URL alive. The first two are refused rather than repaired, which is the part that
-  matters. A fifth state exists in fact and not in the type: a permalink that does not
-  answer is recorded as `drift` with `healable: false` and evidence saying the missing
-  records could not be established either way. The decision is right and the label is
-  wrong, and renaming the cause would touch more than it is worth this week.
-- Three collectors in the account are stuck: one on a repair prompt that was too
-  aggressive, and two holding a repair lock that outlived the job that took it. A
-  repair can damage a working scraper, and nothing here prevents that beyond refusing to
-  serve the result.
-- `bdata scraper run --version dev` is unreachable from the CLI, so a repair cannot be
-  inspected before it reaches production. The gate sits at serving time instead.
-- A resurrection is reported and ranked, but the feed has no way to tell anyone. A
-  relisted recalled product sorts to the top of the feed and carries both dates, which
-  helps a reader who opens the page and not one who does not. This wants a subscription,
-  and there is none.
-- Coverage is two recall sources and two marketplaces, and only two of the four are
-  real: one regulator and one marketplace. A recall we hold can be listed somewhere we
-  do not watch, and this feed cannot see that.
+  certainty is out of reach by construction. Everything downstream inherits that: we
+  publish that a listing matches a product line, never that it is a recalled unit.
+
+- The withdrawal oracle is a liveness probe, so it detects removal and not revision. A
+  recall expanded, narrowed or rescinded at source answers 200 at the same URL and reads
+  healthy. Its gone side is tuned for marketplace pages and misfires on regulator prose,
+  in both its redirect rule and its wording list. Those errors all run one way, dropping
+  a live recall rather than admitting a phantom, and per-record content hashing is the
+  fix that is still missing.
+
+- Presence survives staleness and absence does not, which holds against a broken pipe
+  rather than against a changed world. A notice can be rescinded, and a stale source is
+  exactly the one that cannot tell us it happened, so a retracted recall keeps being
+  served as a stale hit until a cycle succeeds.
+
+- Not every failure has a box. A server error, a rate limit whose wording we do not know,
+  a withdrawal that leaves the URL alive, and an extraction that died on a timeout all
+  file as `drift` with `healable: false`. Each is refused rather than repaired, which is
+  the part that matters, and each carries evidence saying what was actually seen. The
+  decision is right and the label is wrong.
+
+- Coverage is two recall sources and two marketplaces, and only two of the four are real:
+  one regulator and one marketplace. A recall we hold can be listed somewhere we do not
+  watch, and this feed cannot see that.

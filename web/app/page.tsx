@@ -181,9 +181,10 @@ export default function Page() {
           captured with Bright Data Scraper Studio on {snap.study.capturedAt}, cross-checked
           against {snap.study.recalls} real US CPSC recalls. It published{" "}
           <strong>{snap.study.publishable}</strong> and held back {snap.study.quarantined}.{" "}
-          <a href="/method">The working is on the method page.</a> The listings below are
-          matched against a synthetic fixture instead, because a real marketplace cannot be
-          asked to break, delist and relist on cue.
+          <a href="/method">The working is on the method page.</a> The listings below come
+          from Tradewell, a marketplace we built, and from eBay, which is on the same
+          supervision cycle. Only a fixture can be asked to break, delist and relist on
+          cue, so the induced failures happen there.
         </p>
       </section>
 
@@ -345,7 +346,7 @@ export default function Page() {
           Arcadia Product Safety and Tradewell Market are synthetic fixtures built for this
           project, so that failure modes can be induced on demand without hammering a real
           regulator. They are labelled as synthetic everywhere they appear. CPSC recalls and
-          the eBay measurement on the <a href="/method">method page</a> are real.
+          eBay are real, and both are supervised on the same cycle.
         </p>
       </footer>
     </>
